@@ -8,9 +8,10 @@ import { LivingPillars, type Rect, type View } from './pillars-gl';
 //         the far stars and haze lag behind
 //   page  a dimmed, softened stretch of the pillars behind a page of text
 //   map   a star map's place in the pillars; dragging and zooming the map steers it
+//   explore  the pillars as a map to explore (src/scripts/explorer.ts): it follows the explorer's camera
 // Without WebGL 2 the page keeps a still copy of the image (html:not(.has-gl)).
 
-type Mode = 'home' | 'page' | 'map';
+type Mode = 'home' | 'page' | 'map' | 'explore';
 
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const ease = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);
@@ -76,7 +77,7 @@ export function initBackdrop(el: HTMLElement) {
   } catch {
     /* no arrival */
   }
-  const intro = mode === 'home' && html.classList.contains('sky-intro') ? performance.now() : 0;
+  const intro = (mode === 'home' || mode === 'explore') && html.classList.contains('sky-intro') ? performance.now() : 0;
 
   let dirty = true;
   addEventListener('scroll', () => (dirty = true), { passive: true });
@@ -91,6 +92,12 @@ export function initBackdrop(el: HTMLElement) {
   function baseRect(): Rect {
     const vw = innerWidth;
     const vh = innerHeight;
+    const view = mode === 'explore' ? window.__oqView : undefined;
+    if (view) {
+      // fade in from the dark where the image's left edge shows
+      edge = view.x > 4 ? 0.22 : 0.02;
+      return { ...view };
+    }
     if (hero) {
       const b = hero.getBoundingClientRect();
       const fit = fitPillars(b.width, b.height);
@@ -117,7 +124,7 @@ export function initBackdrop(el: HTMLElement) {
     const vh = innerHeight;
     let rect = baseRect();
     let par: [number, number] = [0, 0];
-    let dim = mode === 'home' ? Math.min(0.5, (scrollY / vh) * 0.5) : mode === 'map' ? 0.28 : dimBase;
+    let dim = mode === 'home' || mode === 'explore' ? Math.min(0.5, (scrollY / vh) * 0.5) : mode === 'map' ? 0.28 : dimBase;
     const v: Partial<View> = { blur: mode === 'page' ? 1.1 : mode === 'map' ? 0.25 : 0, life: still ? 0 : mode === 'page' ? 0.7 : 1 };
 
     if (!still) {
@@ -125,7 +132,7 @@ export function initBackdrop(el: HTMLElement) {
       ptr.x += (ptr.tx - ptr.x) * 0.04;
       ptr.y += (ptr.ty - ptr.y) * 0.04;
       par = [Math.sin(t * 0.05) * 14 + ptr.x * 26, Math.cos(t * 0.037) * 10 + ptr.y * 18];
-      if (mode === 'home') par[1] += Math.min(vh, scrollY) * 0.06;
+      if (mode === 'home' || mode === 'explore') par[1] += Math.min(vh, scrollY) * 0.06;
       if (mode === 'page') par[1] += Math.min(vh, scrollY) * 0.03;
     }
 
@@ -167,12 +174,22 @@ export function initBackdrop(el: HTMLElement) {
   // dim, soft pages need fewer pixels and frames
   const fps = mode === 'page' ? 30 : 45;
   let last = 0;
+  let lastView = '';
   const loop = () => {
     requestAnimationFrame(loop);
     // one clock for everything (frame timestamps can trail performance.now() a little)
     const now = performance.now();
     if (document.hidden) return;
     const animating = !still || dive || (intro && now - intro < 3100) || (arrive && now - arrive < 1600) || mode === 'map';
+    // the explorer moved the camera
+    if (mode === 'explore' && window.__oqView) {
+      const v = window.__oqView;
+      const key = `${v.x.toFixed(1)},${v.y.toFixed(1)},${v.w.toFixed(1)}`;
+      if (key !== lastView) {
+        lastView = key;
+        dirty = true;
+      }
+    }
     if (!animating && !dirty) return;
     if (now - last < 1000 / fps - 2) return;
     last = now;
@@ -187,6 +204,20 @@ export function initBackdrop(el: HTMLElement) {
       return;
     }
     lp = p;
+    // closer in, the explorer asks for the full-resolution photo
+    addEventListener(
+      'pillars:sharpen',
+      () => {
+        const im = new Image();
+        im.decoding = 'async';
+        im.onload = () => {
+          lp?.replacePhoto(im);
+          dirty = true;
+        };
+        im.src = '/sky/pillars-max.webp';
+      },
+      { once: true },
+    );
     lp.setScale(mode === 'page' ? 0.6 : mode === 'map' ? 0.85 : 1);
     frame(performance.now());
     el.classList.add('is-live');

@@ -4,7 +4,7 @@
 import { PILLARS } from '../data/pillars';
 
 export interface Sky {
-  mode: 'home' | 'page' | 'map';
+  mode: 'home' | 'page' | 'map' | 'explore';
   /** The point of the image to look at (fractions of the full image). */
   at?: [number, number];
   /** How far in, 1 = the image just covers the window. */
@@ -74,7 +74,8 @@ const dim = sky.dim ?? (sky.mode === 'map' ? 0.28 : 0.55);
   }
 
   .has-gl .pillars__still,
-  .pillars--home .pillars__still {
+  .pillars--home .pillars__still,
+  .pillars--explore .pillars__still {
     display: none;
   }
 </style>
