@@ -1,154 +1,143 @@
 ---
-import Splash from '../components/Splash.astro';
-import Universe from '../components/Universe.astro';
+import StarBand from '../components/StarBand.astro';
 import { cvHref, profile } from '../data/profile';
 import Base from '../layouts/Base.astro';
+import { loadSky } from '../lib/sky';
 import { loadResults, statusLabel } from '../lib/universe';
 
+const sky = await loadSky();
 const results = await loadResults();
 // The three most recent dated results; the section disappears while there are none.
 const signals = results.filter((r) => r.date).slice(0, 3);
 ---
 
 <Base>
-  <Splash slot="intro" />
-  <div class="home-viewport">
-    <div class="wrap home-grid">
-      <!-- ── Left: identity and direct access ── -->
-      <section class="identity-pane" aria-labelledby="observer-heading">
-        <div class="identity-pane__inner">
-          <div class="identity-header">
-            <p class="eyebrow">Observer / Profile 001</p>
-            <h1 id="observer-heading" class="hero-name">
-              {profile.name}
-              {profile.altNames.length > 0 && <span class="hero-alt">{profile.altNames.join(' · ')}</span>}
-            </h1>
-            <p class="hero-role">{profile.role} · {profile.affiliation}</p>
-            <p class="hero-tagline">{profile.tagline}</p>
-            <p class="hero-bio">{profile.bio}</p>
-            {profile.bioZh && <p class="hero-bio-zh" lang="zh">{profile.bioZh}</p>}
-          </div>
+  <StarBand sky={sky} />
 
-          <div class="hero-actions">
-            <a class="btn btn--primary" href="/atlas/">Explore the atlas</a>
-            <a class="btn" href={cvHref}>{profile.cv ? 'View CV' : 'CV & Contact'}</a>
-          </div>
-
-          {
-            signals.length > 0 && (
-              <div class="current-signals" aria-labelledby="signals-heading">
-                <div class="current-signals__head">
-                  <h2 id="signals-heading" class="eyebrow">Current signals</h2>
-                  <span class="signals-count">{String(signals.length).padStart(2, '0')}</span>
-                </div>
-                <ul class="signals-list">
-                  {signals.map((s) => (
-                    <li class="signal-item">
-                      <a href={s.url}>
-                        <span class="code">{s.code}</span>
-                        <span class="signal-item__title" lang={s.lang}>{s.title}</span>
-                        <span class={`status status--${s.status}`}>{s.kind === 'note' ? 'NOTE' : statusLabel(s.status)}</span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )
-          }
-
-          <footer class="identity-footer">
-            <div class="identity-links">
-              <a href={profile.github} rel="noopener">GitHub ↗</a>
-              <a href={`mailto:${profile.email}`}>Email</a>
-              <a href="/research/">Research</a>
-              <a href="/publications/">Publications</a>
-            </div>
-            <p class="affiliation-badge">{profile.affiliation} · {profile.location} · {profile.timezone}</p>
-          </footer>
-        </div>
-      </section>
-
-      <!-- ── Right: the research universe ── -->
-      <section class="atlas-pane" aria-label="Research universe">
-        <Universe results={results} mode="home" heading="Research universe" />
-      </section>
+  <section id="me" class="wrap me" aria-labelledby="me-heading">
+    <div class="me__text">
+      <h2 id="me-heading" class="eyebrow">Observer / Profile 001</h2>
+      <p class="hero-bio">{profile.bio}</p>
+      {profile.bioZh && <p class="hero-bio-zh" lang="zh">{profile.bioZh}</p>}
+      <div class="hero-actions">
+        <a class="btn btn--primary" href="/sky/research/">Enter Research</a>
+        <a class="btn" href={cvHref}>{profile.cv ? 'View CV' : 'CV & Contact'}</a>
+      </div>
     </div>
-  </div>
+
+    <div class="me__side">
+      {
+        signals.length > 0 && (
+          <div class="current-signals" aria-labelledby="signals-heading">
+            <div class="current-signals__head">
+              <h2 id="signals-heading" class="eyebrow">Current signals</h2>
+              <span class="signals-count">{String(signals.length).padStart(2, '0')}</span>
+            </div>
+            <ul class="signals-list">
+              {signals.map((s) => (
+                <li class="signal-item">
+                  <a href={s.url}>
+                    <span class="code">{s.code}</span>
+                    <span class="signal-item__title" lang={s.lang}>{s.title}</span>
+                    <span class={`status status--${s.status}`}>{s.kind === 'note' ? 'NOTE' : statusLabel(s.status)}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+      <ul class="me__parts" aria-label="Five parts of me">
+        {
+          sky.map((f) => (
+            <li>
+              <a href={`/sky/${f.id}/`} style={`--c:${f.color}`}>
+                <span class="me__dot" aria-hidden="true" />
+                <span class="me__part">{f.name}</span>
+                <span class="me__zh" lang="zh">{f.nameZh}</span>
+                <span class="me__line">{f.line}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <footer class="identity-footer">
+        <div class="identity-links">
+          <a href={profile.github} rel="noopener">GitHub ↗</a>
+          <a href={`mailto:${profile.email}`}>Email</a>
+          <a href="/research/">Research</a>
+          <a href="/publications/">Publications</a>
+        </div>
+        <p class="affiliation-badge">{profile.affiliation} · {profile.location} · {profile.timezone}</p>
+      </footer>
+    </div>
+  </section>
 </Base>
 
 <style>
-  .home-viewport {
-    padding: clamp(28px, 4vh, 48px) 0 clamp(32px, 5vh, 56px);
-  }
-
-  /* B1 §6.2: identity column 430–500px, the sky takes the rest */
-  .home-grid {
+  .me {
     display: grid;
-    grid-template-columns: minmax(380px, 460px) minmax(0, 1fr);
-    gap: clamp(28px, 4vw, 56px);
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(32px, 6vw, 96px);
+    padding-top: clamp(48px, 8vh, 88px);
+    padding-bottom: clamp(48px, 8vh, 88px);
   }
 
-  .identity-pane {
+  .me__text,
+  .me__side {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    border-right: 1px solid var(--hairline-soft);
-    padding-right: clamp(20px, 3vw, 44px);
+    gap: 22px;
   }
 
-  .identity-pane__inner {
+  .me__parts {
     display: flex;
     flex-direction: column;
-    gap: 26px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--hairline-soft);
   }
 
-  .identity-header {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .hero-name {
-    display: flex;
-    flex-direction: column;
+  .me__parts a {
+    display: grid;
+    grid-template-columns: 14px 96px 40px minmax(0, 1fr);
+    align-items: baseline;
     gap: 10px;
-    font-size: clamp(40px, 4.4vw, 58px);
-    font-weight: 600;
-    line-height: 1.02;
-    letter-spacing: -0.02em;
+    padding: 11px 4px;
+    border-bottom: 1px solid var(--hairline-soft);
+    color: var(--starlight);
+    text-decoration: none;
+    transition: background-color var(--t-identify);
   }
 
-  .hero-alt {
-    font: 500 13px/1.4 var(--font-mono);
-    letter-spacing: 0.14em;
+  .me__parts a:hover {
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  .me__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 8px 1px var(--c);
+    align-self: center;
+  }
+
+  .me__part {
+    font: 500 12.5px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .me__zh {
+    font-size: 13px;
     color: var(--dim);
   }
 
-  .hero-role {
-    margin: 2px 0 0;
-    font: 500 12.5px/1.6 var(--font-mono);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--signal-cyan);
-  }
-
-  .hero-tagline {
-    position: relative;
-    margin: 6px 0 0;
-    padding-top: 16px;
-    font: 500 22px/1.3 var(--font-display);
-    color: var(--starlight);
-  }
-
-  .hero-tagline::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 88px;
-    height: 1px;
-    background: var(--selection-gold);
+  .me__line {
+    font-size: 14.5px;
+    color: var(--muted);
   }
 
   .hero-bio {
@@ -261,46 +250,23 @@ const signals = results.filter((r) => r.date).slice(0, 3);
     color: var(--dim);
   }
 
-  .atlas-pane {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    height: clamp(560px, calc(100vh - var(--nav-h) - 96px), 820px);
-  }
-
-  .atlas-pane :global(.universe) {
-    flex: 1;
-    min-height: 0;
-  }
-
-  @media (max-width: 1199px) {
-    .home-grid {
+  @media (max-width: 899px) {
+    .me {
       grid-template-columns: 1fr;
     }
-
-    .identity-pane {
-      padding: 0 0 32px;
-      border-right: 0;
-      border-bottom: 1px solid var(--hairline-soft);
-    }
-
-    .atlas-pane {
-      height: auto;
-    }
-
-    .atlas-pane :global(.universe__map) {
-      flex: none;
-      aspect-ratio: 1000 / 700;
-    }
   }
 
-  @media (max-width: 767px) {
-    .atlas-pane :global(.universe__map) {
-      aspect-ratio: auto;
-    }
-
+  @media (max-width: 520px) {
     .hero-actions .btn {
       flex: 1 1 100%;
+    }
+
+    .me__parts a {
+      grid-template-columns: 14px 1fr auto;
+    }
+
+    .me__line {
+      grid-column: 2 / -1;
     }
   }
 </style>

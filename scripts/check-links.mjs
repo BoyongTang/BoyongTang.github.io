@@ -1,5 +1,4 @@
 // Post-build check (B1 §12.6): every internal link and #anchor in dist/ must resolve.
-// Atlas data itself (ids, edges, relation types, content refs) is validated during the build by src/lib/graph.ts.
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,8 +42,7 @@ for (const [file, text] of html) {
       problems.add(`${from} → ${href} (no such page)`);
       continue;
     }
-    // atlas node ids (/atlas/#r-al) are selected by script, not by element id
-    if (hash && route !== '/atlas/' && ids.has(route) && !ids.get(route).has(decodeURIComponent(hash))) {
+    if (hash && ids.has(route) && !ids.get(route).has(decodeURIComponent(hash))) {
       problems.add(`${from} → ${href} (no #${hash} on that page)`);
     }
   }
