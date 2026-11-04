@@ -15,7 +15,7 @@ const tint = hueColor[g.hue];
 const id = `${uid}-${g.id}`;
 ---
 
-<g class="galaxy-art" aria-hidden="true">
+<g class="galaxy-art" aria-hidden="true" data-x={g.x} data-y={g.y} data-r={g.r}>
   <defs>
     <radialGradient id={`${id}-halo`}>
       <stop offset="0" stop-color={tint} stop-opacity="0.26"></stop>
@@ -28,7 +28,7 @@ const id = `${uid}-${g.id}`;
       <stop offset="1" stop-color={tint} stop-opacity="0"></stop>
     </radialGradient>
   </defs>
-  <ellipse
+  <g class="galaxy-art__halowrap"><ellipse
     class="galaxy-art__halo"
     cx={g.x}
     cy={g.y}
@@ -36,11 +36,11 @@ const id = `${uid}-${g.id}`;
     ry={g.r * 1.15 * g.tilt}
     transform={`rotate(${g.rotation} ${g.x} ${g.y})`}
     fill={`url(#${id}-halo)`}
-  ></ellipse>
+  ></ellipse></g>
   <g class="galaxy-art__stars">
     {stars.map((s) => <circle cx={s.x} cy={s.y} r={s.r} opacity={s.o} fill={s.tint ? tint : '#e6f1ef'} />)}
   </g>
-  <ellipse
+  <g class="galaxy-art__corewrap"><ellipse
     class="galaxy-art__core"
     cx={g.x}
     cy={g.y}
@@ -48,5 +48,30 @@ const id = `${uid}-${g.id}`;
     ry={g.r * 0.24 * Math.max(g.tilt, 0.6)}
     transform={`rotate(${g.rotation} ${g.x} ${g.y})`}
     fill={`url(#${id}-core)`}
-  ></ellipse>
+  ></ellipse></g>
 </g>
+
+<style is:global>
+  /* "forming": added by script only (see src/scripts/form.ts). --d0 is this galaxy's start time. */
+  .galaxy-art.is-forming .galaxy-art__stars circle {
+    animation: star-burst 1150ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+    animation-delay: calc(var(--d0, 0ms) + 150ms + var(--k, 0) * 750ms);
+  }
+
+  .galaxy-art.is-forming .galaxy-art__corewrap {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: core-ignite 1100ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+    animation-delay: var(--d0, 0ms);
+  }
+
+  .galaxy-art.is-forming .galaxy-art__halowrap {
+    animation: fade-in 1700ms ease-out both;
+    animation-delay: calc(var(--d0, 0ms) + 250ms);
+  }
+
+  @keyframes core-ignite {
+    0% { transform: scale(0); opacity: 0; }
+    35% { opacity: 1; }
+  }
+</style>

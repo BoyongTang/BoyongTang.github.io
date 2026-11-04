@@ -29,6 +29,15 @@ const iso = (d?: Date) => d?.toISOString().slice(0, 10);
           <GalaxyChart galaxy={g} results={items} stars />
         </svg>
         <figcaption>{galaxyCode(g)} · decorative · not a sky image</figcaption>
+        <script is:inline>
+          // hold the chart dark before first paint; the module below plays it in (shown anyway after 3 s)
+          (function () {
+            var fig = document.currentScript && document.currentScript.parentElement;
+            if (!fig || document.documentElement.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            fig.classList.add('is-wait');
+            setTimeout(function () { fig.classList.remove('is-wait'); }, 3000);
+          })();
+        </script>
       </figure>
 
       <section class="galaxy-info" aria-labelledby="galaxy-name">
@@ -68,6 +77,23 @@ const iso = (d?: Date) => d?.toISOString().slice(0, 10);
   </div>
 </Base>
 
+<script>
+  import { play, primeBurst, reducedMotion } from '../../scripts/form';
+
+  // arriving at a galaxy: it forms from its core, then its chart arrives
+  const fig = document.querySelector<HTMLElement>('.galaxy-view');
+  fig?.classList.remove('is-wait');
+  if (fig && !reducedMotion()) {
+    const art = fig.querySelector<SVGGElement>('.galaxy-art');
+    const chart = fig.querySelector<SVGGElement>('.chart');
+    primeBurst(art?.querySelector<SVGGElement>('.galaxy-art__stars') ?? null);
+    primeBurst(chart?.querySelector<SVGGElement>('[data-dense]') ?? null);
+    art?.style.setProperty('--d0', '0ms');
+    play(art ?? null, 'is-forming', 2600);
+    play(chart, 'is-arriving', 3000);
+  }
+</script>
+
 <style>
   .galaxy-page {
     padding-top: clamp(28px, 4vw, 48px);
@@ -104,6 +130,10 @@ const iso = (d?: Date) => d?.toISOString().slice(0, 10);
 
   .galaxy-view :global(.galaxy-art) {
     opacity: 1;
+  }
+
+  .galaxy-view.is-wait svg {
+    opacity: 0;
   }
 
   .galaxy-view figcaption {

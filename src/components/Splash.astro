@@ -1,0 +1,378 @@
+---
+// Full-screen entrance, shown once per visit on the home page: the starfield rushes out, one large galaxy
+// forms with the name beneath it, then the camera dives into its core and hands over to the universe map.
+// Hidden unless the inline script below turns it on, so without JavaScript or with reduced motion the
+// page simply loads. Add ?intro to the URL to see it again.
+import { profile } from '../data/profile';
+---
+
+<script is:inline>
+  (function () {
+    var html = document.documentElement;
+    var force = /[?&]intro\b/.test(location.search);
+    var reduce = html.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var seen = false;
+    try { seen = sessionStorage.getItem('oq.splash') === '1'; } catch (e) {}
+    if (reduce || (seen && !force)) return;
+    if (force) {
+      // replaying the entrance replays the map's opening too
+      try { sessionStorage.removeItem('oq.intro.home'); } catch (e) {}
+    }
+    html.classList.add('oq-splash');
+    // if the module below never runs, never leave the visitor behind an overlay
+    setTimeout(function () { if (!html.dataset.splash) html.classList.remove('oq-splash'); }, 6000);
+  })();
+</script>
+
+<div class="splash" data-splash>
+  <svg class="splash__sky" viewBox="120 70 760 560" preserveAspectRatio="xMidYMid meet" aria-hidden="true" data-splash-sky>
+    <defs>
+      <radialGradient id="splash-halo">
+        <stop offset="0" stop-color="#e9c18f" stop-opacity="0.22"></stop>
+        <stop offset="0.5" stop-color="#1f4a63" stop-opacity="0.2"></stop>
+        <stop offset="1" stop-color="#0b1d30" stop-opacity="0"></stop>
+      </radialGradient>
+      <radialGradient id="splash-core">
+        <stop offset="0" stop-color="#fff6e8" stop-opacity="1"></stop>
+        <stop offset="0.3" stop-color="#e9c18f" stop-opacity="0.55"></stop>
+        <stop offset="1" stop-color="#e9c18f" stop-opacity="0"></stop>
+      </radialGradient>
+    </defs>
+    <g class="splash__field" data-splash-field></g>
+    <g class="splash__galaxy" data-x="500" data-y="350" data-r="270">
+      <g class="splash__halo">
+        <ellipse cx="500" cy="350" rx="320" ry="200" transform="rotate(-18 500 350)" fill="url(#splash-halo)"></ellipse>
+      </g>
+      <g class="splash__stars" data-splash-stars></g>
+      <g class="splash__core">
+        <ellipse cx="500" cy="350" rx="70" ry="46" transform="rotate(-18 500 350)" fill="url(#splash-core)"></ellipse>
+      </g>
+    </g>
+  </svg>
+
+  <div class="splash__text" aria-hidden="true">
+    <p class="splash__eyebrow">O / Q · Observatory of Questions</p>
+    <p class="splash__name">{profile.name}</p>
+    <p class="splash__tagline">{profile.tagline}</p>
+  </div>
+
+  <button type="button" class="splash__skip" data-splash-skip>Skip intro ›</button>
+</div>
+
+<script>
+  import type { Galaxy } from '../data/galaxies';
+  import { galaxyStars, hueColor, seeded } from '../lib/stars';
+  import { primeBurst } from '../scripts/form';
+
+  const html = document.documentElement;
+  const root = document.querySelector<HTMLElement>('[data-splash]');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  /** Timeline (ms): the galaxy has formed by `leave`; the dive takes `dive`. */
+  const T = { leave: 3900, dive: 1050, fastDive: 450, arrive: 2400 };
+
+  const big: Galaxy = {
+    id: 'splash',
+    name: '',
+    blurb: '',
+    x: 500,
+    y: 350,
+    r: 270,
+    form: 'spiral',
+    arms: 2,
+    rotation: -18,
+    tilt: 0.62,
+    hue: 'gold',
+    seed: 7,
+  };
+
+  function circle(x: number, y: number, r: number, o: number, fill: string) {
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', String(x));
+    c.setAttribute('cy', String(y));
+    c.setAttribute('r', String(r));
+    c.setAttribute('opacity', String(o));
+    c.setAttribute('fill', fill);
+    return c;
+  }
+
+  /** Frame the galaxy so it fills about the same share of any screen, portrait or landscape. */
+  function fit(svg: SVGSVGElement) {
+    const a = innerWidth / Math.max(1, innerHeight);
+    const span = innerWidth < 640 ? 640 : 760;
+    const w = a >= 1 ? span * a : span;
+    const h = a >= 1 ? span : span / a;
+    svg.setAttribute('viewBox', `${(500 - w / 2).toFixed(1)} ${(350 - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
+  }
+
+  function build(r: HTMLElement) {
+    const svg = r.querySelector<SVGSVGElement>('[data-splash-sky]')!;
+    fit(svg);
+    addEventListener('resize', () => fit(svg));
+
+    // the starfield: each star flies out from the centre, as if arriving
+    const field = r.querySelector<SVGGElement>('[data-splash-field]')!;
+    const rand = seeded(2026);
+    const ff = document.createDocumentFragment();
+    for (let i = 0; i < 320; i++) {
+      const x = -700 + rand() * 2400;
+      const y = -600 + rand() * 1900;
+      const c = circle(+x.toFixed(1), +y.toFixed(1), +(0.4 + rand() * 1.1).toFixed(2), +(0.2 + rand() * 0.6).toFixed(2), '#dfeef0');
+      c.style.setProperty('--dx', `${((500 - x) * 0.96).toFixed(1)}px`);
+      c.style.setProperty('--dy', `${((350 - y) * 0.96).toFixed(1)}px`);
+      c.style.setProperty('--k', rand().toFixed(2));
+      ff.append(c);
+    }
+    field.append(ff);
+
+    // the galaxy: bright stars plus a fine dust layer
+    const stars = r.querySelector<SVGGElement>('[data-splash-stars]')!;
+    const sf = document.createDocumentFragment();
+    const tints = [hueColor.gold, hueColor.cyan, '#e6f1ef'];
+    for (const s of galaxyStars(big)) sf.append(circle(s.x, s.y, s.r * 1.1, s.o, s.tint ? tints[Math.floor(s.x) % 2] : '#e6f1ef'));
+    for (const s of galaxyStars(big, { detail: true })) sf.append(circle(s.x, s.y, s.r, s.o * 0.9, s.tint ? tints[Math.floor(s.y) % 3] : '#e6f1ef'));
+    stars.append(sf);
+    primeBurst(stars, 0.12);
+  }
+
+  function run(r: HTMLElement) {
+    html.dataset.splash = 'run';
+    build(r);
+    r.getBoundingClientRect();
+    r.classList.add('is-run');
+    try {
+      sessionStorage.setItem('oq.splash', '1');
+    } catch {
+      /* private mode: it may play again, which is harmless */
+    }
+
+    let left = false;
+    const leave = (fast: boolean) => {
+      if (left) return;
+      left = true;
+      clearTimeout(timer);
+      const dive = fast ? T.fastDive : T.dive;
+      r.classList.add('is-leave');
+      if (fast) r.classList.add('is-fast');
+      html.classList.add('oq-arrive');
+      // hand over to the universe map a moment into the dive, so its opening plays as the overlay clears
+      setTimeout(() => {
+        html.dataset.splash = 'done';
+        dispatchEvent(new CustomEvent('oq:splash-done'));
+      }, fast ? 0 : dive * 0.35);
+      setTimeout(() => {
+        html.classList.remove('oq-splash');
+        r.remove();
+      }, dive);
+      setTimeout(() => html.classList.remove('oq-arrive'), dive + T.arrive);
+      if (/[?&]intro\b/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
+    };
+
+    const timer = window.setTimeout(() => leave(false), T.leave);
+    r.querySelector('[data-splash-skip]')?.addEventListener('click', () => leave(true));
+    r.addEventListener('pointerdown', (ev) => {
+      if (!(ev.target as Element).closest('[data-splash-skip]')) leave(true);
+    });
+    addEventListener('wheel', () => leave(true), { passive: true, once: true });
+    addEventListener('keydown', (ev) => {
+      if (!ev.metaKey && !ev.ctrlKey && !ev.altKey) leave(true);
+    });
+    addEventListener('oq:motion', () => leave(true));
+  }
+
+  if (root && html.classList.contains('oq-splash')) run(root);
+  else root?.remove();
+</script>
+
+<style is:global>
+  .splash {
+    display: none;
+  }
+
+  html.oq-splash {
+    overflow: hidden;
+  }
+
+  html.oq-splash .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: block;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 46%, #0e2539 0%, #071320 58%, #030a12 100%);
+  }
+
+  .splash__sky {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: 50% 50%;
+  }
+
+  .splash__text {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: clamp(56px, 13vh, 132px);
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .splash__text p {
+    margin: 0;
+    opacity: 0;
+  }
+
+  .splash__eyebrow {
+    font: 500 11px/1.4 var(--font-mono);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  .splash__name {
+    margin-top: 14px !important;
+    font: 600 clamp(36px, 6vw, 68px) / 1.05 var(--font-display);
+    letter-spacing: -0.01em;
+    color: var(--starlight);
+  }
+
+  .splash__tagline {
+    margin-top: 12px !important;
+    font-size: clamp(15px, 1.6vw, 18px);
+    color: var(--muted);
+  }
+
+  .splash__skip {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    padding: 9px 14px;
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-sm);
+    background: rgb(7 19 32 / 0.6);
+    color: var(--dim);
+    font: 500 11px/1 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .splash__skip:hover,
+  .splash__skip:focus-visible {
+    color: var(--starlight);
+    border-color: var(--signal-cyan);
+  }
+
+  /* 1 · arrival: the starfield rushes out from the centre; the whole sky drifts slowly in */
+  .splash.is-run .splash__field circle {
+    animation: star-burst 1500ms cubic-bezier(0.05, 0.75, 0.1, 1) both;
+    animation-delay: calc(var(--k, 0) * 380ms);
+  }
+
+  .splash.is-run .splash__sky {
+    animation: splash-drift 3900ms cubic-bezier(0.25, 0.6, 0.3, 1) both;
+  }
+
+  /* 2 · one galaxy forms: the core ignites, the stars spiral out, then the name */
+  .splash.is-run .splash__core {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: splash-ignite 1300ms cubic-bezier(0.2, 1.45, 0.4, 1) both;
+    animation-delay: 750ms;
+  }
+
+  .splash.is-run .splash__halo {
+    animation: fade-in 2000ms ease-out both;
+    animation-delay: 1000ms;
+  }
+
+  .splash.is-run .splash__stars circle {
+    animation: star-burst 1500ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+    animation-delay: calc(900ms + var(--k, 0) * 950ms);
+  }
+
+  .splash.is-run .splash__eyebrow {
+    animation: splash-rise 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: 350ms;
+  }
+
+  .splash.is-run .splash__name {
+    animation: splash-rise 1000ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: 1900ms;
+  }
+
+  .splash.is-run .splash__tagline {
+    animation: splash-rise 1000ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: 2350ms;
+  }
+
+  /* 3 · the dive: into the core, and the overlay clears onto the page */
+  .splash.is-leave {
+    pointer-events: none;
+    animation: splash-out 1050ms cubic-bezier(0.5, 0, 0.75, 0.4) both;
+  }
+
+  .splash.is-leave .splash__sky {
+    animation: splash-dive 1050ms cubic-bezier(0.55, 0, 0.85, 0.35) both;
+  }
+
+  .splash.is-leave .splash__text,
+  .splash.is-leave .splash__skip {
+    opacity: 0;
+    transition: opacity 250ms ease;
+  }
+
+  .splash.is-fast,
+  .splash.is-fast .splash__sky {
+    animation-duration: 450ms;
+  }
+
+  @keyframes splash-drift {
+    from { transform: scale(0.82); }
+  }
+
+  @keyframes splash-ignite {
+    0% { transform: scale(0); opacity: 0; }
+    30% { opacity: 1; }
+  }
+
+  @keyframes splash-rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes splash-dive {
+    from { transform: scale(1); }
+    to { transform: scale(7); opacity: 0; }
+  }
+
+  @keyframes splash-out {
+    0%, 30% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* the page arrives as the overlay clears: header, then the profile line by line */
+  html.oq-arrive .site-header {
+    animation: fade-in 700ms ease-out both;
+    animation-delay: 250ms;
+  }
+
+  html.oq-arrive .identity-header > *,
+  html.oq-arrive .hero-actions,
+  html.oq-arrive .current-signals,
+  html.oq-arrive .identity-footer {
+    animation: splash-rise 750ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: 300ms;
+  }
+
+  html.oq-arrive .identity-header > :nth-child(2) { animation-delay: 380ms; }
+  html.oq-arrive .identity-header > :nth-child(3) { animation-delay: 460ms; }
+  html.oq-arrive .identity-header > :nth-child(4) { animation-delay: 540ms; }
+  html.oq-arrive .identity-header > :nth-child(5) { animation-delay: 620ms; }
+  html.oq-arrive .identity-header > :nth-child(6) { animation-delay: 700ms; }
+  html.oq-arrive .hero-actions { animation-delay: 800ms; }
+  html.oq-arrive .current-signals { animation-delay: 880ms; }
+  html.oq-arrive .identity-footer { animation-delay: 960ms; }
+</style>

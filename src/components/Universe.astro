@@ -24,9 +24,24 @@ const groups = galaxies.map((g) => ({ g, items: resultsIn(results, g.id) }));
 ---
 
 <section class:list={['universe', `universe--${mode}`]} data-universe data-mode={mode} aria-labelledby={`${uid}-title`}>
+  <script is:inline>
+    // Hold the sky dark before first paint when the opening will play (once per visit, motion allowed).
+    // The module script starts it when the map is on screen; if that script never runs, the sky shows after 4 s.
+    (function () {
+      var root = document.currentScript && document.currentScript.parentElement;
+      if (!root) return;
+      var reduce = document.documentElement.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var seen = false;
+      try { seen = sessionStorage.getItem('oq.intro.' + root.dataset.mode) === '1'; } catch (e) {}
+      if (reduce || seen || (root.dataset.mode === 'full' && location.hash.length > 1)) return;
+      root.classList.add('is-intro-wait');
+      setTimeout(function () { if (!root.dataset.introReady) root.classList.remove('is-intro-wait'); }, 4000);
+    })();
+  </script>
   <header class="universe__bar">
     <h2 class="eyebrow" id={`${uid}-title`}>{heading}</h2>
     <div class="universe__bar-right">
+      <button type="button" class="universe__replay" data-replay hidden>↻ Replay</button>
       {mode === 'home' && <a class="universe__open" href="/atlas/">Full atlas ↗</a>}
       <div class="toggle" role="group" aria-label="View">
         <button type="button" data-view="map" aria-pressed="true">MAP</button>
@@ -64,6 +79,7 @@ const groups = galaxies.map((g) => ({ g, items: resultsIn(results, g.id) }));
                 x2={C.x + r1 * Math.cos(rad(d))}
                 y2={C.y + r1 * Math.sin(rad(d))}
                 class:list={['u-tick', long && 'u-tick--long']}
+                style={`--k:${(d / 360).toFixed(3)}`}
               />
             );
           })
@@ -71,8 +87,8 @@ const groups = galaxies.map((g) => ({ g, items: resultsIn(results, g.id) }));
       </g>
 
       {
-        groups.map(({ g, items }) => (
-          <g class="galaxy-wrap" data-wrap={g.id}>
+        groups.map(({ g, items }, i) => (
+          <g class="galaxy-wrap" data-wrap={g.id} style={`--gi:${i}`}>
           <a
             href={`/atlas/${g.id}/`}
             class="galaxy"
@@ -219,6 +235,22 @@ const groups = galaxies.map((g) => ({ g, items: resultsIn(results, g.id) }));
     gap: 16px;
   }
 
+  .universe__replay {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--dim);
+    font: 500 12px/1 var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .universe__replay:hover,
+  .universe__replay:focus-visible {
+    color: var(--starlight);
+  }
+
   .universe__open {
     font: 500 12px/1 var(--font-mono);
     letter-spacing: 0.14em;
@@ -362,6 +394,43 @@ const groups = galaxies.map((g) => ({ g, items: resultsIn(results, g.id) }));
 
   .universe.is-zoomed .galaxy-wrap.is-selected .galaxy__reticle {
     opacity: 0;
+  }
+
+  /* opening sequence (src/scripts/universe.ts): the sky lights up, then each galaxy forms from its core */
+  .universe.is-intro-wait .universe__svg,
+  .universe.is-intro-wait .universe__hint {
+    opacity: 0;
+  }
+
+  .universe.is-intro .u-star {
+    animation: fade-in 900ms ease-out both;
+    animation-delay: calc(var(--k, 0) * 1200ms);
+  }
+
+  .universe.is-intro .u-ring {
+    animation: fade-in 1400ms ease-out both;
+    animation-delay: 250ms;
+  }
+
+  .universe.is-intro .u-tick {
+    animation: fade-in 300ms ease-out both;
+    animation-delay: calc(400ms + var(--k, 0) * 1000ms);
+  }
+
+  .universe.is-intro .universe__hint {
+    animation: fade-in 700ms ease-out both;
+    animation-delay: 3100ms;
+  }
+
+  /* after the opening, each galaxy's reticle blinks once: "these can be opened" */
+  .universe.is-greet .galaxy__reticle {
+    animation: reticle-greet 1300ms ease-in-out both;
+    animation-delay: calc(var(--gi, 0) * 200ms);
+  }
+
+  @keyframes reticle-greet {
+    0%, 100% { opacity: 0; }
+    40% { opacity: 0.75; }
   }
 
   .universe__hint {
