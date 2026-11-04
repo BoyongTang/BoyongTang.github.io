@@ -11,7 +11,7 @@ const results = await loadResults();
 const signals = results.filter((r) => r.date).slice(0, 3);
 ---
 
-<Base>
+<Base sky={{ mode: 'home' }}>
   <PillarsSky sky={sky} />
 
   <section id="me" class="wrap me" aria-labelledby="me-heading">

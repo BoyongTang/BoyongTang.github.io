@@ -2,7 +2,7 @@
 // One nebula's star map: full screen, drag to look around, scroll or pinch to zoom, select a star for
 // its card. Every star is something real (src/lib/sky.ts). Below the map the same stars are a plain
 // list, which is also what keyboard, screen-reader and no-JavaScript visitors get.
-import { PILLARS } from '../../data/pillars';
+import { PILLARS, spots } from '../../data/pillars';
 import Base from '../../layouts/Base.astro';
 import { loadSky, WORLD, type SkyFacet } from '../../lib/sky';
 import { seeded, starFill, starKind } from '../../lib/stars';
@@ -57,11 +57,8 @@ const rings = [260, 520, 780, 1040];
 const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
 ---
 
-<Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line} A star map of ${count}.`}>
+<Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line} A star map of ${count}.`} sky={{ mode: 'map', at: spots[f.id] }}>
   <section class="smap" style={`--c:${f.color};--d:${f.deep}`} aria-labelledby="smap-name" data-smap data-view={`${f.view.x} ${f.view.y} ${f.view.w} ${f.view.h}`} data-tall-view={`${f.tallView.x} ${f.tallView.y} ${f.tallView.w} ${f.tallView.h}`}>
-    <div class="smap__photo" aria-hidden="true" data-photo>
-      <img src={`/sky/map-${f.id}.webp`} alt="" decoding="async" />
-    </div>
     <svg
       class="smap__svg"
       viewBox={`${f.view.x} ${f.view.y} ${f.view.w} ${f.view.h}`}
@@ -270,31 +267,19 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
     height: calc(100svh - var(--nav-h));
     min-height: 480px;
     overflow: hidden;
-    background: #050a1a;
+    background: transparent;
     border-bottom: 1px solid var(--hairline-soft);
   }
 
-  /* this part's stretch of the pillars, drifting a little as the map moves (parallax) */
-  .smap__photo {
-    position: absolute;
-    inset: -6%;
-    transform: translate(var(--px, 0px), var(--py, 0px)) scale(var(--pz, 1));
-    will-change: transform;
-  }
-
-  .smap__photo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .smap__photo::after {
+  /* a soft vignette over the living sky, so labels read */
+  .smap::before {
     content: '';
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse 75% 70% at 50% 50%, transparent 30%, rgb(3 6 16 / 0.55) 100%),
-      linear-gradient(90deg, rgb(3 6 16 / 0.55), transparent 35%);
+      radial-gradient(ellipse 75% 70% at 50% 50%, transparent 35%, rgb(3 6 16 / 0.5) 100%),
+      linear-gradient(90deg, rgb(3 6 16 / 0.45), transparent 35%);
+    pointer-events: none;
   }
 
   .smap__svg {
@@ -427,7 +412,7 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
     animation-delay: calc(var(--k, 0) * 600ms);
   }
 
-  .smap.is-arriving .smap__photo {
+  .smap.is-arriving::before {
     animation: fade-in 1800ms ease-out both;
   }
 

@@ -1,8 +1,8 @@
 ---
-// The home page sky: Webb's Pillars of Creation, quiet and full screen. The five parts of me sit on five
-// places in it where stars are being born; each is a link into its star map. The name sits in the dark
-// beside the pillars. src/scripts/pillars.ts keeps the markers pinned to the photo on any screen;
-// without JavaScript they sit where they would on a typical screen.
+// The home page sky: Webb's Pillars of Creation, alive behind the whole site (Backdrop.astro). The five parts
+// of me sit on five places in it where stars are being born; each is a link into its star map. The name
+// sits in the dark beside the pillars. src/scripts/pillars.ts keeps the parts pinned to their spots.
+// Without WebGL (or JavaScript) the still photo below stands in, with the parts where they would be.
 import { facets } from '../data/facets';
 import { glints, PILLARS, spots } from '../data/pillars';
 import { profile } from '../data/profile';
@@ -37,7 +37,7 @@ const markers = facets.map((f, i) => {
       `--i:${i}`,
     ].join(';'),
     flipWide: wx > REF.wide.w * 0.78,
-    flipTall: tx > REF.tall.w * 0.6,
+    flipTall: tx > REF.tall.w * 0.5,
   };
 });
 const { wide, tall } = PILLARS.variants;
@@ -69,7 +69,7 @@ const { wide, tall } = PILLARS.variants;
           src={tall.src}
           alt="Webb's image of the Pillars of Creation: towering columns of gold-brown gas and dust against a deep blue field of stars."
           decoding="async"
-          fetchpriority="high"
+          loading="lazy"
           style={`--pw:${objectPosition(fw, REF.wide.w, REF.wide.h)};--pt:${objectPosition(ft, REF.tall.w, REF.tall.h)}`}
           data-photo
         />
@@ -137,7 +137,17 @@ const { wide, tall } = PILLARS.variants;
     overflow: hidden;
     isolation: isolate;
     background: #050a1a;
-    border-bottom: 1px solid var(--hairline-soft);
+  }
+
+  /* with the living sky behind the page, this section only holds the parts and the name */
+  :global(.has-gl) .sky {
+    background: transparent;
+  }
+
+  :global(.has-gl) .sky__photo,
+  :global(.has-gl) .sky__backdrop,
+  :global(.has-gl) .sky__glints {
+    display: none;
   }
 
   .sky__stage,
@@ -152,7 +162,7 @@ const { wide, tall } = PILLARS.variants;
 
   /* the photo barely moves: a slow breath over two minutes (markers move with it) */
   @media (prefers-reduced-motion: no-preference) {
-    :global(html:not([data-motion='reduce'])) .sky__drift {
+    :global(html:not([data-motion='reduce']):not(.has-gl)) .sky__drift {
       animation: sky-drift 120s ease-in-out infinite alternate;
       transform-origin: 60% 45%;
     }
@@ -502,9 +512,13 @@ const { wide, tall } = PILLARS.variants;
 
     .sky__id {
       top: auto;
-      bottom: 64px;
+      bottom: 84px;
       max-width: none;
       right: var(--gutter);
+    }
+
+    .sky__hint {
+      display: none;
     }
 
     .sky__foot {

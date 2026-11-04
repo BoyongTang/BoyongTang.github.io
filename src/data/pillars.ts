@@ -3,7 +3,8 @@
 // stars are being born: the pillar heads, their glowing tips and a small evaporating gas globule.
 //
 // Positions are fractions of the full image (0–1 across, 0–1 down). Web copies are made from the
-// original by scripts/make-pillars.mjs. No Astro imports here, so scripts can use it directly.
+// original by scripts/make-pillars.mjs (still copies) and scripts/make-pillars-maps.py (the living sky's
+// texture and masks). No Astro imports here, so scripts can use it directly.
 import type { FacetId } from './facets';
 
 export const PILLARS = {
@@ -46,12 +47,3 @@ export const glints: [number, number][] = [
   [0.9255, 0.24], [0.2268, 0.3175], [0.5065, 0.175], [0.4649, 0.2525], [0.3662, 0.397], [0.5602, 0.4065],
   [0.2675, 0.9005], [0.2069, 0.869], [0.9273, 0.937], [0.4078, 0.767],
 ];
-
-/** Each star map's backdrop: the stretch of the pillars round its spot, as [x0, y0, x1, y1]. */
-export const mapCrops: Record<FacetId, [number, number, number, number]> = {
-  research: [0.42, 0.1, 1, 0.34],
-  contact: [0.38, 0.25, 0.86, 0.45],
-  path: [0.52, 0.24, 1, 0.44],
-  works: [0.5, 0.37, 1, 0.57],
-  toolbox: [0.04, 0.38, 0.56, 0.6],
-};

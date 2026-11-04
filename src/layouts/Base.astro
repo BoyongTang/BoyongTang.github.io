@@ -7,19 +7,32 @@ import '@fontsource/ibm-plex-mono/500.css';
 import '@fontsource/ibm-plex-mono/600.css';
 import 'katex/dist/katex.min.css';
 import '../styles/global.css';
+import Backdrop, { type Sky } from '../components/Backdrop.astro';
 import StarGlow from '../components/StarGlow.astro';
-import { PILLARS } from '../data/pillars';
+import { PILLARS, spots } from '../data/pillars';
 import { cvHref, profile } from '../data/profile';
 
 interface Props {
   title?: string;
   description?: string;
+  /** Where this page sits in the Pillars of Creation (see Backdrop.astro). */
+  sky?: Sky;
 }
 
 const { title, description = `${profile.name} — ${profile.role}. ${profile.subline}` } = Astro.props;
 const fullTitle = title ? `${title} · ${profile.name}` : `${profile.name} · The Observatory of Questions`;
 const path = Astro.url.pathname;
 const canonical = new URL(path, Astro.site);
+// each section of the site floats over the part of the pillars it belongs to
+const placeFor = (p: string): [number, number] =>
+  p.startsWith('/research') || p.startsWith('/publications')
+    ? spots.research
+    : p.startsWith('/projects') || p.startsWith('/notes')
+      ? spots.works
+      : p.startsWith('/about')
+        ? spots.path
+        : spots.contact;
+const sky: Sky = Astro.props.sky ?? { mode: 'page', at: placeFor(path) };
 
 const nav = [
   { href: '/research/', label: 'Research' },
@@ -56,9 +69,14 @@ const year = new Date().getFullYear();
       try {
         if (localStorage.getItem('oq.motion') === 'reduce') document.documentElement.dataset.motion = 'reduce';
       } catch {}
+      // the living sky needs WebGL 2; without it pages keep a still image (?still forces that)
+      try {
+        if (!/[?&]still\b/.test(location.search) && document.createElement('canvas').getContext('webgl2')) document.documentElement.classList.add('has-gl');
+      } catch {}
     </script>
   </head>
   <body>
+    <Backdrop sky={sky} />
     <StarGlow />
     <slot name="intro" />
     <a class="skip-link" href="#main">Skip to content</a>

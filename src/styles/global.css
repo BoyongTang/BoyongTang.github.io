@@ -58,22 +58,19 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--space-950);
+  background: #050a1a; /* under the Pillars of Creation (Backdrop.astro) */
   color: var(--starlight);
   font: 400 17px/1.7 var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 
-/* a faint deep-field gradient behind every page */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(1200px 700px at 72% 38%, rgb(22 48 68 / 0.75), transparent 70%),
-    radial-gradient(900px 600px at 10% 100%, rgb(16 37 56 / 0.8), transparent 70%),
-    var(--space-950);
+/* text floats over the living Pillars of Creation: a faint dark halo keeps it readable */
+main {
+  text-shadow: 0 1px 12px rgb(3 6 16 / 0.55);
+}
+
+main .reading {
+  text-shadow: none;
 }
 
 img,
