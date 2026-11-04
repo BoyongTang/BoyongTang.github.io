@@ -1,0 +1,80 @@
+---
+// The sky behind every page: Webb's Pillars of Creation, alive (src/scripts/backdrop.ts). Each page says
+// where in the pillars it sits. Without WebGL 2 a still copy of the image stands in.
+import { PILLARS } from '../data/pillars';
+
+export interface Sky {
+  mode: 'home' | 'page' | 'map';
+  /** The point of the image to look at (fractions of the full image). */
+  at?: [number, number];
+  /** How far in, 1 = the image just covers the window. */
+  zoom?: number;
+  /** 0 = full brightness, 1 = black. */
+  dim?: number;
+}
+
+interface Props {
+  sky: Sky;
+}
+
+const { sky } = Astro.props;
+const at = sky.at ?? [0.6, 0.35];
+const dim = sky.dim ?? (sky.mode === 'map' ? 0.28 : 0.55);
+---
+
+<div
+  class:list={['pillars', `pillars--${sky.mode}`]}
+  aria-hidden="true"
+  data-pillars
+  data-mode={sky.mode}
+  data-at={at.join(' ')}
+  data-zoom={sky.zoom ?? (sky.mode === 'map' ? 2.2 : 1.5)}
+  data-dim={dim}
+  style={`--at:${(at[0] * 100).toFixed(1)}% ${(at[1] * 100).toFixed(1)}%;--dim:${dim};--still:url(${PILLARS.variants.tall.src})`}
+>
+  <div class="pillars__still"></div>
+  <canvas class="pillars__gl" data-gl></canvas>
+</div>
+
+<script>
+  import { initBackdrop } from '../scripts/backdrop';
+
+  const el = document.querySelector<HTMLElement>('[data-pillars]');
+  if (el) initBackdrop(el);
+</script>
+
+<style is:global>
+  .pillars {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: #050a1a;
+    pointer-events: none;
+  }
+
+  .pillars__gl {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 900ms ease-out;
+  }
+
+  .pillars.is-live .pillars__gl {
+    opacity: 1;
+  }
+
+  /* the still image, when there is no living one (the home page has its own, with the parts on it) */
+  .pillars__still {
+    position: absolute;
+    inset: -20px;
+    background: var(--still) var(--at) / cover no-repeat;
+    filter: brightness(calc(1 - var(--dim))) blur(2px);
+  }
+
+  .has-gl .pillars__still,
+  .pillars--home .pillars__still {
+    display: none;
+  }
+</style>

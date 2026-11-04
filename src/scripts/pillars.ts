@@ -25,8 +25,9 @@ export function initPillars(root: HTMLElement) {
   const layout = () => {
     const w = root.clientWidth;
     const h = root.clientHeight;
-    // which copy the browser picked (it follows the window's shape, not this section's)
-    const shape = /pillars-wide/.test(img.currentSrc) ? 'wide' : 'tall';
+    // the still photo: whichever copy the browser picked (it follows the window's shape, not this
+    // section's); the living sky behind the page goes by this section's shape, as the fit does
+    const shape = img.currentSrc ? (/pillars-wide/.test(img.currentSrc) ? 'wide' : 'tall') : w / Math.max(1, h) >= 0.9 ? 'wide' : 'tall';
     const key = `${w}x${h}:${shape}`;
     if (!w || !h || key === size) return;
     size = key;
@@ -40,7 +41,7 @@ export function initPillars(root: HTMLElement) {
       a.style.left = `${x}px`;
       a.style.top = `${y}px`;
       // labels run away from the nearer edge
-      const flip = x > w * (shape === 'wide' ? 0.78 : 0.6);
+      const flip = x > w * (shape === 'wide' ? 0.78 : 0.5);
       a.classList.toggle('part--flip-wide', flip);
       a.classList.toggle('part--flip-tall', flip);
     }
@@ -51,8 +52,11 @@ export function initPillars(root: HTMLElement) {
       glints[i].hidden = x < 0 || y < 0 || x > w || y > h;
     });
   };
-  if (img.complete) layout();
-  img.addEventListener('load', layout);
+  layout();
+  img.addEventListener('load', () => {
+    size = '';
+    layout();
+  });
   let timer = 0;
   new ResizeObserver(() => {
     clearTimeout(timer);
@@ -93,6 +97,12 @@ export function initPillars(root: HTMLElement) {
       stage.style.setProperty('--ox', `${box.left + box.width / 2 - rb.left}px`);
       stage.style.setProperty('--oy', `${box.top + box.height / 2 - rb.top}px`);
       root.classList.add('is-diving');
+      dispatchEvent(new CustomEvent('pillars:dive', { detail: { x: box.left + box.width / 2, y: box.top + box.height / 2 } }));
+      try {
+        sessionStorage.setItem('oq.dive', a.dataset.part ?? '1');
+      } catch {
+        /* the map simply arrives without the fly-in */
+      }
       window.setTimeout(() => (location.href = a.href), 680);
     });
   }
