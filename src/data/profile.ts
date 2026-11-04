@@ -107,7 +107,7 @@ export const projects: Project[] = [
     tech: ['Python', 'Active learning', 'Bayesian optimization'],
     status: 'Ongoing',
     repo: '',
-    galaxy: 'materials',
+    galaxy: 'ai',
     draft: true,
   },
   {

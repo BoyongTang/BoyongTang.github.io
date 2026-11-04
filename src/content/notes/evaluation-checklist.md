@@ -3,7 +3,7 @@ code: N-002
 title: A Checklist for Leakage-free Comparisons
 summary: What has to be fixed before two strategies, or two models, can be compared at all.
 date: 2026-11-04
-topic: evaluation
+topic: ai
 lang: en
 draft: true
 ---

@@ -3,7 +3,7 @@ code: N-001
 title: 主动学习 ≠ 贝叶斯优化：两个目标，两张成绩单
 summary: 两者可以共用同一个代理模型，但优化目标和评价指标不能混写。
 date: 2026-11-04
-topic: ml
+topic: ai
 lang: zh
 draft: true
 ---

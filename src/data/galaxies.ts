@@ -33,12 +33,10 @@ export interface Galaxy {
 export const VIEW = { w: 1000, h: 700 };
 
 export const galaxies: Galaxy[] = [
-  { id: 'math', name: 'Applied Mathematics', nameZh: '应用数学', blurb: '', x: 215, y: 200, r: 140, form: 'spiral', arms: 2, rotation: -24, tilt: 0.62, hue: 'cyan', seed: 11 },
-  { id: 'ml', name: 'Machine Learning', nameZh: '机器学习', blurb: '', x: 520, y: 350, r: 178, form: 'spiral', arms: 3, rotation: 18, tilt: 0.78, hue: 'gold', seed: 23 },
-  { id: 'materials', name: 'Materials Science', nameZh: '材料科学', blurb: '', x: 825, y: 170, r: 118, form: 'elliptical', rotation: 32, tilt: 0.55, hue: 'star', seed: 37 },
-  { id: 'evaluation', name: 'Trustworthy Evaluation', nameZh: '可信评价', blurb: '', x: 235, y: 530, r: 112, form: 'ring', rotation: 12, tilt: 0.5, hue: 'green', seed: 41 },
-  { id: 'teaching', name: 'Teaching', nameZh: '教学', blurb: '', x: 805, y: 540, r: 126, form: 'spiral', arms: 2, rotation: 140, tilt: 0.45, hue: 'cyan', seed: 59 },
-];
+  { id: 'math', name: 'Mathematics', nameZh: '数学', blurb: '', x: 250, y: 225, r: 158, form: 'spiral', arms: 2, rotation: -24, tilt: 0.6, hue: 'cyan', seed: 11 },
+  { id: 'ai', name: 'AI', nameZh: '人工智能', blurb: '', x: 650, y: 345, r: 190, form: 'spiral', arms: 3, rotation: 18, tilt: 0.76, hue: 'gold', seed: 23 },
+  { id: 'teaching', name: 'Teaching', nameZh: '教学', blurb: '', x: 290, y: 545, r: 125, form: 'spiral', arms: 2, rotation: 150, tilt: 0.46, hue: 'green', seed: 59 },
+]
 
 export const galaxyById = new Map(galaxies.map((g) => [g.id, g]));
 export const galaxyCode = (g: Galaxy) => `G-${String(galaxies.indexOf(g) + 1).padStart(2, '0')}`;
