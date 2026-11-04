@@ -11,7 +11,7 @@ Personal academic homepage for **Boyong Tang (けるゔぃん・とう)**, built
 
 1. **Truth Before Visuals:** Only results that publicly exist are shown; everything else stays a draft. Publication records are strictly distinguished from work in progress.
 2. **Static-First with Astro:** All content is pre-rendered at build time. Search engines and screen readers can access the full textual hierarchy with JavaScript disabled.
-3. **A Quiet Star Band:** the home page is a full-screen band of stars with five nebulae, one per part of me (Research, Toolbox, Path, Works, Contact; `src/data/facets.ts`). Entering a nebula opens its star map (`/sky/<part>/`): drag, zoom, select a star for its card. Every star is real content (`src/lib/sky.ts`); lines join only declared relations. Each map is also a plain list below it, which is what keyboard, screen-reader and no-JavaScript visitors get.
+3. **The Pillars of Creation:** the home page is Webb's Pillars of Creation, with the five parts of me (Research, Toolbox, Path, Works, Contact; `src/data/facets.ts`) sitting on five places in it where stars are born (`src/data/pillars.ts`). Entering a part dives into its star map, set on its own stretch of the pillars (`/sky/<part>/`): drag, zoom, select a star for its card. Every star is real content (`src/lib/sky.ts`); lines join only declared relations. Each map is also a plain list below it, which is what keyboard, screen-reader and no-JavaScript visitors get.
 4. **Editorial Reading Surface:** Research dossiers and field notes feature a high-contrast reading surface (`--reading-paper`), full KaTeX mathematical typesetting, and structured sections (*Question → Motivation → Approach → Evidence → Limitations → Next*).
 
 ---
@@ -28,8 +28,11 @@ npm run dev
 # Build, then check every internal link and #anchor (CI runs the same)
 npm test
 
-# Regenerate public/og.png from the star band data (Node ≥ 23.6)
+# Regenerate public/og.png from the pillars data (Node ≥ 23.6)
 npm run og
+
+# Rebuild public/sky/*.webp from the original weic2216b.jpg (esawebb.org/images/weic2216b/)
+node scripts/make-pillars.mjs path/to/weic2216b.jpg
 
 # Preview production build locally
 npm run preview
@@ -42,8 +45,17 @@ npm run preview
 - **Personal Profile & Links:** Edit [`src/data/profile.ts`](src/data/profile.ts).
 - **Research Dossiers:** Add or edit Markdown files under [`src/content/research/`](src/content/research/).
 - **Field Notes & Proofs:** Add or edit Markdown files under [`src/content/notes/`](src/content/notes/).
-- **Galaxies (fields):** edit [`src/data/galaxies.ts`](src/data/galaxies.ts) — one galaxy per field, unnamed on the map.
-  A result joins a galaxy through its `topic` (research, notes) or `galaxy` (projects, publications) field.
+- **Fields:** edit [`src/data/galaxies.ts`](src/data/galaxies.ts). Research and notes name one through `topic`.
+- **The five parts and their stars:** [`src/data/facets.ts`](src/data/facets.ts) (names, colours, constellation lines) and
+  [`src/lib/sky.ts`](src/lib/sky.ts) (which content becomes which star). Where each part sits in the photo: [`src/data/pillars.ts`](src/data/pillars.ts).
 - **Drafts:** `draft: true` in a Markdown file or a project entry keeps an entry in the repo but off the site.
 - **Projects:** `projects` in [`src/data/profile.ts`](src/data/profile.ts). Leave `repo` empty until a repository is public.
 - **CV:** put the PDF in `public/` and set `profile.cv`; until then every CV link goes to `/about/#cv`.
+
+---
+
+## Image Credit
+
+The sky is Webb's [Pillars of Creation (NIRCam)](https://esawebb.org/images/weic2216b/):
+NASA, ESA, CSA, STScI; J. DePasquale, A. Koekemoer, A. Pagan (STScI). Used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/);
+the web copies in `public/sky/` are cropped, resized and (for the star maps) darkened. The credit is shown on every page that shows it.

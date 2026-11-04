@@ -1,5 +1,5 @@
 ---
-import StarBand from '../components/StarBand.astro';
+import PillarsSky from '../components/PillarsSky.astro';
 import { cvHref, profile } from '../data/profile';
 import Base from '../layouts/Base.astro';
 import { loadSky } from '../lib/sky';
@@ -12,7 +12,7 @@ const signals = results.filter((r) => r.date).slice(0, 3);
 ---
 
 <Base>
-  <StarBand sky={sky} />
+  <PillarsSky sky={sky} />
 
   <section id="me" class="wrap me" aria-labelledby="me-heading">
     <div class="me__text">

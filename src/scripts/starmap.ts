@@ -12,6 +12,7 @@ const MAX_W = WORLD.w * 1.6;
 
 export function initStarMap(root: HTMLElement) {
   const svg = root.querySelector<SVGSVGElement>('[data-svg]')!;
+  const photo = root.querySelector<HTMLElement>('[data-photo]');
   const card = root.querySelector<HTMLElement>('[data-card]')!;
   const cardBody = root.querySelector<HTMLElement>('[data-card-body]')!;
   const stars = new Map<string, SVGAElement>();
@@ -80,6 +81,15 @@ export function initStarMap(root: HTMLElement) {
     vb = clamp(b);
     svg.setAttribute('viewBox', `${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${vb.w.toFixed(1)} ${vb.h.toFixed(1)}`);
     svg.style.setProperty('--ls', (vb.w / Math.max(1, svg.clientWidth)).toFixed(3));
+    // the photo behind is far away: it moves a quarter as much and grows a little as you zoom
+    if (photo) {
+      const [hx, hy, hw, hh] = home();
+      const k = svg.clientWidth / vb.w;
+      const z = Math.min(1.6, Math.max(0.9, 1 + (hw / vb.w - 1) * 0.18));
+      photo.style.setProperty('--px', `${(-(vb.x + vb.w / 2 - (hx + hw / 2)) * k * 0.25).toFixed(1)}px`);
+      photo.style.setProperty('--py', `${(-(vb.y + vb.h / 2 - (hy + hh / 2)) * k * 0.25).toFixed(1)}px`);
+      photo.style.setProperty('--pz', z.toFixed(3));
+    }
   };
 
   const go = (target: Box, ms = 600) => {
@@ -264,8 +274,8 @@ export function initStarMap(root: HTMLElement) {
 
   document.addEventListener('keydown', (ev) => {
     if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
-    const t = ev.target as HTMLElement;
-    if (t.closest('input, textarea, select, [contenteditable]')) return;
+    const t = ev.target instanceof Element ? ev.target : null;
+    if (t?.closest('input, textarea, select, [contenteditable]')) return;
     // keys act on the map while it fills the screen
     const r = root.getBoundingClientRect();
     if (r.bottom < innerHeight * 0.5) return;

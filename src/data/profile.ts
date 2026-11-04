@@ -1,6 +1,6 @@
 // Everything about the person lives here. The rest of the site reads from this file,
 // from src/content/ (research dossiers and notes), src/data/galaxies.ts (research fields) and
-// src/data/facets.ts (the five nebulae on the home page's star band).
+// src/data/facets.ts (the five parts of me on the home page's Pillars of Creation).
 //
 // Rule of the observatory: only write what is true. Leave a field empty ('' or []) to hide it.
 
@@ -101,7 +101,7 @@ export const projects: Project[] = [
     id: 't-01',
     code: 'T-01',
     name: 'Observatory of Questions',
-    summary: 'The source of this site: static pages from content collections, and a star band whose nebulae open into star maps that also work as plain lists.',
+    summary: 'The source of this site: static pages from content collections, and a sky of five parts that open into star maps, each also a plain list.',
     scope: ['Static-first Astro build', 'Declared relations, checked at build time', 'Keyboard, list and reduced-motion fallbacks'],
     tech: ['Astro', 'TypeScript', 'SVG', 'KaTeX'],
     status: 'Active',
