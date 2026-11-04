@@ -1,0 +1,193 @@
+---
+// One part's stars as plain list entries: what keyboard, screen-reader and no-JavaScript visitors read,
+// and what the explorer's star cards are copied from (src/scripts/explorer.ts).
+import type { SkyFacet } from '../lib/sky';
+
+interface Props {
+  f: SkyFacet;
+}
+
+const { f } = Astro.props;
+---
+
+<ol class="slist__items" style={`--c:${f.color}`}>
+  {
+        f.items.map((s) => {
+          const related = f.lines.filter(([a, b]) => a.id === s.id || b.id === s.id).map(([a, b]) => (a.id === s.id ? b : a));
+          return (
+            <li id={`i-${s.id}`} class="sitem">
+              <article class="sitem__body" data-entry={s.id}>
+                <p class="sitem__kind">
+                  {s.kind}
+                  {s.sub && <span> · {s.sub}</span>}
+                </p>
+                <h3 class="sitem__name" lang={s.lang}>
+                  {s.name}
+                  {s.nameZh && <span lang="zh"> {s.nameZh}</span>}
+                </h3>
+                {s.text && <p class="sitem__text">{s.text}</p>}
+                {s.facts && (
+                  <dl class="sitem__facts">
+                    {s.facts.map((x) => (
+                      <>
+                        <dt>{x.label}</dt>
+                        <dd>{x.value}</dd>
+                      </>
+                    ))}
+                  </dl>
+                )}
+                {s.list && (
+                  <ul class="sitem__list">
+                    {s.list.map((x) => (
+                      <li>{x}</li>
+                    ))}
+                  </ul>
+                )}
+                {s.tags && (
+                  <ul class="sitem__tags" aria-label="Tools">
+                    {s.tags.map((x) => (
+                      <li>{x}</li>
+                    ))}
+                  </ul>
+                )}
+                {related.length > 0 && (
+                  <p class="sitem__rel">
+                    Linked to{' '}
+                    {related.map((r, i) => (
+                      <>
+                        {i > 0 && ', '}
+                        <a href={`#i-${r.id}`} data-goto={r.id}>
+                          {r.name}
+                        </a>
+                      </>
+                    ))}
+                  </p>
+                )}
+                {s.links && s.links.length > 0 && (
+                  <p class="sitem__links">
+                    {s.links.map((l) => (
+                      <a class="btn" href={l.href} rel={l.external ? 'noopener' : undefined}>
+                        {l.label}
+                        {l.external && !l.href.startsWith('mailto:') ? ' ↗' : ' →'}
+                      </a>
+                    ))}
+                  </p>
+                )}
+              </article>
+            </li>
+          );
+        })
+  }
+</ol>
+
+<style is:global>
+  .slist__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sitem {
+    padding: 18px 18px 16px;
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+    background: rgb(5 9 18 / 0.55);
+    backdrop-filter: blur(4px);
+    scroll-margin-top: calc(var(--nav-h) + 20px);
+  }
+
+  .sitem:target {
+    border-color: var(--c);
+  }
+
+  .sitem__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sitem__kind {
+    margin: 0;
+    font: 500 11.5px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--c) 70%, #8fa9b3);
+  }
+
+  .sitem__name {
+    margin: 0;
+    font: 500 21px/1.25 var(--font-display);
+    color: var(--starlight);
+  }
+
+  .sitem__text {
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .sitem__facts {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 14px;
+    margin: 0;
+    font-size: 14px;
+  }
+
+  .sitem__facts dt {
+    font: 500 11px/1.9 var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  .sitem__facts dd {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .sitem__list {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .sitem__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sitem__tags li {
+    padding: 3px 8px;
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-sm);
+    font: 500 11.5px/1.4 var(--font-mono);
+    color: var(--muted);
+  }
+
+  .sitem__rel {
+    margin: 0;
+    color: var(--dim);
+    font-size: 14px;
+  }
+
+  .sitem__rel a {
+    color: color-mix(in srgb, var(--c) 65%, #ecf3f0);
+  }
+
+  .sitem__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 0;
+  }
+</style>

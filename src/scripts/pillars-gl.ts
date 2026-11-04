@@ -199,6 +199,12 @@ export class LivingPillars {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
 
+  /** Swap in a sharper copy of the photo (e.g. once the visitor zooms in). */
+  replacePhoto(im: HTMLImageElement) {
+    this.texture(0, im, true);
+    this.imgPx = [im.naturalWidth, im.naturalHeight];
+  }
+
   /** Render resolution: fewer pixels where the sky is dim and soft anyway. */
   setScale(s: number) {
     this.scale = s;

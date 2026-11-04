@@ -1,0 +1,856 @@
+---
+// The Pillars of Creation as the interface: one big image to explore like a map. Drag, scroll or pinch to
+// move through it; the five parts of me sit on places where stars are born. Choosing one (or simply zooming
+// in close to it) flies there and unfolds its stars on the pillar; a star opens its card. The living sky
+// behind it is drawn by Backdrop.astro; this component holds everything you can touch.
+// Without JavaScript the parts are plain links to their pages and every star is in the lists below.
+import { facets, type FacetId } from '../data/facets';
+import { PILLARS, spots } from '../data/pillars';
+import { profile } from '../data/profile';
+import { fitPillars, objectPosition } from '../lib/pillars-fit';
+import type { SkyFacet } from '../lib/sky';
+
+interface Props {
+  sky: SkyFacet[];
+  /** Open on this part (its own page); otherwise the whole pillars, with the name (home). */
+  focus?: FacetId;
+}
+
+const { sky, focus } = Astro.props;
+const home = !focus;
+const W = PILLARS.size.w;
+const H = PILLARS.size.h;
+
+// each part's constellation, laid out round its spot in image pixels (wide and tall screens)
+const R = { wide: 760, tall: 560 };
+const parts = sky.map((f) => {
+  const [sx, sy] = spots[f.id];
+  const lay = (shape: 'wide' | 'tall') => {
+    const v = shape === 'wide' ? f.view : f.tallView;
+    const k = R[shape] / v.w;
+    const half = (v.w * k) / 2;
+    const cx = Math.min(W - half - 40, Math.max(half + 40, sx * W));
+    const cy = sy * H;
+    const vx = v.x + v.w / 2;
+    const vy = v.y + v.h / 2;
+    const pts = f.items.map((s) => {
+      const p = shape === 'wide' ? s : s.tall;
+      return { id: s.id, x: +(cx + (p.x - vx) * k).toFixed(1), y: +(cy + (p.y - vy) * k).toFixed(1), side: p.side };
+    });
+    return { cx, cy, w: v.w * k, h: v.h * k, pts };
+  };
+  return { f, wide: lay('wide'), tall: lay('tall') };
+});
+
+// the layout without JavaScript: the parts where they sit on a typical wide and tall screen
+const REF = { wide: { w: 1440, h: 830 }, tall: { w: 390, h: 720 } };
+const fw = fitPillars(REF.wide.w, REF.wide.h);
+const ft = fitPillars(REF.tall.w, REF.tall.h);
+const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
+const n = (f: SkyFacet) => f.items.length;
+---
+
+<script is:inline>
+  // The opening plays once per visit on the home page, never with reduced motion; ?intro plays it again.
+  (function () {
+    var root = document.currentScript && document.currentScript.nextElementSibling;
+    if (!root || root.dataset.home !== '1') return;
+    var html = document.documentElement;
+    var force = /[?&]intro\b/.test(location.search);
+    var reduce = html.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var seen = false;
+    try { seen = sessionStorage.getItem('oq.pillars') === '1'; } catch (e) {}
+    if (reduce || (seen && !force)) return;
+    html.classList.add('sky-intro');
+    setTimeout(function () { if (!html.dataset.sky) html.classList.remove('sky-intro'); }, 4500);
+  })();
+</script>
+
+<section
+  class:list={['ex', home && 'ex--home']}
+  aria-label="The Pillars of Creation, with the five parts of me. Drag to look around, scroll or pinch to zoom, choose a part to open it."
+  data-ex
+  data-home={home ? '1' : '0'}
+  data-focus={focus ?? ''}
+  data-parts={JSON.stringify(parts.map((p) => ({ id: p.f.id, spot: spots[p.f.id], wide: p.wide, tall: p.tall })))}
+>
+  <!-- the still image: what shows without WebGL (the living sky is drawn behind the page instead) -->
+  <img
+    class="ex__still"
+    src={PILLARS.variants.tall.src}
+    alt="Webb's image of the Pillars of Creation: towering columns of gold-brown gas and dust against a deep blue field of stars."
+    loading="lazy"
+    decoding="async"
+    style={`--pw:${objectPosition(fw, REF.wide.w, REF.wide.h)};--pt:${objectPosition(ft, REF.tall.w, REF.tall.h)}`}
+    data-still
+  />
+  <div class="ex__veil" aria-hidden="true"></div>
+
+  <svg class="ex__stars" aria-hidden="false" role="group" aria-label="Stars of the open part" data-layer>
+    <defs>
+      {
+        facets.map((f) => (
+          <radialGradient id={`xg-${f.id}`}>
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.95" />
+            <stop offset="0.14" stop-color={f.color} stop-opacity="0.75" />
+            <stop offset="0.4" stop-color={f.color} stop-opacity="0.2" />
+            <stop offset="1" stop-color={f.color} stop-opacity="0" />
+          </radialGradient>
+        ))
+      }
+    </defs>
+    {
+      parts.map(({ f, wide, tall }) => (
+        <g class="xpart" data-xpart={f.id} style={`--c:${f.color}`}>
+          {f.lines.map(([a, b]) => (
+            <line class="xline" data-a={a.id} data-b={b.id} />
+          ))}
+          {f.items.map((s, i) => {
+            const w = wide.pts[i];
+            const t = tall.pts[i];
+            const big = s.mag === 1;
+            return (
+              <a
+                class:list={['xstar', big && 'xstar--bright']}
+                href={`#i-${s.id}`}
+                data-star={s.id}
+                data-w={`${w.x} ${w.y} ${w.side}`}
+                data-t={`${t.x} ${t.y} ${t.side}`}
+                tabindex="-1"
+                aria-label={`${s.kind}: ${s.name}${s.sub ? `, ${s.sub}` : ''}`}
+                style={`--i:${i}`}
+              >
+                <circle class="xstar__hit" r="22" />
+                <circle class="xstar__glow" r={big ? 26 : 19} fill={`url(#xg-${f.id})`} />
+                <circle class="xstar__ring" r={big ? 9 : 7} />
+                <circle class="xstar__core" r={big ? 2.8 : 2.2} />
+                <text class="xstar__name" dy="-0.15em" lang={s.lang}>
+                  {s.name}
+                </text>
+                <text class="xstar__sub" dy="1.5em">
+                  {s.kind.toUpperCase()}
+                  {s.sub ? ` · ${s.sub}` : ''}
+                </text>
+              </a>
+            );
+          })}
+        </g>
+      ))
+    }
+  </svg>
+
+  <nav class="ex__parts" aria-label="Five parts of me">
+    {
+      parts.map(({ f }, i) => {
+        const [x, y] = spots[f.id];
+        const [wx, wy] = fw.at(x, y);
+        const [tx, ty] = ft.at(x, y);
+        return (
+          <a
+            class:list={['part', wx > REF.wide.w * 0.78 && 'part--flip-wide', tx > REF.tall.w * 0.5 && 'part--flip-tall']}
+            href={`/sky/${f.id}/`}
+            id={`n-${f.id}`}
+            data-part={f.id}
+            style={`--wx:${pct(wx, REF.wide.w)};--wy:${pct(wy, REF.wide.h)};--tx:${pct(tx, REF.tall.w)};--ty:${pct(ty, REF.tall.h)};--c:${f.color};--i:${i}`}
+            aria-label={`${f.name}, ${f.nameZh}: ${f.line} ${n(f)} ${n(f) === 1 ? 'star' : 'stars'}.`}
+          >
+            <span class="part__halo" aria-hidden="true" />
+            <span class="part__ring" aria-hidden="true" />
+            <span class="part__core" aria-hidden="true" />
+            <span class="part__label" aria-hidden="true">
+              <span class="part__name">{f.name}</span>
+              <span class="part__zh" lang="zh">
+                {f.nameZh} · {String(n(f)).padStart(2, '0')}
+              </span>
+            </span>
+          </a>
+        );
+      })
+    }
+  </nav>
+
+  {
+    home && (
+      <div class="ex__id">
+        <p class="ex__eyebrow">O / Q · Observatory of Questions</p>
+        <h1 class="ex__name">{profile.name}</h1>
+        {profile.altNames.length > 0 && <p class="ex__alt">{profile.altNames.join(' · ')}</p>}
+        <p class="ex__role">
+          {profile.role} · {profile.affiliation}
+        </p>
+        <p class="ex__tagline">{profile.tagline}</p>
+        <p class="ex__hint">Five parts of me, where stars are born. Drag, zoom, choose one.</p>
+      </div>
+    )
+  }
+
+  <!-- the open part -->
+  {
+    sky.map((f) => (
+      <div class="ex__open" data-open={f.id} style={`--c:${f.color}`} hidden>
+        <button type="button" class="ex__back" data-overview>
+          ← All five parts
+        </button>
+        <p class="ex__code">{f.code} · {f.nameZh}</p>
+        {focus === f.id ? <h1 class="ex__title">{f.name}</h1> : <h2 class="ex__title">{f.name}</h2>}
+        <p class="ex__line">
+          {f.line} <span>{String(n(f)).padStart(2, '0')} {n(f) === 1 ? 'star' : 'stars'}</span>
+        </p>
+      </div>
+    ))
+  }
+
+  <aside class="ex__card" aria-live="polite" data-card hidden>
+    <button type="button" class="ex__close" data-close aria-label="Close">×</button>
+    <div data-card-body></div>
+  </aside>
+
+  <div class="ex__tools" role="toolbar" aria-label="View">
+    <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
+    <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
+    <button type="button" data-overview aria-label="See all five parts">⤢</button>
+  </div>
+
+  <div class="ex__foot">
+    <p class="ex__credit">
+      <a href={PILLARS.url} rel="noopener">{PILLARS.title}</a> · {PILLARS.credit} · {PILLARS.license}
+    </p>
+    <a class="ex__down" href={home ? '#me' : '#list'}>{home ? 'About me ↓' : 'As a list ↓'}</a>
+  </div>
+</section>
+
+<script>
+  import { initExplorer } from '../scripts/explorer';
+
+  const root = document.querySelector<HTMLElement>('[data-ex]');
+  if (root) initExplorer(root);
+</script>
+
+<style>
+  .ex {
+    position: relative;
+    height: calc(100svh - var(--nav-h));
+    min-height: 520px;
+    overflow: hidden;
+    isolation: isolate;
+    background: #050a1a;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .ex.is-dragging {
+    cursor: grabbing;
+  }
+
+  :global(.has-gl) .ex {
+    background: transparent;
+  }
+
+  /* ── the still image (no WebGL) ── */
+  .ex__still {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: var(--pw);
+    transform-origin: 0 0;
+  }
+
+  .ex__still.is-placed {
+    inset: auto;
+    left: 0;
+    top: 0;
+    object-fit: fill;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 18%);
+    mask-image: linear-gradient(to right, transparent, #000 18%);
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .ex__still {
+      object-position: var(--pt);
+    }
+  }
+
+  :global(.has-gl) .ex__still {
+    display: none;
+  }
+
+  .ex__veil {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 55% 60% at 12% 32%, rgb(3 6 16 / 0.62), transparent 70%),
+      linear-gradient(180deg, rgb(3 6 16 / 0.3), transparent 20%, transparent 84%, rgb(3 6 16 / 0.55));
+    transition: opacity 600ms ease;
+  }
+
+  .ex.is-open .ex__veil {
+    opacity: 0.55;
+  }
+
+  /* ── an open part's stars ── */
+  .ex__stars {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .xpart {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 500ms ease, visibility 0s 500ms;
+  }
+
+  .xpart.is-open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 600ms ease 150ms;
+  }
+
+  .xline {
+    stroke: var(--c);
+    stroke-opacity: 0.55;
+    stroke-width: 1.2;
+  }
+
+  .xstar {
+    pointer-events: auto;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .xstar__hit {
+    fill: transparent;
+  }
+
+  .xstar__core {
+    fill: #fff;
+  }
+
+  .xstar__ring {
+    fill: none;
+    stroke: var(--c);
+    stroke-opacity: 0;
+    transition: stroke-opacity var(--t-identify) var(--ease);
+  }
+
+  .xstar:hover .xstar__ring,
+  .xstar.is-selected .xstar__ring {
+    stroke-opacity: 0.85;
+  }
+
+  .xstar:focus-visible .xstar__ring {
+    stroke: var(--selection-gold);
+    stroke-opacity: 1;
+    stroke-width: 2;
+  }
+
+  .xstar__name {
+    font: 500 13px var(--font-display);
+    fill: #f2f5f9;
+    paint-order: stroke;
+    stroke: #030610;
+    stroke-width: 4px;
+    stroke-linejoin: round;
+  }
+
+  .xstar--bright .xstar__name {
+    font-size: 14.5px;
+  }
+
+  .xstar__sub {
+    font: 500 8.5px var(--font-mono);
+    letter-spacing: 0.14em;
+    fill: color-mix(in srgb, var(--c) 70%, #b7c6da);
+    paint-order: stroke;
+    stroke: #030610;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  .xstar:hover .xstar__name,
+  .xstar.is-selected .xstar__name {
+    fill: color-mix(in srgb, var(--c) 40%, #fff);
+  }
+
+  .xpart.is-open .xstar {
+    animation: fade-in 600ms ease-out both;
+    animation-delay: calc(200ms + var(--i) * 90ms);
+  }
+
+  /* ── the five parts ── */
+  .part {
+    position: absolute;
+    left: var(--wx);
+    top: var(--wy);
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+    border-radius: 50%;
+    color: var(--c);
+    text-decoration: none;
+    outline: none;
+    z-index: 1;
+    transition: opacity 400ms ease;
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .part {
+      left: var(--tx);
+      top: var(--ty);
+    }
+  }
+
+  .ex.is-open .part {
+    opacity: 0.35;
+  }
+
+  .ex.is-open .part.is-current {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .part__halo,
+  .part__ring,
+  .part__core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .part__halo {
+    width: 96px;
+    height: 96px;
+    margin: -48px 0 0 -48px;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 55%, transparent), color-mix(in srgb, var(--c) 12%, transparent) 55%, transparent);
+    mix-blend-mode: screen;
+    opacity: 0.7;
+    transition: opacity 500ms ease, transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .part__halo {
+      animation: part-breathe calc(5s + var(--i) * 0.9s) ease-in-out infinite;
+    }
+  }
+
+  @keyframes part-breathe {
+    0%, 100% { opacity: 0.55; transform: scale(0.92); }
+    50% { opacity: 0.85; transform: scale(1.06); }
+  }
+
+  .part__ring {
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 1px solid color-mix(in srgb, var(--c) 70%, #fff);
+    opacity: 0.55;
+    transition: opacity 300ms ease, transform 500ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .part__core {
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    background: #fff;
+    box-shadow: 0 0 6px 2px color-mix(in srgb, var(--c) 85%, transparent);
+  }
+
+  .part__label {
+    position: absolute;
+    left: calc(50% + 22px);
+    top: calc(50% - 12px);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    white-space: nowrap;
+    pointer-events: none;
+    text-shadow: 0 0 3px #030610, 0 0 8px #030610, 0 0 16px rgb(3 6 16 / 0.85);
+  }
+
+  .part--flip-wide .part__label {
+    left: auto;
+    right: calc(50% + 22px);
+    align-items: flex-end;
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .part--flip-wide .part__label {
+      left: calc(50% + 22px);
+      right: auto;
+      align-items: flex-start;
+    }
+
+    .part--flip-tall .part__label {
+      left: auto;
+      right: calc(50% + 22px);
+      align-items: flex-end;
+    }
+  }
+
+  .part__name {
+    font: 500 12.5px/1 var(--font-mono);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--c) 70%, #fff);
+  }
+
+  .part__zh {
+    font: 400 12px/1 var(--font-mono);
+    letter-spacing: 0.12em;
+    color: #c9d6e6;
+  }
+
+  .part:hover .part__halo,
+  .part:focus-visible .part__halo {
+    opacity: 1;
+    transform: scale(1.35);
+    animation: none;
+  }
+
+  .part:hover .part__ring,
+  .part:focus-visible .part__ring {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+
+  .part:focus-visible .part__ring {
+    border: 2px solid var(--selection-gold);
+  }
+
+  /* ── the name (home), fading as you go in ── */
+  .ex__id {
+    position: absolute;
+    left: var(--gutter);
+    top: clamp(44px, 12vh, 120px);
+    max-width: min(560px, 50vw);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    z-index: 2;
+    opacity: var(--id-o, 1);
+    transition: opacity 300ms ease;
+  }
+
+  .ex__eyebrow,
+  .ex__alt,
+  .ex__hint {
+    margin: 0;
+    font: 500 11.5px/1.5 var(--font-mono);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #b7c6da;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.9);
+  }
+
+  .ex__alt {
+    text-transform: none;
+    font-size: 13px;
+    letter-spacing: 0.16em;
+  }
+
+  .ex__name {
+    margin: 0;
+    font: 600 clamp(42px, 6vw, 84px) / 1 var(--font-display);
+    letter-spacing: -0.025em;
+    color: #f4f7fb;
+    text-shadow: 0 2px 30px rgb(0 0 0 / 0.7);
+  }
+
+  .ex__role {
+    margin: 8px 0 0;
+    font: 500 12px/1.6 var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #d5e0ec;
+    text-shadow: 0 1px 10px rgb(0 0 0 / 0.8);
+  }
+
+  .ex__tagline {
+    position: relative;
+    margin: 10px 0 0;
+    padding-top: 16px;
+    font: 400 clamp(18px, 1.7vw, 22px) / 1.35 var(--font-display);
+    color: #f4f7fb;
+    text-shadow: 0 1px 12px rgb(0 0 0 / 0.8);
+  }
+
+  .ex__tagline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 72px;
+    height: 1px;
+    background: var(--selection-gold);
+  }
+
+  .ex__hint {
+    margin-top: 14px;
+  }
+
+  /* ── the open part's title ── */
+  .ex__open {
+    position: absolute;
+    left: var(--gutter);
+    top: 22px;
+    max-width: min(440px, 70vw);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 2;
+    text-shadow: 0 1px 14px rgb(0 0 0 / 0.85);
+  }
+
+  .ex__back,
+  .ex__code {
+    font: 500 11.5px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .ex__back {
+    align-self: flex-start;
+    margin-bottom: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #d5e0ec;
+    cursor: pointer;
+  }
+
+  .ex__back:hover {
+    color: #fff;
+  }
+
+  .ex__code {
+    margin: 0;
+    color: color-mix(in srgb, var(--c) 75%, #b7c6da);
+  }
+
+  .ex__title {
+    margin: 0;
+    font: 600 clamp(30px, 4vw, 48px) / 1.05 var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  .ex__line {
+    margin: 0;
+    color: #d5e0ec;
+    font-size: 15px;
+  }
+
+  .ex__line span {
+    margin-left: 8px;
+    font: 500 11.5px var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #b7c6da;
+  }
+
+  /* ── a star's card ── */
+  .ex__card {
+    position: absolute;
+    top: 22px;
+    right: var(--gutter);
+    width: min(380px, calc(100% - 2 * var(--gutter)));
+    max-height: calc(100% - 110px);
+    overflow: auto;
+    padding: 22px 22px 20px;
+    border: 1px solid color-mix(in srgb, var(--c, #82d0dc) 35%, var(--hairline));
+    border-radius: var(--radius-md);
+    background: rgb(5 9 18 / 0.88);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 20px 60px rgb(0 0 0 / 0.5);
+    z-index: 3;
+    cursor: auto;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .ex__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--muted);
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+  .ex__close:hover {
+    color: var(--starlight);
+  }
+
+  /* ── tools and foot ── */
+  .ex__tools {
+    position: absolute;
+    right: var(--gutter);
+    bottom: 52px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 2;
+  }
+
+  .ex__tools button {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: rgb(3 6 11 / 0.6);
+    color: var(--starlight);
+    font: 500 17px/1 var(--font-mono);
+    cursor: pointer;
+  }
+
+  .ex__tools button:hover {
+    border-color: var(--signal-cyan);
+  }
+
+  .ex:not(.is-live) .ex__tools {
+    display: none;
+  }
+
+  .ex__foot {
+    position: absolute;
+    left: var(--gutter);
+    right: var(--gutter);
+    bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 22px;
+    z-index: 2;
+  }
+
+  .ex__credit {
+    margin: 0;
+    font: 400 11px/1.5 var(--font-mono);
+    letter-spacing: 0.04em;
+    color: #b7c6da;
+    text-shadow: 0 1px 6px rgb(0 0 0 / 0.95);
+    cursor: auto;
+  }
+
+  .ex__credit a {
+    color: inherit;
+  }
+
+  .ex__down {
+    flex: none;
+    font: 500 11.5px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #d5e0ec;
+    text-decoration: none;
+    text-shadow: 0 1px 6px rgb(0 0 0 / 0.95);
+  }
+
+  .ex__down:hover {
+    color: #fff;
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .ex__veil {
+      background: linear-gradient(180deg, rgb(3 6 16 / 0.3), transparent 18%, transparent 48%, rgb(3 6 16 / 0.82) 78%, rgb(3 6 16 / 0.92));
+    }
+
+    .ex__id {
+      top: auto;
+      bottom: 84px;
+      max-width: none;
+      right: var(--gutter);
+    }
+
+    .ex__hint {
+      display: none;
+    }
+
+    .ex__foot {
+      flex-direction: column-reverse;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .ex__down {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+    }
+
+    .ex__credit {
+      max-width: 72%;
+      font-size: 10px;
+    }
+
+    .ex__tools {
+      bottom: auto;
+      top: 18px;
+    }
+
+    .ex__card {
+      top: auto;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      width: auto;
+      max-height: 58%;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+    }
+  }
+
+  /* ── the opening (home): each part lights up, then the name ── */
+  :global(html.sky-intro) .part {
+    animation: part-ignite 1200ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+    animation-delay: calc(1500ms + var(--i) * 280ms);
+  }
+
+  :global(html.sky-intro) .part__label {
+    animation: fade-in 900ms ease-out both;
+    animation-delay: calc(2000ms + var(--i) * 280ms);
+  }
+
+  :global(html.sky-intro) .ex__id > * {
+    animation: ex-rise 1000ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  :global(html.sky-intro) .ex__eyebrow { animation-delay: 700ms; }
+  :global(html.sky-intro) .ex__name { animation-delay: 900ms; }
+  :global(html.sky-intro) .ex__alt { animation-delay: 1050ms; }
+  :global(html.sky-intro) .ex__role { animation-delay: 1200ms; }
+  :global(html.sky-intro) .ex__tagline { animation-delay: 1350ms; }
+  :global(html.sky-intro) .ex__hint { animation-delay: 3300ms; }
+
+  :global(html.sky-intro) .ex__foot,
+  :global(html.sky-intro) .ex__tools {
+    animation: fade-in 900ms ease-out 3000ms both;
+  }
+
+  @keyframes part-ignite {
+    from { opacity: 0; transform: scale(0.3); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes ex-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>
