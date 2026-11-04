@@ -2,7 +2,7 @@
 // The research universe: one unnamed galaxy per field. Selecting a galaxy zooms into it and lists its
 // results. Without JavaScript every galaxy is a plain link to its own page, and the List view is in the page.
 import { galaxies, galaxyCode, VIEW } from '../data/galaxies';
-import { ambientStars, kindLabel, resultsIn, statusLabel, type Result } from '../lib/universe';
+import { ambientStars, kindLabel, resultsIn, starFill, statusLabel, type Result } from '../lib/universe';
 import GalaxyArt from './GalaxyArt.astro';
 import GalaxyChart from './GalaxyChart.astro';
 
@@ -62,7 +62,7 @@ const groups = galaxies.map((g) => ({ g, items: resultsIn(results, g.id) }));
       <rect x="-3000" y="-3000" width="7000" height="7000" fill="transparent" data-bg></rect>
 
       <g class="u-ambient" aria-hidden="true">
-        {stars.map((s) => <circle cx={s.x} cy={s.y} r={s.r} opacity={s.o} class:list={['u-star', s.twinkle && `tw tw${s.twinkle}`]} />)}
+        {stars.map((s) => <circle cx={s.x} cy={s.y} r={s.r} opacity={s.o} fill={starFill(s)} class:list={['u-star', s.twinkle ? `tw tw${s.twinkle}` : s.shimmer && `sh${s.shimmer}`]} />)}
       </g>
 
       <g class="u-instrument" aria-hidden="true">
@@ -267,7 +267,7 @@ const groups = galaxies.map((g) => ({ g, items: resultsIn(results, g.id) }));
     background:
       linear-gradient(rgb(56 84 103 / 0.06) 1px, transparent 1px) 0 0 / 40px 40px,
       linear-gradient(90deg, rgb(56 84 103 / 0.06) 1px, transparent 1px) 0 0 / 40px 40px,
-      radial-gradient(ellipse at 50% 50%, rgb(18 40 58 / 0.85), rgb(7 19 32 / 0.6) 75%);
+      radial-gradient(ellipse at 50% 50%, rgb(14 22 34 / 0.92), rgb(4 7 12 / 0.96) 78%);
     overflow: hidden;
   }
 
@@ -280,10 +280,6 @@ const groups = galaxies.map((g) => ({ g, items: resultsIn(results, g.id) }));
   }
 
   /* ambient sky & instrument geometry: decoration only */
-  .u-star {
-    fill: #dfeef0;
-  }
-
   .tw {
     animation: twinkle 7s ease-in-out infinite;
   }

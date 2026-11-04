@@ -4,7 +4,7 @@ import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { galaxies } from '../src/data/galaxies.ts';
-import { galaxyStars, hueColor } from '../src/lib/stars.ts';
+import { galaxyStars, hueColor, starColor } from '../src/lib/stars.ts';
 
 const W = 1200;
 const H = 630;
@@ -29,9 +29,8 @@ const rings = `<circle cx="${cx}" cy="${cy}" r="${330 * k}" fill="none" stroke="
 
 const glx = galaxies
   .map((g) => {
-    const tint = hueColor[g.hue];
     const pts = galaxyStars(g)
-      .map((st) => `<circle cx="${px(st.x).toFixed(1)}" cy="${py(st.y).toFixed(1)}" r="${(st.r * 0.9).toFixed(2)}" fill="${st.tint ? tint : '#e6f1ef'}" opacity="${st.o}"/>`)
+      .map((st) => `<circle cx="${px(st.x).toFixed(1)}" cy="${py(st.y).toFixed(1)}" r="${((st.glow ? st.r / 3.4 : st.r) * 0.9).toFixed(2)}" fill="${starColor[st.kind]}" opacity="${st.glow ? Math.min(1, st.o + 0.2) : st.o}"/>`)
       .join('');
     return `<ellipse cx="${px(g.x)}" cy="${py(g.y)}" rx="${g.r * k * 0.34}" ry="${g.r * k * 0.26}" fill="url(#core-${g.hue})" transform="rotate(${g.rotation} ${px(g.x)} ${py(g.y)})"/>${pts}`;
   })
@@ -39,7 +38,7 @@ const glx = galaxies
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
-    ${Object.entries(hueColor).map(([h, col]) => `<radialGradient id="core-${h}"><stop offset="0" stop-color="#fff6e8" stop-opacity="0.95"/><stop offset="0.35" stop-color="${col}" stop-opacity="0.45"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></radialGradient>`).join('')}
+    ${Object.entries(hueColor).map(([h, col]) => `<radialGradient id="core-${h}"><stop offset="0" stop-color="#fff8ee" stop-opacity="1"/><stop offset="0.18" stop-color="#ffd2a2" stop-opacity="0.75"/><stop offset="0.45" stop-color="#e07a3c" stop-opacity="0.28"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></radialGradient>`).join('')}
     <radialGradient id="neb" cx="0.72" cy="0.5" r="0.6"><stop offset="0" stop-color="#163044" stop-opacity="0.9"/><stop offset="1" stop-color="${c.bg}" stop-opacity="0"/></radialGradient>
   </defs>
   <rect width="${W}" height="${H}" fill="${c.bg}"/>

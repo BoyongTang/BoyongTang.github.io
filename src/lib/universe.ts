@@ -54,5 +54,5 @@ export function resultsIn(results: Result[], id: string) {
   return results.filter((r) => r.galaxy === id);
 }
 
-export { ambientStars, galaxyStars, hueColor, resultPositions, seeded } from './stars';
+export { ambientStars, galaxySpray, galaxyStars, hueColor, resultPositions, seeded, starColor, starFill } from './stars';
 export { galaxies };
