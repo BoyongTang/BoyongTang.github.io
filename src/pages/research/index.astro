@@ -1,51 +1,53 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { statusLabel } from '../../lib/graph';
+import { galaxyById } from '../../data/galaxies';
+import { publishedResearch, statusLabel } from '../../lib/universe';
 
-const research = (await getCollection('research')).sort(
-  (a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime()
-);
-
-const topics = [...new Set(research.map((r) => r.data.topic))];
+const research = (await publishedResearch()).sort((a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime());
+const iso = (d: Date) => d.toISOString().slice(0, 10);
 ---
 
-<Base title="Research Index" description="Research questions, methods, and ongoing inquiries.">
+<Base title="Research" description="Research projects and their real status.">
   <div class="wrap">
     <header class="page-head">
-      <p class="kicker">01 / RESEARCH INDEX</p>
-      <h1>Research Inquiries</h1>
+      <p class="kicker">01 / Research</p>
+      <h1>Research</h1>
       <p>
-        A collection of open research questions, experimental investigations, and methodological explorations.
-        Organized by inquiry status and relation to core problems.
+        What I am working on. Each status is the real stage of the work; results are linked only once they can be
+        shared.
       </p>
       <div class="head-actions">
-        <a class="btn" href="/atlas/">Open Research Atlas ↗</a>
+        <a class="btn" href="/atlas/">Explore by field</a>
       </div>
     </header>
 
-    <div class="section">
-      <ul class="signals">
-        {research.map((item) => (
-          <li class="signal">
-            <a href={`/research/${item.id}/`}>
-              <span class="code">{item.data.code}</span>
-              <div>
-                <span class="signal__title">{item.data.title}</span>
-                <p class="signal__summary">{item.data.question}</p>
-              </div>
-              <div class="signal__meta">
-                <span class={`status status--${item.data.status}`}>{statusLabel(item.data.status)}</span>
-                {item.data.sample && <span class="sample-tag">SAMPLE</span>}
-                <time datetime={item.data.updatedAt.toISOString().slice(0, 10)}>
-                  {item.data.updatedAt.toISOString().slice(0, 10)}
-                </time>
-              </div>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <section class="section" aria-label="Research projects">
+      {research.length ? (
+        <ul class="signals">
+          {research.map((item) => (
+            <li class="signal">
+              <a href={`/research/${item.id}/`}>
+                <span class="code">{item.data.code}</span>
+                <div>
+                  <span class="signal__title">{item.data.title}</span>
+                  <p class="signal__summary">{item.data.summary}</p>
+                </div>
+                <div class="signal__meta">
+                  <span class={`status status--${item.data.status}`}>{statusLabel(item.data.status)}</span>
+                  <span>{galaxyById.get(item.data.topic)?.name}</span>
+                  <time datetime={iso(item.data.updatedAt)}>Updated {iso(item.data.updatedAt)}</time>
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div class="empty">
+          <strong>Nothing published yet</strong>
+          <p>Research entries will appear here once their write-ups are ready.</p>
+        </div>
+      )}
+    </section>
   </div>
 </Base>
 

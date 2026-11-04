@@ -7,7 +7,7 @@ import '@fontsource/ibm-plex-mono/500.css';
 import '@fontsource/ibm-plex-mono/600.css';
 import 'katex/dist/katex.min.css';
 import '../styles/global.css';
-import { profile } from '../data/profile';
+import { cvHref, profile } from '../data/profile';
 
 interface Props {
   title?: string;
@@ -27,6 +27,7 @@ const nav = [
   { href: '/about/', label: 'About' },
 ];
 const current = (href: string) => (path.startsWith(href) ? 'page' : undefined);
+// CV is always one click away (B1 §5.2): the PDF when it exists, otherwise the CV section of About.
 const year = new Date().getFullYear();
 ---
 
@@ -45,6 +46,9 @@ const year = new Date().getFullYear();
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={new URL('/og.png', Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${profile.name} — Observatory of Questions`} />
     <meta name="twitter:card" content="summary_large_image" />
     <script is:inline>
       try {
@@ -67,7 +71,7 @@ const year = new Date().getFullYear();
         <nav class="nav" id="site-nav" aria-label="Main">
           <ul>
             {nav.map((n) => <li><a href={n.href} aria-current={current(n.href)}>{n.label}</a></li>)}
-            {profile.cv && <li><a class="nav__cv" href={profile.cv}>CV ↓</a></li>}
+            <li><a class="nav__cv" href={cvHref}>{profile.cv ? 'CV ↓' : 'CV'}</a></li>
           </ul>
         </nav>
       </div>

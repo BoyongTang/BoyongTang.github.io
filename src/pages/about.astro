@@ -6,10 +6,10 @@ import Base from '../layouts/Base.astro';
 <Base title="About" description={`About ${profile.name} — ${profile.role}`}>
   <div class="wrap about-wrap">
     <header class="page-head">
-      <p class="kicker">05 / OBSERVER PROFILE</p>
-      <h1>About &amp; Background</h1>
+      <p class="kicker">05 / Observer</p>
+      <h1>About</h1>
       <p>
-        Biographical notes, academic training, research philosophy, and direct contact avenues.
+        Who I am, what I study, and how to reach me.
       </p>
     </header>
 
@@ -17,7 +17,7 @@ import Base from '../layouts/Base.astro';
       <!-- ── Left: Profile narrative ── -->
       <div class="about-content">
         <section class="about-sec">
-          <h2 class="eyebrow">Identity &amp; Interests</h2>
+          <h2 class="eyebrow">Profile</h2>
           <p class="about-lead">
             {profile.name}
             {profile.altNames && profile.altNames.length > 0 && (
@@ -26,11 +26,11 @@ import Base from '../layouts/Base.astro';
           </p>
           <p class="about-role">{profile.role}</p>
           <p class="about-text">{profile.bio}</p>
-          {profile.bioZh && <p class="about-text about-text--zh">{profile.bioZh}</p>}
+          {profile.bioZh && <p class="about-text about-text--zh" lang="zh">{profile.bioZh}</p>}
         </section>
 
         <section class="about-sec">
-          <h2 class="eyebrow">Academic Background</h2>
+          <h2 class="eyebrow">Education</h2>
           <ul class="edu-list">
             {profile.education.map((edu) => (
               <li class="edu-item">
@@ -46,19 +46,32 @@ import Base from '../layouts/Base.astro';
         </section>
 
         <section class="about-sec">
-          <h2 class="eyebrow">Research Areas</h2>
-          <div class="interests-tags">
+          <h2 class="eyebrow">Research interests</h2>
+          <ul class="interests-tags">
             {profile.interests.map((interest) => (
-              <span class="interest-chip">{interest}</span>
+              <li class="interest-chip">{interest}</li>
             ))}
-          </div>
+          </ul>
+          <p class="about-text about-text--small">
+            Current work is in <a href="/research/">Research</a>; the relations between topics are in the
+            <a href="/atlas/">atlas</a>.
+          </p>
         </section>
+
+        {profile.stack.length > 0 && (
+          <section class="about-sec">
+            <h2 class="eyebrow">Tools</h2>
+            <ul class="interests-tags">
+              {profile.stack.map((t) => <li class="interest-chip interest-chip--quiet">{t}</li>)}
+            </ul>
+          </section>
+        )}
       </div>
 
       <!-- ── Right: Practical contact & documents ── -->
       <aside class="about-sidebar">
         <div class="dossier-box">
-          <h2 class="eyebrow">Direct Contact</h2>
+          <h2 class="eyebrow">Contact</h2>
           <ul class="contact-links">
             <li>
               <span class="contact-label">Email</span>
@@ -80,14 +93,17 @@ import Base from '../layouts/Base.astro';
             </li>
           </ul>
 
-          <div class="cv-download">
-            <h3 class="eyebrow">Curriculum Vitae</h3>
+          <div class="cv-download" id="cv">
+            <h3 class="eyebrow">Curriculum vitae</h3>
             {profile.cv ? (
               <a class="btn btn--primary" href={profile.cv} download>
                 Download CV (PDF) ↓
               </a>
             ) : (
-              <p class="cv-note">Official CV document available upon request via email.</p>
+              <>
+                <p class="cv-note">The PDF CV is in preparation. For a current copy, please write by email.</p>
+                <a class="btn btn--primary" href={`mailto:${profile.email}?subject=CV%20request`}>Request CV by email</a>
+              </>
             )}
           </div>
         </div>
@@ -145,7 +161,6 @@ import Base from '../layouts/Base.astro';
   }
 
   .about-text--zh {
-    color: var(--dim);
     font-size: 15px;
   }
 
@@ -194,6 +209,18 @@ import Base from '../layouts/Base.astro';
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .interest-chip--quiet {
+    border-style: dashed;
+    color: var(--muted);
+  }
+
+  .about-text--small {
+    font-size: 14.5px;
   }
 
   .interest-chip {
@@ -248,6 +275,7 @@ import Base from '../layouts/Base.astro';
   }
 
   .cv-download {
+    scroll-margin-top: calc(var(--nav-h) + 24px);
     border-top: 1px solid var(--hairline-soft);
     padding-top: 20px;
     display: flex;

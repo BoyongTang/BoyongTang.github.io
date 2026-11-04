@@ -1,36 +1,43 @@
 ---
-import { getCollection } from 'astro:content';
+import { galaxyById } from '../../data/galaxies';
 import Base from '../../layouts/Base.astro';
+import { publishedNotes } from '../../lib/universe';
 
-const allNotes = (await getCollection('notes')).sort(
+const allNotes = (await publishedNotes()).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime()
 );
 ---
 
-<Base title="Field Notes" description="Derivations, proofs, experiment notes, and mathematical readings.">
+<Base title="Notes" description="Field notes: working positions, checklists and derivations behind the research.">
   <div class="wrap">
     <header class="page-head">
-      <p class="kicker">02 / FIELD LOG</p>
-      <h1>Field Notes</h1>
+      <p class="kicker">04 / Field notes</p>
+      <h1>Notes</h1>
       <p>
-        Working notes, mathematical derivations, reading summaries, and laboratory logs.
-        Reflections from the edge of certainty.
+        Working positions, checklists and derivations behind the research. Each note keeps its original language and
+        ends with what is still open.
       </p>
     </header>
 
     <div class="section">
-      <ul class="signals">
+      {allNotes.length === 0 && (
+        <div class="empty">
+          <strong>No notes yet</strong>
+          <p>Notes will appear here once they are written.</p>
+        </div>
+      )}
+      <ul class="signals" hidden={allNotes.length === 0}>
         {allNotes.map((note) => (
           <li class="signal">
             <a href={`/notes/${note.id}/`}>
               <span class="code">{note.data.code}</span>
               <div>
-                <span class="signal__title">{note.data.title}</span>
-                <p class="signal__summary">{note.data.summary}</p>
+                <span class="signal__title" lang={note.data.lang}>{note.data.title}</span>
+                <p class="signal__summary" lang={note.data.lang}>{note.data.summary}</p>
               </div>
               <div class="signal__meta">
-                <span class="status status--completed">{note.data.topic}</span>
-                {note.data.sample && <span class="sample-tag">SAMPLE</span>}
+                <span>{galaxyById.get(note.data.topic)?.name}</span>
+                <span>{note.data.lang === 'zh' ? '中文' : 'English'}</span>
                 <time datetime={note.data.date.toISOString().slice(0, 10)}>
                   {note.data.date.toISOString().slice(0, 10)}
                 </time>

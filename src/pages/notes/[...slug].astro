@@ -1,10 +1,11 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
+import { galaxyById } from '../../data/galaxies';
 import Base from '../../layouts/Base.astro';
-import { loadGraph, relationsOf } from '../../lib/graph';
+import { publishedNotes } from '../../lib/universe';
 
 export async function getStaticPaths() {
-  const entries = await getCollection('notes');
+  const entries = await publishedNotes();
   return entries.map((entry) => ({
     params: { slug: entry.id },
     props: { entry },
@@ -13,21 +14,18 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const graph = await loadGraph();
-
-const thisNode = graph.nodes.find((n) => n.url === `/notes/${entry.id}/`);
-const related = thisNode ? relationsOf(graph, thisNode.id) : [];
+const galaxy = galaxyById.get(entry.data.topic);
 ---
 
 <Base title={entry.data.title} description={entry.data.summary}>
   <div class="wrap note-container">
-    <article class="note-main reading">
+    <a class="note-back" href="/notes/">← Back to notes</a>
+    <article class="note-main reading" lang={entry.data.lang}>
       <header class="note-header">
         <div class="note-meta">
           <span class="code">{entry.data.code}</span>
           <span class="note-meta__divider">/</span>
-          <span class="eyebrow">{entry.data.topic}</span>
-          {entry.data.sample && <span class="sample-tag">SAMPLE</span>}
+          {galaxy && <a class="note-topic" href={`/atlas/${galaxy.id}/`}>{galaxy.name}</a>}
           <span class="note-meta__divider">/</span>
           <time datetime={entry.data.date.toISOString().slice(0, 10)}>
             {entry.data.date.toISOString().slice(0, 10)}
@@ -37,25 +35,10 @@ const related = thisNode ? relationsOf(graph, thisNode.id) : [];
         <p class="note-lead">{entry.data.summary}</p>
       </header>
 
-      <div class="prose note-body" lang={entry.data.lang}>
+      <div class="prose note-body">
         <Content />
       </div>
 
-      {related.length > 0 && (
-        <footer class="note-footer">
-          <h2 class="eyebrow">Related Research Signals</h2>
-          <ul class="related-notes">
-            {related.map((r) => (
-              <li>
-                <span class="related-edge">{r.edge.relationLabel}</span>
-                <a href={r.other.url}>
-                  <span class="code">{r.other.code}</span> {r.other.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </footer>
-      )}
     </article>
   </div>
 </Base>
@@ -64,6 +47,45 @@ const related = thisNode ? relationsOf(graph, thisNode.id) : [];
   .note-container {
     padding: clamp(32px, 5vw, 64px) var(--gutter);
     max-width: 860px;
+  }
+
+  .note-back {
+    display: inline-block;
+    margin-bottom: 16px;
+    font: 500 12.5px var(--font-mono);
+    letter-spacing: 0.08em;
+    text-decoration: none;
+  }
+
+  .note-topic {
+    color: var(--reading-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .note-related-head {
+    color: var(--reading-muted);
+  }
+
+  .prose :global(table) {
+    width: 100%;
+    margin: 1.4em 0;
+    border-collapse: collapse;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .prose :global(th),
+  .prose :global(td) {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--reading-rule);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .prose :global(th) {
+    background: #e6edf0;
+    font-weight: 600;
   }
 
   .note-main {

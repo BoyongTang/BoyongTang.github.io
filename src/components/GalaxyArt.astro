@@ -1,0 +1,52 @@
+---
+// One galaxy drawn in sky coordinates: a diffuse halo, decorative stars and a bright core.
+// Purely visual (aria-hidden): the name and results live in the surrounding markup.
+import type { Galaxy } from '../data/galaxies';
+import { galaxyStars, hueColor } from '../lib/universe';
+
+interface Props {
+  galaxy: Galaxy;
+  uid: string;
+}
+
+const { galaxy: g, uid } = Astro.props;
+const stars = galaxyStars(g);
+const tint = hueColor[g.hue];
+const id = `${uid}-${g.id}`;
+---
+
+<g class="galaxy-art" aria-hidden="true">
+  <defs>
+    <radialGradient id={`${id}-halo`}>
+      <stop offset="0" stop-color={tint} stop-opacity="0.26"></stop>
+      <stop offset="0.45" stop-color="#1f4a63" stop-opacity="0.22"></stop>
+      <stop offset="1" stop-color="#0b1d30" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id={`${id}-core`}>
+      <stop offset="0" stop-color="#fff6e8" stop-opacity="0.95"></stop>
+      <stop offset="0.35" stop-color={tint} stop-opacity="0.45"></stop>
+      <stop offset="1" stop-color={tint} stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <ellipse
+    class="galaxy-art__halo"
+    cx={g.x}
+    cy={g.y}
+    rx={g.r * 1.15}
+    ry={g.r * 1.15 * g.tilt}
+    transform={`rotate(${g.rotation} ${g.x} ${g.y})`}
+    fill={`url(#${id}-halo)`}
+  ></ellipse>
+  <g class="galaxy-art__stars">
+    {stars.map((s) => <circle cx={s.x} cy={s.y} r={s.r} opacity={s.o} fill={s.tint ? tint : '#e6f1ef'} />)}
+  </g>
+  <ellipse
+    class="galaxy-art__core"
+    cx={g.x}
+    cy={g.y}
+    rx={g.r * 0.24}
+    ry={g.r * 0.24 * Math.max(g.tilt, 0.6)}
+    transform={`rotate(${g.rotation} ${g.x} ${g.y})`}
+    fill={`url(#${id}-core)`}
+  ></ellipse>
+</g>
