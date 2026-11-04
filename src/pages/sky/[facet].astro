@@ -2,6 +2,7 @@
 // One nebula's star map: full screen, drag to look around, scroll or pinch to zoom, select a star for
 // its card. Every star is something real (src/lib/sky.ts). Below the map the same stars are a plain
 // list, which is also what keyboard, screen-reader and no-JavaScript visitors get.
+import { PILLARS } from '../../data/pillars';
 import Base from '../../layouts/Base.astro';
 import { loadSky, WORLD, type SkyFacet } from '../../lib/sky';
 import { seeded, starFill, starKind } from '../../lib/stars';
@@ -25,46 +26,32 @@ const C = { x: WORLD.w / 2, y: WORLD.h / 2 };
 const n = f.items.length;
 const count = `${String(n).padStart(2, '0')} ${n === 1 ? 'star' : 'stars'}`;
 
-// the nebula itself: soft clouds of its colour round the centre, with dark dust through them
+// The backdrop is this part's stretch of the Pillars of Creation (a real image, public/sky/map-*.webp).
+// On top: a few stars of the map's own, the brightest with Webb's six-pointed spikes.
 const rand = seeded(f.seed * 131);
 const gauss = () => Math.sqrt(-2 * Math.log(rand() || 1e-9)) * Math.cos(2 * Math.PI * rand());
-const clouds = Array.from({ length: 9 }, (_, i) => ({
-  x: C.x + gauss() * 330,
-  y: C.y + gauss() * 220,
-  rx: 260 + rand() * 420,
-  ry: 160 + rand() * 260,
-  rot: rand() * 180,
-  fill: i % 3 === 2 ? 'deep' : 'main',
-  o: 0.35 + rand() * 0.45,
-}));
-const dust = Array.from({ length: 5 }, () => ({
-  x: C.x + gauss() * 300,
-  y: C.y + gauss() * 200,
-  rx: 120 + rand() * 260,
-  ry: 40 + rand() * 90,
-  rot: rand() * 180,
-}));
-
-// background stars: thin everywhere, thick inside the nebula
 const field = [
-  ...Array.from({ length: 900 }, () => ({ x: -300 + rand() * (WORLD.w + 600), y: -300 + rand() * (WORLD.h + 600), near: 0 })),
-  ...Array.from({ length: 650 }, () => {
-    const x = gauss() * 380;
-    const y = gauss() * 260;
+  ...Array.from({ length: 200 }, () => ({ x: -300 + rand() * (WORLD.w + 600), y: -300 + rand() * (WORLD.h + 600), near: 0 })),
+  ...Array.from({ length: 160 }, () => {
+    const x = gauss() * 420;
+    const y = gauss() * 280;
     return { x: C.x + x, y: C.y + y, near: Math.exp(-(x * x + y * y) / 250000) };
   }),
 ].map((p) => {
   const big = rand() ** 5;
-  const glow = big > 0.45;
-  const r = 0.7 + big * 2.6 + p.near * 0.6;
+  const glow = big > 0.4;
+  const r = 0.7 + big * 2.4 + p.near * 0.5;
+  const kind = starKind(rand());
   return {
     x: +p.x.toFixed(1),
     y: +p.y.toFixed(1),
     r: +(glow ? r * 3.2 : r).toFixed(2),
-    o: +Math.min(1, 0.18 + rand() * 0.45 + p.near * 0.3).toFixed(2),
-    fill: starFill({ kind: starKind(rand()), glow }),
+    o: +Math.min(1, 0.25 + rand() * 0.45 + p.near * 0.25).toFixed(2),
+    fill: starFill({ kind, glow }),
+    spike: glow ? +(r * (14 + rand() * 14)).toFixed(1) : 0,
   };
 });
+const spikes = field.filter((s) => s.spike);
 
 const rings = [260, 520, 780, 1040];
 const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
@@ -72,6 +59,9 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
 
 <Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line} A star map of ${count}.`}>
   <section class="smap" style={`--c:${f.color};--d:${f.deep}`} aria-labelledby="smap-name" data-smap data-view={`${f.view.x} ${f.view.y} ${f.view.w} ${f.view.h}`} data-tall-view={`${f.tallView.x} ${f.tallView.y} ${f.tallView.w} ${f.tallView.h}`}>
+    <div class="smap__photo" aria-hidden="true" data-photo>
+      <img src={`/sky/map-${f.id}.webp`} alt="" decoding="async" />
+    </div>
     <svg
       class="smap__svg"
       viewBox={`${f.view.x} ${f.view.y} ${f.view.w} ${f.view.h}`}
@@ -81,19 +71,18 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
       data-svg
     >
       <defs>
-        <radialGradient id="cl-main">
-          <stop offset="0" stop-color={f.color} stop-opacity="0.2" />
-          <stop offset="0.5" stop-color={f.color} stop-opacity="0.07" />
-          <stop offset="1" stop-color={f.color} stop-opacity="0" />
+        <!-- Webb's diffraction spikes: six long points and two short ones, fading out (unit length) -->
+        <radialGradient id="spk-fade" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.95" />
+          <stop offset="0.25" stop-color="#ffffff" stop-opacity="0.35" />
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
         </radialGradient>
-        <radialGradient id="cl-deep">
-          <stop offset="0" stop-color={f.deep} stop-opacity="0.4" />
-          <stop offset="1" stop-color={f.deep} stop-opacity="0" />
-        </radialGradient>
-        <radialGradient id="cl-dust">
-          <stop offset="0" stop-color="#020407" stop-opacity="0.55" />
-          <stop offset="1" stop-color="#020407" stop-opacity="0" />
-        </radialGradient>
+        <g id="spk" fill="url(#spk-fade)">
+          <polygon points="0,-1 0.016,0 0,1 -0.016,0" />
+          <polygon points="0,-1 0.016,0 0,1 -0.016,0" transform="rotate(60)" />
+          <polygon points="0,-1 0.016,0 0,1 -0.016,0" transform="rotate(-60)" />
+          <polygon points="-0.42,0 0,0.01 0.42,0 0,-0.01" />
+        </g>
         <radialGradient id="mg">
           <stop offset="0" stop-color="#ffffff" stop-opacity="0.95" />
           <stop offset="0.12" stop-color={f.color} stop-opacity="0.75" />
@@ -104,11 +93,6 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
 
       <rect x={-4000} y={-4000} width={WORLD.w + 8000} height={WORLD.h + 8000} fill="transparent" data-bg />
 
-      <g class="smap__clouds" aria-hidden="true">
-        {clouds.map((c) => <ellipse cx={c.x} cy={c.y} rx={c.rx} ry={c.ry} transform={`rotate(${c.rot} ${c.x} ${c.y})`} fill={`url(#cl-${c.fill})`} opacity={c.o} />)}
-        {dust.map((c) => <ellipse cx={c.x} cy={c.y} rx={c.rx} ry={c.ry} transform={`rotate(${c.rot} ${c.x} ${c.y})`} fill="url(#cl-dust)" />)}
-      </g>
-
       <g class="smap__grid" aria-hidden="true">
         {rings.map((r) => <circle cx={C.x} cy={C.y} r={r} />)}
         {spokes.map((a) => <line x1={C.x + Math.cos(a) * 130} y1={C.y + Math.sin(a) * 130} x2={C.x + Math.cos(a) * 1300} y2={C.y + Math.sin(a) * 1300} />)}
@@ -116,6 +100,9 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
 
       <g class="smap__field" aria-hidden="true" data-field data-x={C.x} data-y={C.y} data-r={900}>
         {field.map((s) => <circle cx={s.x} cy={s.y} r={s.r} opacity={s.o} fill={s.fill} />)}
+      </g>
+      <g class="smap__spikes" aria-hidden="true">
+        {spikes.map((s) => <use href="#spk" transform={`translate(${s.x} ${s.y}) scale(${s.spike})`} opacity={(s.o * 0.8).toFixed(2)} />)}
       </g>
 
       <g class="smap__lines" aria-hidden="true">
@@ -140,6 +127,7 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
                 aria-label={`${s.kind}: ${s.name}${s.sub ? `, ${s.sub}` : ''}`}
               >
                 <circle class="mstar__hit" r="44" />
+                <use class="mstar__spike" href="#spk" transform={`scale(${big ? 120 : 82})`} />
                 <circle class="mstar__glow" r={big ? 58 : 38} fill="url(#mg)" />
                 <circle class="mstar__ring" r={big ? 18 : 14} />
                 <circle class="mstar__core" r={big ? 4.6 : 3.4} />
@@ -161,7 +149,7 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
 
     <div class="smap__hud smap__hud--top">
       <div class="smap__title">
-        <a class="smap__back" href={`/#n-${f.id}`} data-back>← Star band</a>
+        <a class="smap__back" href={`/#n-${f.id}`} data-back>← The pillars</a>
         <p class="smap__code">{f.code} · Nebula</p>
         <h1 id="smap-name" class="smap__name">
           {f.name} <span lang="zh">{f.nameZh}</span>
@@ -263,7 +251,8 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
     </ol>
     <p class="slist__note">
       Every star here is real: an interest, a tool, a place, a piece of work or a way to reach me. More appear as they happen. Lines join
-      things that are actually related; positions mean nothing.
+      things that are actually related; positions mean nothing. Behind them: part of Webb's
+      <a href={PILLARS.url} rel="noopener">{PILLARS.title}</a>, {PILLARS.credit}, {PILLARS.license}.
     </p>
   </section>
 </Base>
@@ -281,10 +270,31 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
     height: calc(100svh - var(--nav-h));
     min-height: 480px;
     overflow: hidden;
-    background:
-      radial-gradient(ellipse 60% 55% at 50% 52%, color-mix(in srgb, var(--d) 18%, transparent), transparent 75%),
-      #03060b;
+    background: #050a1a;
     border-bottom: 1px solid var(--hairline-soft);
+  }
+
+  /* this part's stretch of the pillars, drifting a little as the map moves (parallax) */
+  .smap__photo {
+    position: absolute;
+    inset: -6%;
+    transform: translate(var(--px, 0px), var(--py, 0px)) scale(var(--pz, 1));
+    will-change: transform;
+  }
+
+  .smap__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .smap__photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 75% 70% at 50% 50%, transparent 30%, rgb(3 6 16 / 0.55) 100%),
+      linear-gradient(90deg, rgb(3 6 16 / 0.55), transparent 35%);
   }
 
   .smap__svg {
@@ -338,6 +348,10 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
 
   .mstar__core {
     fill: #fff;
+  }
+
+  .mstar__spike {
+    opacity: 0.75;
   }
 
   .mstar__ring {
@@ -413,7 +427,7 @@ const spokes = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12);
     animation-delay: calc(var(--k, 0) * 600ms);
   }
 
-  .smap.is-arriving .smap__clouds {
+  .smap.is-arriving .smap__photo {
     animation: fade-in 1800ms ease-out both;
   }
 

@@ -1,0 +1,585 @@
+---
+// The home page sky: Webb's Pillars of Creation, quiet and full screen. The five parts of me sit on five
+// places in it where stars are being born; each is a link into its star map. The name sits in the dark
+// beside the pillars. src/scripts/pillars.ts keeps the markers pinned to the photo on any screen;
+// without JavaScript they sit where they would on a typical screen.
+import { facets } from '../data/facets';
+import { glints, PILLARS, spots } from '../data/pillars';
+import { profile } from '../data/profile';
+import { fitPillars, objectPosition } from '../lib/pillars-fit';
+import type { SkyFacet } from '../lib/sky';
+
+interface Props {
+  sky: SkyFacet[];
+}
+
+const { sky } = Astro.props;
+const count = new Map(sky.map((f) => [f.id, f.items.length]));
+
+// the layout without JavaScript, for a typical wide and a typical tall screen
+const REF = { wide: { w: 1440, h: 830 }, tall: { w: 390, h: 720 } };
+const fw = fitPillars(REF.wide.w, REF.wide.h);
+const ft = fitPillars(REF.tall.w, REF.tall.h);
+const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
+const markers = facets.map((f, i) => {
+  const [x, y] = spots[f.id];
+  const [wx, wy] = fw.at(x, y);
+  const [tx, ty] = ft.at(x, y);
+  return {
+    f,
+    n: count.get(f.id) ?? 0,
+    style: [
+      `--wx:${pct(wx, REF.wide.w)}`,
+      `--wy:${pct(wy, REF.wide.h)}`,
+      `--tx:${pct(tx, REF.tall.w)}`,
+      `--ty:${pct(ty, REF.tall.h)}`,
+      `--c:${f.color}`,
+      `--i:${i}`,
+    ].join(';'),
+    flipWide: wx > REF.wide.w * 0.78,
+    flipTall: tx > REF.tall.w * 0.6,
+  };
+});
+const { wide, tall } = PILLARS.variants;
+---
+
+<script is:inline>
+  // Decide before the first paint whether the opening plays: once per visit, never with reduced motion.
+  // ?intro plays it again.
+  (function () {
+    var html = document.documentElement;
+    var force = /[?&]intro\b/.test(location.search);
+    var reduce = html.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var seen = false;
+    try { seen = sessionStorage.getItem('oq.pillars') === '1'; } catch (e) {}
+    if (reduce || (seen && !force)) return;
+    html.classList.add('sky-intro');
+    // if the script never runs, never leave the page half-revealed
+    setTimeout(function () { if (!html.dataset.sky) html.classList.remove('sky-intro'); }, 4500);
+  })();
+</script>
+
+<section class="sky" aria-labelledby="sky-name" data-sky>
+  <div class="sky__stage" data-stage>
+    <div class="sky__drift">
+      <div class="sky__backdrop" style={`background-image:url(${wide.src})`} aria-hidden="true"></div>
+      <picture class="sky__photo">
+        <source media="(min-aspect-ratio: 9/10)" srcset={wide.src} />
+        <img
+          src={tall.src}
+          alt="Webb's image of the Pillars of Creation: towering columns of gold-brown gas and dust against a deep blue field of stars."
+          decoding="async"
+          fetchpriority="high"
+          style={`--pw:${objectPosition(fw, REF.wide.w, REF.wide.h)};--pt:${objectPosition(ft, REF.tall.w, REF.tall.h)}`}
+          data-photo
+        />
+      </picture>
+      <div class="sky__veil" aria-hidden="true"></div>
+      <div class="sky__glints" aria-hidden="true" data-glints data-points={JSON.stringify(glints)}></div>
+
+      <nav class="sky__parts" aria-label="Five parts of me">
+        {
+          markers.map(({ f, n, style, flipWide, flipTall }) => (
+            <a
+              class:list={['part', flipWide && 'part--flip-wide', flipTall && 'part--flip-tall']}
+              href={`/sky/${f.id}/`}
+              id={`n-${f.id}`}
+              style={style}
+              data-part={f.id}
+              data-spot={spots[f.id].join(' ')}
+              aria-label={`${f.name}, ${f.nameZh}: ${f.line} ${n} ${n === 1 ? 'star' : 'stars'}.`}
+            >
+              <span class="part__halo" aria-hidden="true" />
+              <span class="part__ring" aria-hidden="true" />
+              <span class="part__core" aria-hidden="true" />
+              <span class="part__label" aria-hidden="true">
+                <span class="part__name">{f.name}</span>
+                <span class="part__zh" lang="zh">
+                  {f.nameZh} · {String(n).padStart(2, '0')}
+                </span>
+              </span>
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+  </div>
+
+  <div class="sky__id">
+    <p class="sky__eyebrow">O / Q · Observatory of Questions</p>
+    <h1 id="sky-name" class="sky__name">{profile.name}</h1>
+    {profile.altNames.length > 0 && <p class="sky__alt">{profile.altNames.join(' · ')}</p>}
+    <p class="sky__role">{profile.role} · {profile.affiliation}</p>
+    <p class="sky__tagline">{profile.tagline}</p>
+    <p class="sky__hint">Five parts of me, where stars are born. Enter one.</p>
+  </div>
+
+  <div class="sky__foot">
+    <p class="sky__credit">
+      <a href={PILLARS.url} rel="noopener">{PILLARS.title}</a> · {PILLARS.credit} · {PILLARS.license}
+    </p>
+    <a class="sky__down" href="#me">About me ↓</a>
+  </div>
+</section>
+
+<script>
+  import { initPillars } from '../scripts/pillars';
+
+  const root = document.querySelector<HTMLElement>('[data-sky]');
+  if (root) initPillars(root);
+</script>
+
+<style>
+  .sky {
+    position: relative;
+    height: calc(100svh - var(--nav-h));
+    min-height: 520px;
+    overflow: hidden;
+    isolation: isolate;
+    background: #050a1a;
+    border-bottom: 1px solid var(--hairline-soft);
+  }
+
+  .sky__stage,
+  .sky__drift {
+    position: absolute;
+    inset: 0;
+  }
+
+  .sky__stage {
+    transform-origin: var(--ox, 50%) var(--oy, 50%);
+  }
+
+  /* the photo barely moves: a slow breath over two minutes (markers move with it) */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .sky__drift {
+      animation: sky-drift 120s ease-in-out infinite alternate;
+      transform-origin: 60% 45%;
+    }
+  }
+
+  @keyframes sky-drift {
+    from { transform: scale(1); }
+    to { transform: scale(1.035); }
+  }
+
+  .sky__photo {
+    position: absolute;
+    inset: 0;
+  }
+
+  .sky__photo img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--pw);
+  }
+
+  /* wide screens: the pillars stand at full height on the right, fading into a soft, dark copy of themselves */
+  .sky__backdrop {
+    position: absolute;
+    inset: -60px;
+    background: center / cover no-repeat;
+    filter: blur(30px) brightness(0.4) saturate(1.15);
+  }
+
+  @media (min-aspect-ratio: 118 / 100) {
+    .sky__photo img {
+      object-fit: contain;
+      object-position: 100% 50%;
+      --iw: calc((100svh - var(--nav-h)) * 1.0893);
+      -webkit-mask-image: linear-gradient(to left, #000 calc(var(--iw) * 0.76), transparent var(--iw));
+      mask-image: linear-gradient(to left, #000 calc(var(--iw) * 0.76), transparent var(--iw));
+    }
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .sky__backdrop {
+      display: none;
+    }
+  }
+
+  /* with the script: placed exactly, so the parts sit on their spots */
+  .sky__photo img.is-fitted {
+    inset: auto;
+    object-fit: fill;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .sky__photo img.is-fitted.is-framed {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 24%);
+    mask-image: linear-gradient(to right, transparent, #000 24%);
+  }
+
+  /* a dark veil where the name sits, so the text reads over the stars */
+  .sky__veil {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 55% 60% at 12% 32%, rgb(3 6 16 / 0.72), transparent 70%),
+      linear-gradient(180deg, rgb(3 6 16 / 0.35), transparent 22%, transparent 82%, rgb(3 6 16 / 0.6));
+    pointer-events: none;
+  }
+
+  .sky__glints {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .sky__glints :global(i) {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    margin: -1.5px 0 0 -1.5px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 6px 2px rgb(220 235 255 / 0.8);
+    opacity: 0;
+    animation: glint var(--gd, 7s) ease-in-out var(--gl, 0s) infinite;
+  }
+
+  @keyframes glint {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.75; }
+  }
+
+  /* ── the five parts ── */
+  .part {
+    position: absolute;
+    left: var(--wx);
+    top: var(--wy);
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+    border-radius: 50%;
+    color: var(--c);
+    text-decoration: none;
+    outline: none;
+    z-index: 1;
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .sky__photo img {
+      object-position: var(--pt);
+    }
+
+    .part {
+      left: var(--tx);
+      top: var(--ty);
+    }
+  }
+
+  .part__halo,
+  .part__ring,
+  .part__core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .part__halo {
+    width: 96px;
+    height: 96px;
+    margin: -48px 0 0 -48px;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 55%, transparent), color-mix(in srgb, var(--c) 12%, transparent) 55%, transparent);
+    mix-blend-mode: screen;
+    opacity: 0.7;
+    transition: opacity 500ms ease, transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .part__halo {
+      animation: part-breathe calc(5s + var(--i) * 0.9s) ease-in-out infinite;
+    }
+  }
+
+  @keyframes part-breathe {
+    0%, 100% { opacity: 0.55; transform: scale(0.92); }
+    50% { opacity: 0.85; transform: scale(1.06); }
+  }
+
+  .part__ring {
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 1px solid color-mix(in srgb, var(--c) 70%, #fff);
+    opacity: 0.55;
+    transition: opacity 300ms ease, transform 500ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .part__core {
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    background: #fff;
+    box-shadow: 0 0 6px 2px color-mix(in srgb, var(--c) 85%, transparent);
+  }
+
+  .part__label {
+    position: absolute;
+    left: calc(50% + 22px);
+    top: calc(50% - 12px);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    white-space: nowrap;
+    pointer-events: none;
+    text-shadow: 0 0 3px #030610, 0 0 8px #030610, 0 0 16px rgb(3 6 16 / 0.85);
+  }
+
+  .part--flip-wide .part__label {
+    left: auto;
+    right: calc(50% + 22px);
+    align-items: flex-end;
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .part--flip-wide .part__label {
+      left: calc(50% + 22px);
+      right: auto;
+      align-items: flex-start;
+    }
+
+    .part--flip-tall .part__label {
+      left: auto;
+      right: calc(50% + 22px);
+      align-items: flex-end;
+    }
+  }
+
+  .part__name {
+    font: 500 12.5px/1 var(--font-mono);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--c) 70%, #fff);
+  }
+
+  .part__zh {
+    font: 400 12px/1 var(--font-mono);
+    letter-spacing: 0.12em;
+    color: #c9d6e6;
+  }
+
+  .part:hover .part__halo,
+  .part:focus-visible .part__halo {
+    opacity: 1;
+    transform: scale(1.35);
+    animation: none;
+  }
+
+  .part:hover .part__ring,
+  .part:focus-visible .part__ring {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+
+  .part:focus-visible .part__ring {
+    border: 2px solid var(--selection-gold);
+  }
+
+  /* ── the name ── */
+  .sky__id {
+    position: absolute;
+    left: var(--gutter);
+    top: clamp(44px, 12vh, 120px);
+    max-width: min(560px, 50vw);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .sky__eyebrow {
+    margin: 0 0 6px;
+    font: 500 11.5px/1.4 var(--font-mono);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #b7c6da;
+  }
+
+  .sky__name {
+    margin: 0;
+    font: 600 clamp(42px, 6vw, 84px) / 1 var(--font-display);
+    letter-spacing: -0.025em;
+    color: #f4f7fb;
+    text-shadow: 0 2px 30px rgb(0 0 0 / 0.7);
+  }
+
+  .sky__alt {
+    margin: 0;
+    font: 500 13px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    color: #b7c6da;
+  }
+
+  .sky__role {
+    margin: 8px 0 0;
+    font: 500 12px/1.6 var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #d5e0ec;
+    text-shadow: 0 1px 10px rgb(0 0 0 / 0.8);
+  }
+
+  .sky__tagline {
+    position: relative;
+    margin: 10px 0 0;
+    padding-top: 16px;
+    font: 400 clamp(18px, 1.7vw, 22px) / 1.35 var(--font-display);
+    color: #f4f7fb;
+    text-shadow: 0 1px 12px rgb(0 0 0 / 0.8);
+  }
+
+  .sky__tagline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 72px;
+    height: 1px;
+    background: var(--selection-gold);
+  }
+
+  .sky__hint {
+    margin: 14px 0 0;
+    font: 500 11.5px/1.5 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #b7c6da;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.9);
+  }
+
+  .sky__foot {
+    position: absolute;
+    left: var(--gutter);
+    right: var(--gutter);
+    bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 22px;
+    z-index: 2;
+  }
+
+  .sky__credit {
+    margin: 0;
+    font: 400 11px/1.5 var(--font-mono);
+    letter-spacing: 0.04em;
+    color: #b7c6da;
+    text-shadow: 0 1px 6px rgb(0 0 0 / 0.95);
+  }
+
+  .sky__credit a {
+    color: inherit;
+  }
+
+  .sky__down {
+    flex: none;
+    font: 500 11.5px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #d5e0ec;
+    text-decoration: none;
+    text-shadow: 0 1px 6px rgb(0 0 0 / 0.95);
+  }
+
+  .sky__down:hover {
+    color: #fff;
+  }
+
+  /* tall screens: the pillars fill the screen, the name sits low over their dark bases */
+  @media (max-aspect-ratio: 9 / 10) {
+    .sky__veil {
+      background: linear-gradient(180deg, rgb(3 6 16 / 0.3), transparent 18%, transparent 48%, rgb(3 6 16 / 0.82) 78%, rgb(3 6 16 / 0.92));
+    }
+
+    .sky__id {
+      top: auto;
+      bottom: 64px;
+      max-width: none;
+      right: var(--gutter);
+    }
+
+    .sky__foot {
+      flex-direction: column-reverse;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .sky__down {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+    }
+
+    .sky__credit {
+      max-width: 72%;
+      font-size: 10px;
+    }
+  }
+
+  /* ── leaving for a part: the camera falls into its place in the pillars ── */
+  .sky.is-diving .sky__stage {
+    transition: transform 760ms cubic-bezier(0.55, 0, 0.85, 0.35), opacity 760ms ease-in;
+    transform: scale(6);
+    opacity: 0;
+  }
+
+  .sky.is-diving .sky__id,
+  .sky.is-diving .sky__foot {
+    transition: opacity 300ms ease;
+    opacity: 0;
+  }
+
+  /* ── the opening: the pillars come out of the dark, each part lights up, then the name ── */
+  :global(html.sky-intro) .sky__photo {
+    animation: sky-arrive 3200ms cubic-bezier(0.2, 0.6, 0.2, 1) both;
+  }
+
+  :global(html.sky-intro) .part {
+    animation: part-ignite 1200ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+    animation-delay: calc(1500ms + var(--i) * 280ms);
+  }
+
+  :global(html.sky-intro) .part__label {
+    animation: fade-in 900ms ease-out both;
+    animation-delay: calc(2000ms + var(--i) * 280ms);
+  }
+
+  :global(html.sky-intro) .sky__id > * {
+    animation: sky-rise 1000ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  :global(html.sky-intro) .sky__eyebrow { animation-delay: 700ms; }
+  :global(html.sky-intro) .sky__name { animation-delay: 900ms; }
+  :global(html.sky-intro) .sky__alt { animation-delay: 1050ms; }
+  :global(html.sky-intro) .sky__role { animation-delay: 1200ms; }
+  :global(html.sky-intro) .sky__tagline { animation-delay: 1350ms; }
+  :global(html.sky-intro) .sky__hint { animation-delay: 3300ms; }
+
+  :global(html.sky-intro) .sky__foot {
+    animation: fade-in 900ms ease-out 3000ms both;
+  }
+
+  @keyframes sky-arrive {
+    from { opacity: 0; transform: scale(1.12); filter: brightness(0.4) blur(6px); }
+    to { opacity: 1; transform: none; filter: none; }
+  }
+
+  @keyframes part-ignite {
+    from { opacity: 0; transform: scale(0.3); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes sky-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>

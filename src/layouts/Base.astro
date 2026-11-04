@@ -8,6 +8,7 @@ import '@fontsource/ibm-plex-mono/600.css';
 import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 import StarGlow from '../components/StarGlow.astro';
+import { PILLARS } from '../data/pillars';
 import { cvHref, profile } from '../data/profile';
 
 interface Props {
@@ -87,7 +88,7 @@ const year = new Date().getFullYear();
     <footer class="site-footer">
       <div class="site-footer__inner">
         <span>© {year} {profile.name} · O/Q Observatory of Questions</span>
-        <span>The sky is drawn, not observed: every star is real content.</span>
+        <span>Sky: <a href={PILLARS.url} rel="noopener">{PILLARS.title}</a>, {PILLARS.credit}, {PILLARS.license}. Every star on it is real content.</span>
         <span>
           <a href={`mailto:${profile.email}`}>{profile.email}</a>
           &nbsp;·&nbsp;
