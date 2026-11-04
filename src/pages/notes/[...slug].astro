@@ -25,7 +25,7 @@ const galaxy = galaxyById.get(entry.data.topic);
         <div class="note-meta">
           <span class="code">{entry.data.code}</span>
           <span class="note-meta__divider">/</span>
-          {galaxy && <a class="note-topic" href={`/atlas/${galaxy.id}/`}>{galaxy.name}</a>}
+          {galaxy && <span class="note-topic">{galaxy.name}</span>}
           <span class="note-meta__divider">/</span>
           <time datetime={entry.data.date.toISOString().slice(0, 10)}>
             {entry.data.date.toISOString().slice(0, 10)}

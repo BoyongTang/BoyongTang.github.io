@@ -11,7 +11,7 @@ Personal academic homepage for **Boyong Tang (けるゔぃん・とう)**, built
 
 1. **Truth Before Visuals:** Only results that publicly exist are shown; everything else stays a draft. Publication records are strictly distinguished from work in progress.
 2. **Static-First with Astro:** All content is pre-rendered at build time. Search engines and screen readers can access the full textual hierarchy with JavaScript disabled.
-3. **Research Universe:** one SVG galaxy per field, unnamed on the map. Entering a galaxy opens a detailed chart where each real result is a labelled star (no connecting lines). Map / List views; every galaxy also has its own page.
+3. **A Quiet Star Band:** the home page is a full-screen band of stars with five nebulae, one per part of me (Research, Toolbox, Path, Works, Contact; `src/data/facets.ts`). Entering a nebula opens its star map (`/sky/<part>/`): drag, zoom, select a star for its card. Every star is real content (`src/lib/sky.ts`); lines join only declared relations. Each map is also a plain list below it, which is what keyboard, screen-reader and no-JavaScript visitors get.
 4. **Editorial Reading Surface:** Research dossiers and field notes feature a high-contrast reading surface (`--reading-paper`), full KaTeX mathematical typesetting, and structured sections (*Question → Motivation → Approach → Evidence → Limitations → Next*).
 
 ---
@@ -28,7 +28,7 @@ npm run dev
 # Build, then check every internal link and #anchor (CI runs the same)
 npm test
 
-# Regenerate public/og.png from the atlas data (Node ≥ 23.6)
+# Regenerate public/og.png from the star band data (Node ≥ 23.6)
 npm run og
 
 # Preview production build locally

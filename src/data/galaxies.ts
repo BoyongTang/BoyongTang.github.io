@@ -1,10 +1,7 @@
-// The research universe: one galaxy per field. Galaxies carry no names on the map — the name appears only
-// once a visitor enters a galaxy (and in the list view / screen-reader label).
+// Research fields. Research dossiers and notes name one through their `topic` field; a dossier's page
+// shows its field as a small galaxy (GalaxyArt), drawn from `seed` so it is the same on every visit.
 //
-// Stars are decoration, generated from `seed` so the sky is identical on every visit. Results (papers,
-// projects, notes, research) belong to a galaxy through their `topic` / `galaxy` field, never to a star.
-//
-// Position and size are a conceptual layout on a 1000 × 700 sky — not coordinates, not a ranking.
+// Position and size are a layout on a 1000 × 700 sky — not coordinates, not a ranking.
 
 export type GalaxyForm = 'spiral' | 'elliptical' | 'ring';
 export type Hue = 'cyan' | 'gold' | 'green' | 'star';

@@ -9,6 +9,13 @@ export default defineConfig({
   site: 'https://boyongtang.github.io',
   trailingSlash: 'always',
   build: { format: 'directory' },
+  // the old research atlas became the star band (home) and its nebulae
+  redirects: {
+    '/atlas': '/',
+    '/atlas/math': '/sky/research/',
+    '/atlas/ai': '/sky/research/',
+    '/atlas/teaching': '/sky/research/',
+  },
   markdown: {
     processor: unified({
       remarkPlugins: [remarkMath],

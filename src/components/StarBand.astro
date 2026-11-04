@@ -1,0 +1,519 @@
+---
+// The home page sky: a quiet band of stars across the screen, five nebulae along it (one per part of me),
+// and the name in the dark beside it. The band is painted by src/scripts/band.ts; without JavaScript a
+// soft gradient stands in, and every nebula is still a plain link to its star map.
+import { facets } from '../data/facets';
+import { profile } from '../data/profile';
+import { BANDS, REF, spotAt } from '../lib/band';
+import type { SkyFacet } from '../lib/sky';
+
+interface Props {
+  sky: SkyFacet[];
+}
+
+const { sky } = Astro.props;
+const count = new Map(sky.map((f) => [f.id, f.items.length]));
+const pct = (v: number) => `${v.toFixed(2)}%`;
+const spots = facets.map((f, i) => {
+  const [wx, wy] = spotAt(BANDS.wide, f.t, f.side, REF.wide.w, REF.wide.h);
+  const [tx, ty] = spotAt(BANDS.tall, f.t, f.side, REF.tall.w, REF.tall.h);
+  const n = count.get(f.id) ?? 0;
+  return {
+    f,
+    n,
+    style: [
+      `--wx:${pct((wx / REF.wide.w) * 100)}`,
+      `--wy:${pct((wy / REF.wide.h) * 100)}`,
+      `--tx:${pct((tx / REF.tall.w) * 100)}`,
+      `--ty:${pct((ty / REF.tall.h) * 100)}`,
+      `--c:${f.color}`,
+      `--d:${f.deep}`,
+      `--i:${i}`,
+    ].join(';'),
+    flip: wx / REF.wide.w > 0.8,
+  };
+});
+---
+
+<script is:inline>
+  // Decide before the first paint whether the band's opening plays: once per visit, never with reduced
+  // motion. ?intro plays it again.
+  (function () {
+    var html = document.documentElement;
+    var force = /[?&]intro\b/.test(location.search);
+    var reduce = html.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var seen = false;
+    try { seen = sessionStorage.getItem('oq.band') === '1'; } catch (e) {}
+    if (reduce || (seen && !force)) return;
+    html.classList.add('band-intro');
+    // if the script never runs, never leave the page half-revealed
+    setTimeout(function () { if (!html.dataset.band) html.classList.remove('band-intro'); }, 4000);
+  })();
+</script>
+
+<section class="sky" aria-labelledby="sky-name" data-sky>
+  <div class="sky__stage" data-stage>
+    <div class="sky__band" aria-hidden="true">
+      <canvas class="sky__canvas" data-canvas></canvas>
+    </div>
+    <div class="sky__glints" aria-hidden="true" data-glints></div>
+
+    <nav class="sky__nebulae" aria-label="Five parts of me">
+      {
+        spots.map(({ f, n, style, flip }) => (
+          <a
+            class:list={['nebula', flip && 'nebula--flip']}
+            href={`/sky/${f.id}/`}
+            id={`n-${f.id}`}
+            style={style}
+            data-nebula={f.id}
+            data-t={f.t}
+            data-side={f.side}
+            aria-label={`${f.name}, ${f.nameZh}: ${f.line} ${n} ${n === 1 ? 'star' : 'stars'}.`}
+          >
+            <span class="nebula__cloud" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span class="nebula__ring" aria-hidden="true" />
+            <span class="nebula__core" aria-hidden="true" />
+            <span class="nebula__label" aria-hidden="true">
+              <span class="nebula__name">{f.name}</span>
+              <span class="nebula__zh" lang="zh">
+                {f.nameZh} · {String(n).padStart(2, '0')}
+              </span>
+            </span>
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+
+  <div class="sky__id">
+    <p class="sky__eyebrow">O / Q · Observatory of Questions</p>
+    <h1 id="sky-name" class="sky__name">{profile.name}</h1>
+    {profile.altNames.length > 0 && <p class="sky__alt">{profile.altNames.join(' · ')}</p>}
+    <p class="sky__role">{profile.role} · {profile.affiliation}</p>
+    <p class="sky__tagline">{profile.tagline}</p>
+  </div>
+
+  <div class="sky__foot">
+    <p class="sky__hint">Five nebulae, five parts of me. Enter one.</p>
+    <a class="sky__down" href="#me">About me ↓</a>
+  </div>
+</section>
+
+<script>
+  import { initBand } from '../scripts/band';
+
+  const root = document.querySelector<HTMLElement>('[data-sky]');
+  if (root) initBand(root);
+</script>
+
+<style>
+  .sky {
+    position: relative;
+    height: calc(100svh - var(--nav-h));
+    min-height: 520px;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+      radial-gradient(ellipse 70% 45% at 52% 60%, rgb(40 52 78 / 0.35), transparent 70%),
+      linear-gradient(180deg, #03060b 0%, #05080e 60%, #070b12 100%);
+    border-bottom: 1px solid var(--hairline-soft);
+  }
+
+  .sky__stage {
+    position: absolute;
+    inset: 0;
+    transform-origin: var(--ox, 50%) var(--oy, 50%);
+  }
+
+  .sky__band {
+    position: absolute;
+    inset: -2%;
+    /* stand-in band until the canvas paints (and without JavaScript) */
+    background: linear-gradient(-32deg, transparent 32%, rgb(150 170 215 / 0.1) 46%, rgb(255 222 190 / 0.13) 52%, rgb(150 170 215 / 0.08) 58%, transparent 72%);
+  }
+
+  .sky__band.is-painted {
+    background: none;
+  }
+
+  .sky__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 900ms ease-out;
+  }
+
+  .sky__band.is-painted .sky__canvas {
+    opacity: 1;
+  }
+
+  /* the sky barely moves: a slow drift over two minutes */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .sky__band {
+      animation: band-drift 140s ease-in-out infinite alternate;
+    }
+  }
+
+  @keyframes band-drift {
+    from { transform: translate(0, 0) scale(1); }
+    to { transform: translate(-1.2%, 0.8%) scale(1.035); }
+  }
+
+  /* a few stars that breathe */
+  .sky__glints {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .sky__glints :global(i) {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    margin: -1px 0 0 -1px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 4px 1px var(--g, #c2d9ff);
+    opacity: 0.25;
+    animation: glint var(--gd, 7s) ease-in-out var(--gl, 0s) infinite;
+  }
+
+  @keyframes glint {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.85; }
+  }
+
+  /* ── nebulae ── */
+  .nebula {
+    --s: clamp(96px, 15vmin, 190px);
+    position: absolute;
+    left: var(--wx);
+    top: var(--wy);
+    width: calc(var(--s) * 0.7);
+    height: calc(var(--s) * 0.7);
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    color: var(--c);
+    text-decoration: none;
+    outline: none;
+    z-index: 1;
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .nebula {
+      left: var(--tx);
+      top: var(--ty);
+    }
+  }
+
+  .nebula__cloud,
+  .nebula__ring,
+  .nebula__core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .nebula__cloud {
+    width: var(--s);
+    height: var(--s);
+    margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+    mix-blend-mode: screen;
+    filter: blur(calc(var(--s) * 0.05));
+    opacity: 0.78;
+    transition: opacity 600ms ease, transform 900ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .nebula__cloud i {
+    position: absolute;
+    border-radius: 50%;
+  }
+
+  .nebula__cloud i:nth-child(1) {
+    inset: 0;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 42%, transparent), color-mix(in srgb, var(--d) 22%, transparent) 55%, transparent);
+  }
+
+  .nebula__cloud i:nth-child(2) {
+    left: 4%;
+    top: 22%;
+    width: 78%;
+    height: 48%;
+    transform: rotate(-24deg);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--d) 70%, transparent), transparent);
+  }
+
+  .nebula__cloud i:nth-child(3) {
+    left: 30%;
+    top: 34%;
+    width: 44%;
+    height: 34%;
+    transform: rotate(32deg);
+    background: radial-gradient(closest-side, rgb(255 255 255 / 0.55), color-mix(in srgb, var(--c) 45%, transparent) 40%, transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .nebula__cloud {
+      animation: nebula-turn calc(90s + var(--i) * 17s) linear infinite;
+    }
+  }
+
+  @keyframes nebula-turn {
+    to { rotate: 360deg; }
+  }
+
+  .nebula__core {
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    background: #fff;
+    box-shadow: 0 0 6px 2px color-mix(in srgb, var(--c) 80%, transparent), 0 0 18px 6px color-mix(in srgb, var(--c) 30%, transparent);
+  }
+
+  .nebula__ring {
+    width: calc(var(--s) * 0.5);
+    height: calc(var(--s) * 0.5);
+    margin: calc(var(--s) * -0.25) 0 0 calc(var(--s) * -0.25);
+    border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+    opacity: 0;
+    transform: scale(0.75);
+    transition: opacity 300ms ease, transform 500ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .nebula__label {
+    position: absolute;
+    left: calc(50% + 16px);
+    top: calc(50% + 10px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    text-shadow: 0 0 3px #03060b, 0 0 8px #03060b, 0 0 14px rgb(3 6 11 / 0.8);
+  }
+
+  .nebula--flip .nebula__label {
+    left: auto;
+    right: calc(50% + 16px);
+    align-items: flex-end;
+  }
+
+  .nebula__name {
+    font: 500 12px/1 var(--font-mono);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--c) 75%, #fff);
+    opacity: 0.85;
+    transition: opacity 300ms ease;
+  }
+
+  .nebula__zh {
+    font: 400 12px/1 var(--font-mono);
+    letter-spacing: 0.12em;
+    color: var(--dim);
+  }
+
+  .nebula:hover .nebula__cloud,
+  .nebula:focus-visible .nebula__cloud {
+    opacity: 1;
+    transform: scale(1.14);
+  }
+
+  .nebula:hover .nebula__ring,
+  .nebula:focus-visible .nebula__ring {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .nebula:hover .nebula__name,
+  .nebula:focus-visible .nebula__name {
+    opacity: 1;
+  }
+
+  .nebula:focus-visible .nebula__ring {
+    border-width: 2px;
+    border-color: var(--selection-gold);
+  }
+
+  /* ── the name, in the dark beside the band ── */
+  .sky__id {
+    position: absolute;
+    left: var(--gutter);
+    top: clamp(48px, 13vh, 130px);
+    max-width: min(560px, 62vw);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .sky__eyebrow {
+    margin: 0 0 6px;
+    font: 500 11.5px/1.4 var(--font-mono);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  .sky__name {
+    margin: 0;
+    font: 600 clamp(42px, 6.2vw, 84px) / 1 var(--font-display);
+    letter-spacing: -0.025em;
+    color: var(--starlight);
+    text-shadow: 0 2px 30px rgb(0 0 0 / 0.6);
+  }
+
+  .sky__alt {
+    margin: 0;
+    font: 500 13px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    color: var(--dim);
+  }
+
+  .sky__role {
+    margin: 8px 0 0;
+    font: 500 12px/1.6 var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .sky__tagline {
+    position: relative;
+    margin: 10px 0 0;
+    padding-top: 16px;
+    font: 400 clamp(18px, 1.7vw, 22px) / 1.35 var(--font-display);
+    color: var(--starlight);
+  }
+
+  .sky__tagline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 72px;
+    height: 1px;
+    background: var(--selection-gold);
+  }
+
+  .sky__foot {
+    position: absolute;
+    right: var(--gutter);
+    bottom: 22px;
+    display: flex;
+    align-items: baseline;
+    gap: 22px;
+    font: 500 11.5px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    z-index: 2;
+  }
+
+  .sky__hint {
+    margin: 0;
+    color: var(--dim);
+  }
+
+  .sky__down {
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .sky__down:hover {
+    color: var(--starlight);
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .sky__id {
+      top: 28px;
+      max-width: none;
+      right: var(--gutter);
+    }
+
+    .sky__foot {
+      left: var(--gutter);
+      justify-content: flex-end;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .sky__hint {
+      display: none;
+    }
+  }
+
+  /* ── leaving for a nebula: the camera falls into it ── */
+  .sky.is-diving .sky__stage {
+    transition: transform 720ms cubic-bezier(0.55, 0, 0.85, 0.35), opacity 720ms ease-in;
+    transform: scale(5);
+    opacity: 0;
+  }
+
+  .sky.is-diving .sky__id,
+  .sky.is-diving .sky__foot {
+    transition: opacity 300ms ease;
+    opacity: 0;
+  }
+
+  /* ── the opening: the band lights up from the lower left, then each nebula, then the name ── */
+  :global(html.band-intro) .sky__band {
+    -webkit-mask-image: radial-gradient(circle at 0% 100%, #000 var(--reveal), transparent calc(var(--reveal) + 30%));
+    mask-image: radial-gradient(circle at 0% 100%, #000 var(--reveal), transparent calc(var(--reveal) + 30%));
+    animation: band-reveal 2800ms cubic-bezier(0.3, 0.1, 0.2, 1) both;
+  }
+
+  :global(html.band-intro) .nebula {
+    animation: nebula-ignite 1300ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+    animation-delay: calc(900ms + var(--i) * 260ms);
+  }
+
+  :global(html.band-intro) .nebula__label {
+    animation: fade-in 900ms ease-out both;
+    animation-delay: calc(1500ms + var(--i) * 260ms);
+  }
+
+  :global(html.band-intro) .sky__id > * {
+    animation: band-rise 1000ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  :global(html.band-intro) .sky__eyebrow { animation-delay: 300ms; }
+  :global(html.band-intro) .sky__name { animation-delay: 500ms; }
+  :global(html.band-intro) .sky__alt { animation-delay: 700ms; }
+  :global(html.band-intro) .sky__role { animation-delay: 850ms; }
+  :global(html.band-intro) .sky__tagline { animation-delay: 1000ms; }
+
+  :global(html.band-intro) .sky__foot {
+    animation: fade-in 900ms ease-out 2600ms both;
+  }
+
+  @property --reveal {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 160%;
+  }
+
+  @keyframes band-reveal {
+    from { --reveal: -30%; }
+    to { --reveal: 160%; }
+  }
+
+  @keyframes nebula-ignite {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  @keyframes band-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>
