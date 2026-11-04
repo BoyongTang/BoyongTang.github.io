@@ -1,30 +1,38 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { statusLabel } from '../../lib/graph';
+import { loadGraph, statusLabel } from '../../lib/graph';
 
 const research = (await getCollection('research')).sort(
-  (a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime()
+  (a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime(),
 );
-
-const topics = [...new Set(research.map((r) => r.data.topic))];
+const graph = await loadGraph();
+const questions = graph.nodes.filter((n) => n.type === 'question');
+const methods = graph.nodes.filter((n) => n.type === 'method');
+const iso = (d: Date) => d.toISOString().slice(0, 10);
 ---
 
-<Base title="Research Index" description="Research questions, methods, and ongoing inquiries.">
+<Base title="Research" description="Research dossiers, open questions and the methods they use.">
   <div class="wrap">
     <header class="page-head">
-      <p class="kicker">01 / RESEARCH INDEX</p>
-      <h1>Research Inquiries</h1>
+      <p class="kicker">01 / Research</p>
+      <h1>Research</h1>
       <p>
-        A collection of open research questions, experimental investigations, and methodological explorations.
-        Organized by inquiry status and relation to core problems.
+        What I am working on, the questions behind it, and the methods it uses. Each status is the real stage of the
+        work; results are linked only once they can be shared.
       </p>
       <div class="head-actions">
-        <a class="btn" href="/atlas/">Open Research Atlas ↗</a>
+        <a class="btn" href="/atlas/">Explore as a map</a>
       </div>
     </header>
 
-    <div class="section">
+    <section class="section" aria-labelledby="dossiers">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Dossiers / {String(research.length).padStart(2, '0')}</p>
+          <h2 id="dossiers">Projects in progress</h2>
+        </div>
+      </div>
       <ul class="signals">
         {research.map((item) => (
           <li class="signal">
@@ -32,25 +40,103 @@ const topics = [...new Set(research.map((r) => r.data.topic))];
               <span class="code">{item.data.code}</span>
               <div>
                 <span class="signal__title">{item.data.title}</span>
-                <p class="signal__summary">{item.data.question}</p>
+                <p class="signal__summary">{item.data.summary}</p>
               </div>
               <div class="signal__meta">
                 <span class={`status status--${item.data.status}`}>{statusLabel(item.data.status)}</span>
                 {item.data.sample && <span class="sample-tag">SAMPLE</span>}
-                <time datetime={item.data.updatedAt.toISOString().slice(0, 10)}>
-                  {item.data.updatedAt.toISOString().slice(0, 10)}
-                </time>
+                <time datetime={iso(item.data.updatedAt)}>Updated {iso(item.data.updatedAt)}</time>
               </div>
             </a>
           </li>
         ))}
       </ul>
-    </div>
+    </section>
+
+    <section class="section" aria-labelledby="questions">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Signals / {String(questions.length).padStart(2, '0')}</p>
+          <h2 id="questions">Open questions</h2>
+        </div>
+      </div>
+      <ul class="signals">
+        {questions.map((q) => (
+          <li class="signal">
+            <a href={q.url}>
+              <span class="code">{q.code}</span>
+              <div>
+                <span class="signal__title">{q.title}</span>
+                <p class="signal__summary">{q.summary}</p>
+              </div>
+              <div class="signal__meta">
+                <span class="status status--open">OPEN QUESTION</span>
+                <span>{q.topicLabel}</span>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="methods">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Methods / {String(methods.length).padStart(2, '0')}</p>
+          <h2 id="methods">Methods in use</h2>
+        </div>
+      </div>
+      <ul class="method-grid">
+        {methods.map((m) => (
+          <li>
+            <a href={m.url}>
+              <span class="code">{m.code}</span>
+              <strong>{m.title}</strong>
+              <span>{m.summary}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
   </div>
 </Base>
 
 <style>
   .head-actions {
     margin-top: 24px;
+  }
+
+  .method-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .method-grid a {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    padding: 20px;
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+    background: rgb(11 29 48 / 0.5);
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.55;
+    text-decoration: none;
+    transition: border-color var(--t-identify) var(--ease);
+  }
+
+  .method-grid a:hover {
+    border-color: var(--signal-cyan);
+  }
+
+  .method-grid strong {
+    color: var(--starlight);
+    font: 600 18px/1.3 var(--font-display);
   }
 </style>

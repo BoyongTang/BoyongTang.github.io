@@ -116,6 +116,11 @@ p {
   margin: 0 0 1em;
 }
 
+/* `hidden` must win over component display rules (e.g. .sample-tag, flex panels) */
+[hidden] {
+  display: none !important;
+}
+
 .visually-hidden {
   position: absolute !important;
   width: 1px;
@@ -197,12 +202,14 @@ p {
 }
 
 .status--completed,
-.status--published {
+.status--published,
+.status--note {
   color: var(--starlight);
 }
 
 .status--completed::before,
-.status--published::before {
+.status--published::before,
+.status--note::before {
   background: currentColor;
   border-radius: 1px;
 }

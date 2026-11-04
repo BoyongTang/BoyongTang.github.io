@@ -18,6 +18,19 @@ const graph = await loadGraph();
 // Find the corresponding node in the graph
 const thisNode = graph.nodes.find((n) => n.url === `/research/${entry.id}/`);
 const related = thisNode ? relationsOf(graph, thisNode.id) : [];
+
+// The mini sky is the real neighbourhood from the atlas, scaled to fit — not a decorative pattern.
+const local = thisNode ? [thisNode, ...related.map((r) => r.other)] : [];
+const localIds = new Set(local.map((n) => n.id));
+const localEdges = graph.edges.filter((e) => localIds.has(e.source) && localIds.has(e.target));
+const xs = local.map((n) => n.x);
+const ys = local.map((n) => n.y);
+const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1);
+const scale = 180 / span;
+const cx = (Math.max(...xs) + Math.min(...xs)) / 2;
+const cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+const pos = new Map(local.map((n) => [n.id, { x: 120 + (n.x - cx) * scale, y: 120 + (n.y - cy) * scale }]));
+const iso = (d: Date) => d.toISOString().slice(0, 10);
 ---
 
 <Base title={entry.data.title} description={entry.data.summary}>
@@ -32,9 +45,7 @@ const related = thisNode ? relationsOf(graph, thisNode.id) : [];
             <span class={`status status--${entry.data.status}`}>{statusLabel(entry.data.status)}</span>
             {entry.data.sample && <span class="sample-tag">SAMPLE</span>}
             <span class="dossier-meta__divider">/</span>
-            <time datetime={entry.data.updatedAt.toISOString().slice(0, 10)}>
-              {entry.data.updatedAt.toISOString().slice(0, 10)}
-            </time>
+            <time datetime={iso(entry.data.updatedAt)}>Updated {iso(entry.data.updatedAt)}</time>
           </div>
           <h1 class="dossier-title">{entry.data.title}</h1>
           <p class="dossier-lead">{entry.data.question}</p>
@@ -46,7 +57,7 @@ const related = thisNode ? relationsOf(graph, thisNode.id) : [];
 
         {entry.data.links && entry.data.links.length > 0 && (
           <footer class="dossier-links">
-            <h3 class="eyebrow">Public Artifacts &amp; Resources</h3>
+            <h2 class="eyebrow">Public artefacts</h2>
             <div class="links-list">
               {entry.data.links.map((link) => (
                 <a class="btn btn--primary" href={link.href} target="_blank" rel="noopener">
@@ -59,11 +70,11 @@ const related = thisNode ? relationsOf(graph, thisNode.id) : [];
       </article>
 
       <!-- ── Right Column: Context & Relation Sky ── -->
-      <aside class="dossier-sidebar" aria-label="Research Signal &amp; Relations">
+      <aside class="dossier-sidebar" aria-label="Related research">
         <div class="sidebar-block">
           <div class="sidebar-head">
-            <p class="eyebrow">RESEARCH SIGNAL</p>
-            <a class="sidebar-back" href="/research/">← All Research</a>
+            <p class="eyebrow">Research signal / {entry.data.code}</p>
+            <a class="sidebar-back" href="/research/">← Back to research</a>
           </div>
 
           <div class="mini-sky">
@@ -75,28 +86,32 @@ const related = thisNode ? relationsOf(graph, thisNode.id) : [];
               <line x1="15" y1="120" x2="225" y2="120" class="mini-axis" />
               <line x1="120" y1="15" x2="120" y2="225" class="mini-axis" />
 
-              <!-- relations lines -->
-              {related.map((rel, idx) => {
-                const angle = (idx / related.length) * 2 * Math.PI - Math.PI / 2;
-                const ox = 120 + 75 * Math.cos(angle);
-                const oy = 120 + 75 * Math.sin(angle);
-                return (
+              {localEdges.map((e) => {
+                const p = pos.get(e.source)!;
+                const q = pos.get(e.target)!;
+                const touches = e.source === thisNode?.id || e.target === thisNode?.id;
+                return <line x1={p.x} y1={p.y} x2={q.x} y2={q.y} class:list={['mini-rel-line', !touches && 'mini-rel-line--far']} stroke-dasharray={e.dash || undefined} />;
+              })}
+              {local.map((n) => {
+                const p = pos.get(n.id)!;
+                return n.id === thisNode?.id ? (
                   <g>
-                    <line x1="120" y1="120" x2={ox} y2={oy} class="mini-rel-line" stroke-dasharray="3 3" />
-                    <circle cx={ox} cy={oy} r="4" class="mini-node" />
+                    <circle cx={p.x} cy={p.y} r="12" class="mini-central-glow" />
+                    <circle cx={p.x} cy={p.y} r="6" class="mini-central-core" />
+                  </g>
+                ) : (
+                  <g>
+                    <circle cx={p.x} cy={p.y} r="4" class={`mini-node mini-node--${n.type}`} />
+                    <text x={p.x} y={p.y + (p.y > 120 ? 16 : -9)} text-anchor="middle" class="mini-code">{n.code}</text>
                   </g>
                 );
               })}
-
-              <!-- central active node -->
-              <circle cx="120" cy="120" r="12" class="mini-central-glow" />
-              <circle cx="120" cy="120" r="6" class="mini-central-core" />
             </svg>
           </div>
 
           {related.length > 0 ? (
             <div class="sidebar-relations">
-              <h3 class="eyebrow">RELATED SIGNALS / {String(related.length).padStart(2, '0')}</h3>
+              <h2 class="eyebrow">Related signals / {String(related.length).padStart(2, '0')}</h2>
               <ul class="related-list">
                 {related.map((r) => (
                   <li class="related-item">
@@ -117,11 +132,11 @@ const related = thisNode ? relationsOf(graph, thisNode.id) : [];
           <div class="sidebar-atlas-link">
             {thisNode ? (
               <a class="btn btn--ghost" href={`/atlas/#${thisNode.id}`}>
-                View in Full Atlas ↗
+                Show in atlas →
               </a>
             ) : (
               <a class="btn btn--ghost" href="/atlas/">
-                View in Full Atlas ↗
+                Show in atlas →
               </a>
             )}
           </div>
@@ -252,15 +267,32 @@ const related = thisNode ? relationsOf(graph, thisNode.id) : [];
   }
 
   .mini-rel-line {
-    stroke: var(--signal-cyan);
+    stroke: var(--orbit-green);
     stroke-width: 1.2;
     stroke-opacity: 0.8;
   }
 
+  .mini-rel-line--far {
+    stroke-opacity: 0.3;
+  }
+
   .mini-node {
-    fill: var(--orbit-green);
+    fill: var(--starlight);
     stroke: var(--space-950);
     stroke-width: 1;
+  }
+
+  .mini-node--question,
+  .mini-node--method {
+    fill: var(--space-900);
+    stroke: var(--signal-cyan);
+    stroke-width: 1.4;
+  }
+
+  .mini-code {
+    font: 500 9px var(--font-mono);
+    letter-spacing: 0.08em;
+    fill: var(--dim);
   }
 
   .mini-central-glow {
@@ -271,7 +303,7 @@ const related = thisNode ? relationsOf(graph, thisNode.id) : [];
     fill: var(--selection-gold);
   }
 
-  .sidebar-relations h3 {
+  .sidebar-relations h2 {
     margin: 0 0 10px;
   }
 

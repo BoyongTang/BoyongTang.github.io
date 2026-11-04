@@ -25,8 +25,11 @@ npm install
 # Start local development server
 npm run dev
 
-# Build production static site
-npm run build
+# Build, then check every internal link and #anchor (CI runs the same)
+npm test
+
+# Regenerate public/og.png from the atlas data (Node ≥ 23.6)
+npm run og
 
 # Preview production build locally
 npm run preview
@@ -40,3 +43,6 @@ npm run preview
 - **Research Dossiers:** Add or edit Markdown files under [`src/content/research/`](src/content/research/).
 - **Field Notes & Proofs:** Add or edit Markdown files under [`src/content/notes/`](src/content/notes/).
 - **Atlas Map & Edges:** Configure nodes, topics, and relation edges in [`src/data/atlas.ts`](src/data/atlas.ts).
+  The build refuses unknown refs, missing titles/URLs, unknown topics or relations, and edges without a description.
+- **Projects:** `projects` in [`src/data/profile.ts`](src/data/profile.ts). Leave `repo` empty until a repository is public.
+- **CV:** put the PDF in `public/` and set `profile.cv`; until then every CV link goes to `/about/#cv`.

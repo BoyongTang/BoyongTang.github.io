@@ -6,19 +6,20 @@ import { loadGraph } from '../lib/graph';
 const graph = await loadGraph();
 ---
 
-<Base title="Research Atlas" description="Interactive celestial knowledge map of questions, methods, and evidence.">
+<Base title="Research Atlas" description="An explorable map of research questions, methods, projects and notes, with a plain list view.">
   <div class="wrap atlas-page-wrap">
     <header class="page-head">
-      <p class="kicker">06 / CELESTIAL KNOWLEDGE MAP</p>
+      <p class="kicker">Explore / Atlas</p>
       <h1>Research Atlas</h1>
       <p>
-        An interactive map of questions, methods, and evidence.
-        Explore how problems motivate approaches, and how field notes document emerging questions.
+        Questions, methods, projects and notes, joined only by relations that are declared and explained. Select a
+        point to see what it connects to, or switch to the list. Everything here is also reachable from the normal
+        pages.
       </p>
     </header>
 
     <div class="atlas-full-container">
-      <Atlas graph={graph} mode="full" heading="Full Research Sky" />
+      <Atlas graph={graph} mode="full" heading="Research sky / Full atlas" />
     </div>
   </div>
 </Base>
@@ -36,6 +37,6 @@ const graph = await loadGraph();
     display: flex;
     flex-direction: column;
     margin-top: 24px;
-    min-height: 720px;
+    min-height: min(760px, 90vh);
   }
 </style>

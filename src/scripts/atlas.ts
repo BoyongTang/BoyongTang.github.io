@@ -199,6 +199,8 @@ export function initAtlas(root: HTMLElement) {
     if (!r.width || !r.height) return;
     const k = Math.max(vb.w / r.width, vb.h / r.height);
     root.style.setProperty('--k', k.toFixed(3));
+    // drawn small: hide secondary labels so the named points stay readable
+    root.classList.toggle('is-dense', k > 1.55);
   }
 
   function applyView() {
@@ -325,15 +327,16 @@ export function initAtlas(root: HTMLElement) {
   /* ── map / list ──────────────────────────── */
 
   const viewBtns = root.querySelectorAll<HTMLButtonElement>('[data-view]');
-  viewBtns.forEach((b) =>
-    b.addEventListener('click', () => {
-      const list = b.dataset.view === 'list';
-      viewBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-      mapEl.hidden = list;
-      listEl.hidden = !list;
-      if (!list) updateScale();
-    }),
-  );
+  function setView(list: boolean) {
+    viewBtns.forEach((x) => x.setAttribute('aria-pressed', String((x.dataset.view === 'list') === list)));
+    mapEl.hidden = list;
+    listEl.hidden = !list;
+    if (!list) updateScale();
+  }
+  viewBtns.forEach((b) => b.addEventListener('click', () => setView(b.dataset.view === 'list')));
+
+  // phones read the list first; the map stays one tap away
+  if (full && !location.hash && matchMedia('(max-width: 767px)').matches) setView(true);
 
   /* ── search & topic filter (full atlas) ──── */
 

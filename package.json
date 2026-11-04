@@ -7,7 +7,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check:atlas": "node scripts/check-atlas.mjs"
+    "check": "node scripts/check-links.mjs",
+    "test": "astro build && node scripts/check-links.mjs",
+    "og": "node scripts/make-og.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.5",

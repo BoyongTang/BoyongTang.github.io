@@ -1,76 +1,43 @@
 ---
-import { profile } from '../data/profile';
+import { projects } from '../data/profile';
 import Base from '../layouts/Base.astro';
-
-interface Project {
-  code: string;
-  name: string;
-  tagline: string;
-  desc: string;
-  tech: string[];
-  status: string;
-  repo: string;
-  demo?: string;
-  sample?: boolean;
-}
-
-const projects: Project[] = [
-  {
-    code: 'T-01',
-    name: 'Observatory of Questions',
-    tagline: 'Deep-space personal research atlas & academic homepage',
-    desc: 'The code powering this site: Astro, TypeScript, SVG-based knowledge graph, accessible semantic list fallback, and zero heavy 3D overhead.',
-    tech: ['Astro', 'TypeScript', 'SVG', 'KaTeX'],
-    status: 'ACTIVE',
-    repo: 'https://github.com/BoyongTang/BoyongTang.github.io',
-    sample: false,
-  },
-  {
-    code: 'T-02',
-    name: 'ML-Practice & Notes',
-    tagline: 'Foundations of machine learning from mathematical first principles',
-    desc: 'Lecture notes, numerical simulations, and reference implementations for classic and modern machine learning algorithms.',
-    tech: ['Python', 'Jupyter', 'NumPy', 'PyTorch'],
-    status: 'ACTIVE',
-    repo: 'https://github.com/BoyongTang/ML-practice',
-    sample: false,
-  },
-];
 ---
 
-<Base title="Projects & Instruments" description="Open-source tools, scientific code, and software experiments.">
+<Base title="Projects" description="Code and teaching work: what each project is for, its scope and its real status.">
   <div class="wrap">
     <header class="page-head">
-      <p class="kicker">04 / INSTRUMENTS</p>
-      <h1>Projects &amp; Instruments</h1>
+      <p class="kicker">03 / Instruments</p>
+      <h1>Projects</h1>
       <p>
-        Computational tools, research code, and software repositories.
-        Clear division between experimental prototypes and maintained libraries.
+        Code and teaching work behind the research. A repository link appears only once the repository is public.
       </p>
     </header>
 
     <div class="section">
       <div class="projects-grid">
         {projects.map((proj) => (
-          <article class="proj-card">
+          <article class="proj-card" id={proj.id}>
             <header class="proj-card__head">
               <span class="code">{proj.code}</span>
-              <span class="status status--active">{proj.status}</span>
+              <span class={`status status--${proj.status.toLowerCase()}`}>{proj.status.toUpperCase()}</span>
             </header>
             <h2 class="proj-card__title">{proj.name}</h2>
-            <p class="proj-card__tagline">{proj.tagline}</p>
-            <p class="proj-card__desc">{proj.desc}</p>
+            {proj.nameZh && <p class="proj-card__tagline" lang="zh">{proj.nameZh}</p>}
+            <p class="proj-card__desc">{proj.summary}</p>
+            <ul class="proj-card__scope">
+              {proj.scope.map((item) => <li>{item}</li>)}
+            </ul>
             <div class="proj-card__tech">
               {proj.tech.map((t) => <span class="tech-tag">{t}</span>)}
             </div>
             <div class="proj-card__links">
-              <a class="btn" href={proj.repo} target="_blank" rel="noopener">
-                Repository ↗
-              </a>
-              {proj.demo && (
-                <a class="btn btn--ghost" href={proj.demo} target="_blank" rel="noopener">
-                  Demo ↗
-                </a>
+              {proj.repo ? (
+                <a class="btn" href={proj.repo} rel="noopener">Repository ↗</a>
+              ) : (
+                <span class="proj-card__pending">Repository not public yet</span>
+              )}
+              {proj.research && (
+                <a class="btn btn--ghost" href={`/research/${proj.research}/`}>Research dossier →</a>
               )}
             </div>
           </article>
@@ -83,7 +50,7 @@ const projects: Project[] = [
 <style>
   .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
     gap: 24px;
   }
 
@@ -138,9 +105,34 @@ const projects: Project[] = [
     color: var(--starlight);
   }
 
+  .proj-card {
+    scroll-margin-top: calc(var(--nav-h) + 24px);
+  }
+
+  .proj-card:target {
+    border-color: var(--selection-gold);
+  }
+
+  .proj-card__scope {
+    margin: 0;
+    padding-left: 1.1em;
+    color: var(--muted);
+    font-size: 14.5px;
+    line-height: 1.6;
+  }
+
   .proj-card__links {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 12px;
     margin-top: 8px;
+  }
+
+  .proj-card__pending {
+    font: 500 12px var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
   }
 </style>

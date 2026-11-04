@@ -1,72 +1,116 @@
 ---
+import { getCollection } from 'astro:content';
 import Atlas from '../components/Atlas.astro';
-import { profile } from '../data/profile';
+import { cvHref, profile } from '../data/profile';
+import { VIEW } from '../data/atlas';
 import Base from '../layouts/Base.astro';
-import { loadGraph } from '../lib/graph';
+import { loadGraph, statusLabel } from '../lib/graph';
 
 const graph = await loadGraph();
-const signals = graph.nodes
-  .filter((n) => n.type === 'research' || n.type === 'note')
+
+// The three most recent real entries, newest first (dossiers before notes on the same day).
+const research = (await getCollection('research')).map((e) => ({
+  code: e.data.code, title: e.data.title, url: `/research/${e.id}/`, date: e.data.updatedAt, rank: 0,
+  status: e.data.status, label: statusLabel(e.data.status),
+}));
+const notes = (await getCollection('notes')).map((e) => ({
+  code: e.data.code, title: e.data.title, url: `/notes/${e.id}/`, date: e.data.date, rank: 1,
+  status: 'note', label: 'NOTE',
+}));
+const signals = [...research, ...notes]
+  .sort((a, b) => b.date.getTime() - a.date.getTime() || a.rank - b.rank || a.code.localeCompare(b.code))
   .slice(0, 3);
+
+const byId = new Map(graph.nodes.map((n) => [n.id, n]));
 ---
 
 <Base>
   <div class="home-viewport">
     <div class="wrap home-grid">
-      <!-- ── Left Column: Identity & Direct Access ── -->
+      <!-- ── Left: identity and direct access ── -->
       <section class="identity-pane" aria-labelledby="observer-heading">
         <div class="identity-pane__inner">
           <div class="identity-header">
-            <p class="eyebrow">OBSERVER / PROFILE 001</p>
-            <h1 id="observer-heading" class="hero-title">{profile.tagline}</h1>
-            <p class="hero-subline">{profile.role}</p>
+            <p class="eyebrow">Observer / Profile 001</p>
+            <h1 id="observer-heading" class="hero-name">
+              {profile.name}
+              {profile.altNames.length > 0 && <span class="hero-alt">{profile.altNames.join(' · ')}</span>}
+            </h1>
+            <p class="hero-role">{profile.role} · {profile.affiliation}</p>
+            <p class="hero-tagline">{profile.tagline}</p>
             <p class="hero-bio">{profile.bio}</p>
-            {profile.bioZh && <p class="hero-bio-zh">{profile.bioZh}</p>}
+            {profile.bioZh && <p class="hero-bio-zh" lang="zh">{profile.bioZh}</p>}
           </div>
 
           <div class="hero-actions">
             <a class="btn btn--primary" href="/research/">Explore Research</a>
-            {profile.cv ? (
-              <a class="btn" href={profile.cv}>View CV</a>
-            ) : (
-              <a class="btn" href="/about/">About &amp; Profile</a>
-            )}
+            <a class="btn" href={cvHref}>{profile.cv ? 'View CV' : 'CV & Contact'}</a>
           </div>
 
-          <!-- Current Signals (Recent Work / Questions) -->
           <div class="current-signals" aria-labelledby="signals-heading">
             <div class="current-signals__head">
-              <h2 id="signals-heading" class="eyebrow">Current Signals</h2>
+              <h2 id="signals-heading" class="eyebrow">Current signals</h2>
               <span class="signals-count">{String(signals.length).padStart(2, '0')}</span>
             </div>
             <ul class="signals-list">
               {signals.map((s) => (
                 <li class="signal-item">
-                  <a href={s.url} {...(s.external ? { target: '_blank', rel: 'noopener' } : {})}>
+                  <a href={s.url}>
                     <span class="code">{s.code}</span>
                     <span class="signal-item__title">{s.title}</span>
-                    <span class={`status status--${s.status}`}>{s.status}</span>
+                    <span class={`status status--${s.status}`}>{s.label}</span>
                   </a>
                 </li>
               ))}
             </ul>
           </div>
 
-          <!-- Quick external links -->
           <footer class="identity-footer">
             <div class="identity-links">
-              <a href={profile.github} target="_blank" rel="noopener">GitHub ↗</a>
+              <a href={profile.github} rel="noopener">GitHub ↗</a>
               <a href={`mailto:${profile.email}`}>Email</a>
               <a href="/publications/">Publications</a>
+              <a href="/notes/">Notes</a>
             </div>
-            <p class="affiliation-badge">{profile.affiliation} · {profile.location}</p>
+            <p class="affiliation-badge">{profile.affiliation} · {profile.location} · {profile.timezone}</p>
           </footer>
         </div>
       </section>
 
-      <!-- ── Right Column: Interactive Research Sky ── -->
-      <section class="atlas-pane" aria-label="Research Sky and Knowledge Atlas">
-        <Atlas graph={graph} mode="home" heading="Research Sky / Live Atlas" />
+      <!-- ── Right: the research sky (tablet and desktop) ── -->
+      <section class="atlas-pane" aria-label="Research atlas">
+        <Atlas graph={graph} mode="home" heading="Research sky / Live atlas" />
+      </section>
+
+      <!-- ── Phones: a static preview, the full atlas one tap away ── -->
+      <section class="atlas-preview" aria-labelledby="preview-heading">
+        <div class="atlas-preview__head">
+          <h2 id="preview-heading" class="eyebrow">Atlas / Preview</h2>
+          <span class="signals-count">{String(graph.nodes.length).padStart(2, '0')} signals</span>
+        </div>
+        <a class="atlas-preview__map" href="/atlas/" aria-label="Open the research atlas">
+          <svg viewBox={`40 60 ${VIEW.w - 60} ${VIEW.h - 100}`} aria-hidden="true">
+            {graph.edges.map((e) => {
+              const a = byId.get(e.source)!;
+              const b = byId.get(e.target)!;
+              return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} class="pv-edge" />;
+            })}
+            {graph.nodes.map((n) =>
+              n.featured ? (
+                <g>
+                  <circle cx={n.x} cy={n.y} r="26" class="pv-orbit" />
+                  <circle cx={n.x} cy={n.y} r="11" class="pv-core pv-core--featured" />
+                </g>
+              ) : (
+                <circle cx={n.x} cy={n.y} r="8" class={`pv-core pv-core--${n.type}`} />
+              ),
+            )}
+          </svg>
+        </a>
+        <div class="atlas-preview__actions">
+          <a class="btn" href="/atlas/">Open atlas</a>
+          <a class="btn btn--ghost" href="/research/">Research list →</a>
+        </div>
       </section>
     </div>
   </div>
@@ -74,19 +118,15 @@ const signals = graph.nodes
 
 <style>
   .home-viewport {
-    min-height: calc(100vh - var(--nav-h) - 75px);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: clamp(20px, 3vh, 40px) 0;
+    padding: clamp(28px, 4vh, 48px) 0 clamp(32px, 5vh, 56px);
   }
 
+  /* B1 §6.2: identity column 430–500px, the sky takes the rest */
   .home-grid {
     display: grid;
-    grid-template-columns: minmax(380px, 460px) minmax(560px, 1fr);
-    gap: clamp(24px, 4vw, 56px);
+    grid-template-columns: minmax(380px, 460px) minmax(0, 1fr);
+    gap: clamp(28px, 4vw, 56px);
     align-items: stretch;
-    width: 100%;
   }
 
   .identity-pane {
@@ -100,7 +140,7 @@ const signals = graph.nodes
   .identity-pane__inner {
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 26px;
   }
 
   .identity-header {
@@ -109,54 +149,80 @@ const signals = graph.nodes
     gap: 12px;
   }
 
-  .hero-title {
-    font-size: clamp(34px, 4vw, 52px);
+  .hero-name {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: clamp(40px, 4.4vw, 58px);
     font-weight: 600;
-    line-height: 1.1;
+    line-height: 1.02;
     letter-spacing: -0.02em;
-    color: var(--starlight);
   }
 
-  .hero-subline {
-    font: 500 14px/1.4 var(--font-mono);
+  .hero-alt {
+    font: 500 13px/1.4 var(--font-mono);
+    letter-spacing: 0.14em;
+    color: var(--dim);
+  }
+
+  .hero-role {
+    margin: 2px 0 0;
+    font: 500 12.5px/1.6 var(--font-mono);
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--signal-cyan);
-    margin: 0;
+  }
+
+  .hero-tagline {
+    position: relative;
+    margin: 6px 0 0;
+    padding-top: 16px;
+    font: 500 22px/1.3 var(--font-display);
+    color: var(--starlight);
+  }
+
+  .hero-tagline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 88px;
+    height: 1px;
+    background: var(--selection-gold);
   }
 
   .hero-bio {
+    margin: 0;
+    max-width: 46ch;
     color: var(--muted);
     font-size: 16px;
     line-height: 1.65;
-    margin: 4px 0 0;
-    max-width: 44ch;
   }
 
   .hero-bio-zh {
-    color: var(--dim);
-    font-size: 14.5px;
-    line-height: 1.6;
     margin: 0;
     max-width: 44ch;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.7;
   }
 
   .hero-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-top: 4px;
   }
 
   .current-signals {
-    border-top: 1px solid var(--hairline-soft);
-    padding-top: 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+    padding-top: 20px;
+    border-top: 1px solid var(--hairline-soft);
   }
 
-  .current-signals__head {
+  .current-signals__head,
+  .atlas-preview__head {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -164,28 +230,29 @@ const signals = graph.nodes
 
   .signals-count {
     font: 500 12px var(--font-mono);
+    letter-spacing: 0.1em;
     color: var(--dim);
   }
 
   .signals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     margin: 0;
     padding: 0;
     list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
   }
 
   .signal-item a {
     display: grid;
-    grid-template-columns: 56px 1fr auto;
-    align-items: center;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: baseline;
     gap: 12px;
-    padding: 8px 10px;
+    padding: 9px 10px;
+    border: 1px solid transparent;
     border-radius: var(--radius-sm);
     color: var(--starlight);
     text-decoration: none;
-    border: 1px solid transparent;
     transition: background-color var(--t-identify), border-color var(--t-identify);
   }
 
@@ -196,9 +263,7 @@ const signals = graph.nodes
 
   .signal-item__title {
     font-size: 14.5px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.4;
   }
 
   .signal-item a:hover .signal-item__title {
@@ -215,14 +280,15 @@ const signals = graph.nodes
 
   .identity-links {
     display: flex;
-    gap: 18px;
-    font: 500 12.5px/1 var(--font-mono);
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    font: 500 12.5px/1.6 var(--font-mono);
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
   .identity-links a {
-    color: var(--dim);
+    color: var(--muted);
     text-decoration: none;
   }
 
@@ -231,31 +297,108 @@ const signals = graph.nodes
   }
 
   .affiliation-badge {
+    margin: 0;
     font: 400 12px/1.4 var(--font-mono);
     color: var(--dim);
-    margin: 0;
   }
 
   .atlas-pane {
     display: flex;
     flex-direction: column;
-    min-height: 520px;
+    min-width: 0;
+    height: clamp(560px, calc(100vh - var(--nav-h) - 96px), 820px);
   }
 
-  @media (max-width: 1080px) {
+  .atlas-pane :global(.atlas) {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .atlas-preview {
+    display: none;
+  }
+
+  @media (max-width: 1199px) {
     .home-grid {
       grid-template-columns: 1fr;
     }
 
     .identity-pane {
-      border-right: none;
+      padding: 0 0 32px;
+      border-right: 0;
       border-bottom: 1px solid var(--hairline-soft);
-      padding-right: 0;
-      padding-bottom: 32px;
     }
 
     .atlas-pane {
-      min-height: 480px;
+      height: auto;
+    }
+
+    .atlas-pane :global(.atlas__map) {
+      flex: none;
+      aspect-ratio: 1000 / 700;
+    }
+  }
+
+  /* B1 §11.1: phones get a static preview, never a squeezed desktop graph */
+  @media (max-width: 767px) {
+    .atlas-pane {
+      display: none;
+    }
+
+    .atlas-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .atlas-preview__map {
+      display: block;
+      border: 1px solid var(--hairline-soft);
+      border-radius: var(--radius-md);
+      background: radial-gradient(ellipse at 55% 50%, rgb(22 48 68 / 0.9), rgb(7 19 32 / 0.6) 75%);
+    }
+
+    .atlas-preview__map svg {
+      width: 100%;
+      height: auto;
+    }
+
+    .pv-edge {
+      stroke: #8fc3b4;
+      stroke-opacity: 0.45;
+      stroke-width: 2;
+    }
+
+    .pv-core {
+      fill: #ecf3f0;
+    }
+
+    .pv-core--question,
+    .pv-core--method {
+      fill: #0b1d30;
+      stroke: #82d0dc;
+      stroke-width: 3;
+    }
+
+    .pv-core--featured {
+      fill: #e9c18f;
+    }
+
+    .pv-orbit {
+      fill: none;
+      stroke: #e9c18f;
+      stroke-opacity: 0.5;
+      stroke-width: 2;
+    }
+
+    .atlas-preview__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-actions .btn {
+      flex: 1 1 100%;
     }
   }
 </style>
