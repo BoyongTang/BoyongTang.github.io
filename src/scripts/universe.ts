@@ -222,14 +222,23 @@ export function initUniverse(root: HTMLElement) {
   // play the opening once the map is actually on screen (on phones it sits below the profile)
   if (root.classList.contains('is-intro-wait')) {
     root.dataset.introReady = '1';
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        io.disconnect();
-        playIntro();
-      },
-      { threshold: 0.35 },
-    );
-    io.observe(mapEl);
+    const html = document.documentElement;
+    const watch = () => {
+      const box = mapEl.getBoundingClientRect();
+      const seen = Math.min(box.bottom, innerHeight) - Math.max(box.top, 0);
+      if (seen >= box.height * 0.35) return playIntro();
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          io.disconnect();
+          playIntro();
+        },
+        { threshold: 0.35 },
+      );
+      io.observe(mapEl);
+    };
+    // after the site's entrance (Splash.astro), the map's opening continues from its dive
+    if (html.classList.contains('oq-splash') && html.dataset.splash !== 'done') addEventListener('oq:splash-done', watch, { once: true });
+    else watch();
   }
 }
