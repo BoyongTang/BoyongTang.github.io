@@ -5,6 +5,7 @@ summary: What has to be fixed before two strategies, or two models, can be compa
 date: 2026-11-04
 topic: evaluation
 lang: en
+draft: true
 ---
 
 **Question.** When a result says "strategy A beats random sampling", what exactly was compared — and would it survive

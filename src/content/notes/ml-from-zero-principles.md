@@ -5,6 +5,7 @@ summary: 不只要求"代码能跑"——算法直觉、手算推演、数据边
 date: 2026-11-04
 topic: teaching
 lang: zh
+draft: true
 ---
 
 **问题。** 一门面向中文学习者的机器学习课，怎样才算教会了？

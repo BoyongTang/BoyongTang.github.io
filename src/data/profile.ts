@@ -1,5 +1,5 @@
 // Everything about the person lives here. The rest of the site reads from this file,
-// from src/content/ (research dossiers and notes) and from src/data/atlas.ts (the star map).
+// from src/content/ (research dossiers and notes) and from src/data/galaxies.ts (the research universe).
 //
 // Rule of the observatory: only write what is true. Leave a field empty ('' or []) to hide it.
 
@@ -70,6 +70,8 @@ export interface Publication {
   links?: { label: string; href: string }[];
   /** Research dossier this paper came out of, e.g. 'active-learning-materials'. */
   research?: string;
+  /** Galaxy id from src/data/galaxies.ts. */
+  galaxy?: string;
 }
 
 export const publications: Publication[] = [];
@@ -87,6 +89,10 @@ export interface Project {
   repo: string;
   /** Research dossier the project belongs to. */
   research?: string;
+  /** Galaxy id from src/data/galaxies.ts. */
+  galaxy?: string;
+  /** Hidden from the site until it publicly exists (e.g. the repository is public). */
+  draft?: boolean;
 }
 
 export const projects: Project[] = [
@@ -101,7 +107,8 @@ export const projects: Project[] = [
     tech: ['Python', 'Active learning', 'Bayesian optimization'],
     status: 'Ongoing',
     repo: '',
-    research: 'active-learning-materials',
+    galaxy: 'materials',
+    draft: true,
   },
   {
     id: 't-02',
@@ -114,6 +121,8 @@ export const projects: Project[] = [
     tech: ['Python', 'Jupyter', 'scikit-learn', 'RDKit', 'DeepChem'],
     status: 'Ongoing',
     repo: '',
+    galaxy: 'teaching',
+    draft: true,
   },
   {
     id: 't-03',

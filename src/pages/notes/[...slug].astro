@@ -1,11 +1,11 @@
 ---
-import { getCollection, render } from 'astro:content';
-import { topics } from '../../data/atlas';
+import { render } from 'astro:content';
+import { galaxyById } from '../../data/galaxies';
 import Base from '../../layouts/Base.astro';
-import { loadGraph, relationsOf } from '../../lib/graph';
+import { publishedNotes } from '../../lib/universe';
 
 export async function getStaticPaths() {
-  const entries = await getCollection('notes');
+  const entries = await publishedNotes();
   return entries.map((entry) => ({
     params: { slug: entry.id },
     props: { entry },
@@ -14,11 +14,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const graph = await loadGraph();
-
-const thisNode = graph.nodes.find((n) => n.url === `/notes/${entry.id}/`);
-const related = thisNode ? relationsOf(graph, thisNode.id) : [];
-const topicLabel = topics.find((t) => t.id === entry.data.topic)?.label ?? entry.data.topic;
+const galaxy = galaxyById.get(entry.data.topic);
 ---
 
 <Base title={entry.data.title} description={entry.data.summary}>
@@ -29,8 +25,7 @@ const topicLabel = topics.find((t) => t.id === entry.data.topic)?.label ?? entry
         <div class="note-meta">
           <span class="code">{entry.data.code}</span>
           <span class="note-meta__divider">/</span>
-          <span class="note-topic">{topicLabel}</span>
-          {entry.data.sample && <span class="sample-tag">SAMPLE</span>}
+          {galaxy && <a class="note-topic" href={`/atlas/${galaxy.id}/`}>{galaxy.name}</a>}
           <span class="note-meta__divider">/</span>
           <time datetime={entry.data.date.toISOString().slice(0, 10)}>
             {entry.data.date.toISOString().slice(0, 10)}
@@ -44,21 +39,6 @@ const topicLabel = topics.find((t) => t.id === entry.data.topic)?.label ?? entry
         <Content />
       </div>
 
-      {related.length > 0 && (
-        <footer class="note-footer">
-          <h2 class="eyebrow note-related-head" lang="en">Related signals</h2>
-          <ul class="related-notes">
-            {related.map((r) => (
-              <li>
-                <span class="related-edge">{r.edge.relationLabel}</span>
-                <a href={r.other.url}>
-                  <span class="code">{r.other.code}</span> {r.other.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </footer>
-      )}
     </article>
   </div>
 </Base>

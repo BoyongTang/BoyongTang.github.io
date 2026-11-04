@@ -15,12 +15,12 @@ const research = defineCollection({
     /** The question in one sentence. */
     question: z.string(),
     status: z.enum(['exploring', 'ongoing', 'completed', 'paused', 'archived']),
+    /** Galaxy id from src/data/galaxies.ts. */
     topic: z.string(),
-    methods: z.array(z.string()).default([]),
     updatedAt: z.coerce.date(),
     links: z.array(link).default([]),
-    /** True while the entry is placeholder copy: it is marked SAMPLE everywhere it appears. */
-    sample: z.boolean().default(false),
+    /** Drafts are kept in the repo but never built or linked. Flip to false once the text is confirmed. */
+    draft: z.boolean().default(false),
   }),
 });
 
@@ -32,9 +32,11 @@ const notes = defineCollection({
     title: z.string(),
     summary: z.string(),
     date: z.coerce.date(),
+    /** Galaxy id from src/data/galaxies.ts. */
     topic: z.string(),
     lang: z.enum(['en', 'zh']).default('en'),
-    sample: z.boolean().default(false),
+    /** Drafts are kept in the repo but never built or linked. */
+    draft: z.boolean().default(false),
   }),
 });
 

@@ -1,0 +1,158 @@
+---
+import GalaxyArt from '../../components/GalaxyArt.astro';
+import GalaxyChart from '../../components/GalaxyChart.astro';
+import { galaxies, galaxyCode, type Galaxy } from '../../data/galaxies';
+import Base from '../../layouts/Base.astro';
+import { kindLabel, loadResults, resultsIn, statusLabel } from '../../lib/universe';
+
+export function getStaticPaths() {
+  return galaxies.map((galaxy) => ({ params: { galaxy: galaxy.id }, props: { galaxy } }));
+}
+
+const { galaxy: g } = Astro.props as { galaxy: Galaxy };
+const items = resultsIn(await loadResults(), g.id);
+const i = galaxies.indexOf(g);
+const prev = galaxies[(i - 1 + galaxies.length) % galaxies.length];
+const next = galaxies[(i + 1) % galaxies.length];
+const box = { x: g.x - g.r * 1.75, y: g.y - g.r * 1.4, w: g.r * 3.5, h: g.r * 2.8 };
+const iso = (d?: Date) => d?.toISOString().slice(0, 10);
+---
+
+<Base title={g.name} description={`${g.name} — results in this field.`}>
+  <div class="wrap galaxy-page">
+    <a class="galaxy-back" href={`/atlas/#${g.id}`}>← All galaxies</a>
+
+    <div class="galaxy-layout">
+      <figure class="galaxy-view">
+        <svg viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`} role="group" aria-label={`Chart of ${g.name}. Each labelled star is a result; the same results are listed alongside.`}>
+          <GalaxyArt galaxy={g} uid="page" />
+          <GalaxyChart galaxy={g} results={items} stars />
+        </svg>
+        <figcaption>{galaxyCode(g)} · decorative · not a sky image</figcaption>
+      </figure>
+
+      <section class="galaxy-info" aria-labelledby="galaxy-name">
+        <p class="kicker">Galaxy / {galaxyCode(g)}</p>
+        <h1 id="galaxy-name">{g.name}</h1>
+        {g.nameZh && <p class="galaxy-zh" lang="zh">{g.nameZh}</p>}
+        {g.blurb && <p class="galaxy-blurb">{g.blurb}</p>}
+
+        <h2 class="eyebrow galaxy-count">Results / {String(items.length).padStart(2, '0')}</h2>
+        {items.length ? (
+          <ul class="result-list">
+            {items.map((r) => (
+              <li>
+                <a href={r.url} {...(r.external ? { rel: 'noopener' } : {})}>
+                  <span class="code">{r.code}</span>
+                  <span class="result-list__title" lang={r.lang}>{r.title}</span>
+                  <span class="result-list__meta">
+                    {kindLabel[r.kind]} · {statusLabel(r.status)}{r.date && ` · ${iso(r.date)}`}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div class="empty">
+            <strong>No public results yet</strong>
+            <p>Papers, projects and notes in this field will appear here once they are public.</p>
+          </div>
+        )}
+
+        <nav class="galaxy-nav" aria-label="Other galaxies">
+          <a href={`/atlas/${prev.id}/`}>← {prev.name}</a>
+          <a href={`/atlas/${next.id}/`}>{next.name} →</a>
+        </nav>
+      </section>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .galaxy-page {
+    padding-top: clamp(28px, 4vw, 48px);
+    padding-bottom: 64px;
+  }
+
+  .galaxy-back {
+    display: inline-block;
+    margin-bottom: 20px;
+    font: 500 12.5px var(--font-mono);
+    letter-spacing: 0.08em;
+    text-decoration: none;
+  }
+
+  .galaxy-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+    gap: clamp(24px, 4vw, 56px);
+    align-items: start;
+  }
+
+  .galaxy-view {
+    margin: 0;
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+    background: radial-gradient(ellipse at 50% 50%, rgb(18 40 58 / 0.9), rgb(7 19 32 / 0.7) 75%);
+  }
+
+  .galaxy-view svg {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3.5 / 2.8;
+  }
+
+  .galaxy-view :global(.galaxy-art) {
+    opacity: 1;
+  }
+
+  .galaxy-view figcaption {
+    padding: 0 16px 12px;
+    font: 500 11px var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  .galaxy-info h1 {
+    margin-top: 12px;
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 600;
+  }
+
+  .galaxy-zh {
+    margin: 8px 0 0;
+    color: var(--muted);
+  }
+
+  .galaxy-blurb {
+    margin: 16px 0 0;
+    color: var(--muted);
+  }
+
+  .galaxy-count {
+    margin: 32px 0 10px;
+  }
+
+  .galaxy-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline-soft);
+    font: 500 12.5px var(--font-mono);
+    letter-spacing: 0.08em;
+  }
+
+  .galaxy-nav a {
+    text-decoration: none;
+  }
+
+  @media (max-width: 860px) {
+    .galaxy-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

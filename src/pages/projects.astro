@@ -1,6 +1,9 @@
 ---
-import { projects } from '../data/profile';
+import { projects as allProjects } from '../data/profile';
 import Base from '../layouts/Base.astro';
+
+// Projects that do not publicly exist yet stay as drafts in profile.ts.
+const projects = allProjects.filter((p) => !p.draft);
 ---
 
 <Base title="Projects" description="Code and teaching work: what each project is for, its scope and its real status.">
@@ -9,7 +12,7 @@ import Base from '../layouts/Base.astro';
       <p class="kicker">03 / Instruments</p>
       <h1>Projects</h1>
       <p>
-        Code and teaching work behind the research. A repository link appears only once the repository is public.
+        Code and teaching work. A project is listed once it publicly exists.
       </p>
     </header>
 

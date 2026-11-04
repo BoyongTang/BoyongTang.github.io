@@ -1,9 +1,10 @@
-// Renders public/og.png (1200 × 630) from the real atlas data, so the social preview never drifts
+// Renders public/og.png (1200 × 630) from the real galaxy data, so the social preview never drifts
 // from the site. Run: npm run og   (needs Node ≥ 23.6 to import the .ts data file directly)
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { edges, nodes } from '../src/data/atlas.ts';
+import { galaxies } from '../src/data/galaxies.ts';
+import { galaxyStars, hueColor } from '../src/lib/stars.ts';
 
 const W = 1200;
 const H = 630;
@@ -11,53 +12,41 @@ const c = { bg: '#071320', panel: '#0b1d30', hair: '#385467', star: '#ecf3f0', m
 const sans = "'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif";
 const mono = "'IBM Plex Mono', Menlo, 'Courier New', monospace";
 
-// map the 1000 × 700 atlas into the right-hand panel
-const box = { x: 690, y: 80, w: 460, h: 470 };
-const k = Math.min(box.w / 860, box.h / 560);
+// map the 1000 × 700 universe into the right-hand panel
+const box = { x: 650, y: 60, w: 500, h: 510 };
+const k = Math.min(box.w / 1000, box.h / 700) * 1.08;
 const px = (x) => box.x + box.w / 2 + (x - 500) * k;
-const py = (y) => box.y + box.h / 2 + (y - 400) * k;
-const byId = new Map(nodes.map((n) => [n.id, n]));
+const py = (y) => box.y + box.h / 2 + (y - 350) * k;
 
 // fixed-seed ambient stars (decorative only)
 let s = 103;
 const rand = () => ((s = (s * 16807) % 2147483647) / 2147483647);
 const stars = Array.from({ length: 140 }, () => `<circle cx="${(rand() * W).toFixed(1)}" cy="${(rand() * H).toFixed(1)}" r="${(0.4 + rand() * 0.9).toFixed(2)}" fill="${c.star}" opacity="${(0.12 + rand() * 0.4).toFixed(2)}"/>`).join('');
 
-const cx = px(520);
-const cy = py(360);
-const rings = [70, 140, 220].map((r, i) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c.hair}" stroke-opacity="${i === 2 ? 0.7 : 0.45}" ${i === 2 ? 'stroke-dasharray="2 6"' : ''}/>`).join('');
+const cx = px(500);
+const cy = py(350);
+const rings = `<circle cx="${cx}" cy="${cy}" r="${330 * k}" fill="none" stroke="${c.hair}" stroke-opacity="0.55" stroke-dasharray="2 6"/>`;
 
-const lines = edges
-  .map((e) => {
-    const a = byId.get(e.source);
-    const b = byId.get(e.target);
-    return `<line x1="${px(a.x)}" y1="${py(a.y)}" x2="${px(b.x)}" y2="${py(b.y)}" stroke="${c.green}" stroke-opacity="0.5" stroke-width="1.2"/>`;
+const glx = galaxies
+  .map((g) => {
+    const tint = hueColor[g.hue];
+    const pts = galaxyStars(g)
+      .map((st) => `<circle cx="${px(st.x).toFixed(1)}" cy="${py(st.y).toFixed(1)}" r="${(st.r * 0.9).toFixed(2)}" fill="${st.tint ? tint : '#e6f1ef'}" opacity="${st.o}"/>`)
+      .join('');
+    return `<ellipse cx="${px(g.x)}" cy="${py(g.y)}" rx="${g.r * k * 0.34}" ry="${g.r * k * 0.26}" fill="url(#core-${g.hue})" transform="rotate(${g.rotation} ${px(g.x)} ${py(g.y)})"/>${pts}`;
   })
   .join('');
 
-const dots = nodes
-  .map((n) => {
-    const x = px(n.x);
-    const y = py(n.y);
-    if (n.featured)
-      return `<circle cx="${x}" cy="${y}" r="26" fill="${c.gold}" opacity="0.14"/><circle cx="${x}" cy="${y}" r="15" fill="none" stroke="${c.gold}" stroke-opacity="0.6"/><circle cx="${x}" cy="${y}" r="6" fill="${c.gold}"/>`;
-    if (n.type === 'question' || n.type === 'method')
-      return `<circle cx="${x}" cy="${y}" r="5" fill="${c.panel}" stroke="${c.cyan}" stroke-width="1.6"/>`;
-    return `<circle cx="${x}" cy="${y}" r="4.5" fill="${c.star}"/>`;
-  })
-  .join('');
-
-const featured = nodes.find((n) => n.featured);
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
+    ${Object.entries(hueColor).map(([h, col]) => `<radialGradient id="core-${h}"><stop offset="0" stop-color="#fff6e8" stop-opacity="0.95"/><stop offset="0.35" stop-color="${col}" stop-opacity="0.45"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></radialGradient>`).join('')}
     <radialGradient id="neb" cx="0.72" cy="0.5" r="0.6"><stop offset="0" stop-color="#163044" stop-opacity="0.9"/><stop offset="1" stop-color="${c.bg}" stop-opacity="0"/></radialGradient>
   </defs>
   <rect width="${W}" height="${H}" fill="${c.bg}"/>
   <rect width="${W}" height="${H}" fill="url(#neb)"/>
   ${stars}
   <rect x="24" y="24" width="${W - 48}" height="${H - 48}" fill="none" stroke="${c.hair}" stroke-opacity="0.6"/>
-  ${rings}${lines}${dots}
-  <text x="${px(featured.x)}" y="${py(featured.y) + 44}" text-anchor="middle" font-family="${mono}" font-size="13" letter-spacing="2" fill="${c.gold}">ACTIVE LEARNING · MATERIALS</text>
+  ${rings}${glx}
   <text x="72" y="96" font-family="${mono}" font-size="15" letter-spacing="4" fill="${c.dim}">O / Q · OBSERVATORY OF QUESTIONS</text>
   <text x="72" y="214" font-family="${sans}" font-size="80" font-weight="600" fill="${c.star}">Boyong Tang</text>
   <text x="72" y="262" font-family="${mono}" font-size="16" letter-spacing="3" fill="${c.cyan}">APPLIED MATHEMATICS &amp; AI · SICHUAN UNIVERSITY</text>
@@ -66,7 +55,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   <text x="72" y="396" font-family="${sans}" font-size="21" fill="${c.muted}">Active learning for materials science:</text>
   <text x="72" y="426" font-family="${sans}" font-size="21" fill="${c.muted}">reproduce first, then build a loop that transfers.</text>
   <text x="72" y="560" font-family="${mono}" font-size="15" letter-spacing="3" fill="${c.dim}">BOYONGTANG.GITHUB.IO</text>
-  <text x="${W - 72}" y="580" text-anchor="end" font-family="${mono}" font-size="11" letter-spacing="2" fill="${c.dim}">CONCEPTUAL LAYOUT · NOT SKY COORDINATES</text>
+  <text x="${W - 72}" y="580" text-anchor="end" font-family="${mono}" font-size="11" letter-spacing="2" fill="${c.dim}">ONE GALAXY PER FIELD · NOT A SKY IMAGE</text>
 </svg>`;
 
 const out = fileURLToPath(new URL('../public/og.png', import.meta.url));

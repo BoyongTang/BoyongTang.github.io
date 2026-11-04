@@ -1,27 +1,12 @@
 ---
-import { getCollection } from 'astro:content';
-import Atlas from '../components/Atlas.astro';
+import Universe from '../components/Universe.astro';
 import { cvHref, profile } from '../data/profile';
-import { VIEW } from '../data/atlas';
 import Base from '../layouts/Base.astro';
-import { loadGraph, statusLabel } from '../lib/graph';
+import { loadResults, statusLabel } from '../lib/universe';
 
-const graph = await loadGraph();
-
-// The three most recent real entries, newest first (dossiers before notes on the same day).
-const research = (await getCollection('research')).map((e) => ({
-  code: e.data.code, title: e.data.title, url: `/research/${e.id}/`, date: e.data.updatedAt, rank: 0,
-  status: e.data.status, label: statusLabel(e.data.status),
-}));
-const notes = (await getCollection('notes')).map((e) => ({
-  code: e.data.code, title: e.data.title, url: `/notes/${e.id}/`, date: e.data.date, rank: 1,
-  status: 'note', label: 'NOTE',
-}));
-const signals = [...research, ...notes]
-  .sort((a, b) => b.date.getTime() - a.date.getTime() || a.rank - b.rank || a.code.localeCompare(b.code))
-  .slice(0, 3);
-
-const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+const results = await loadResults();
+// The three most recent dated results; the section disappears while there are none.
+const signals = results.filter((r) => r.date).slice(0, 3);
 ---
 
 <Base>
@@ -43,74 +28,47 @@ const byId = new Map(graph.nodes.map((n) => [n.id, n]));
           </div>
 
           <div class="hero-actions">
-            <a class="btn btn--primary" href="/research/">Explore Research</a>
+            <a class="btn btn--primary" href="/atlas/">Explore the atlas</a>
             <a class="btn" href={cvHref}>{profile.cv ? 'View CV' : 'CV & Contact'}</a>
           </div>
 
-          <div class="current-signals" aria-labelledby="signals-heading">
-            <div class="current-signals__head">
-              <h2 id="signals-heading" class="eyebrow">Current signals</h2>
-              <span class="signals-count">{String(signals.length).padStart(2, '0')}</span>
-            </div>
-            <ul class="signals-list">
-              {signals.map((s) => (
-                <li class="signal-item">
-                  <a href={s.url}>
-                    <span class="code">{s.code}</span>
-                    <span class="signal-item__title">{s.title}</span>
-                    <span class={`status status--${s.status}`}>{s.label}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {
+            signals.length > 0 && (
+              <div class="current-signals" aria-labelledby="signals-heading">
+                <div class="current-signals__head">
+                  <h2 id="signals-heading" class="eyebrow">Current signals</h2>
+                  <span class="signals-count">{String(signals.length).padStart(2, '0')}</span>
+                </div>
+                <ul class="signals-list">
+                  {signals.map((s) => (
+                    <li class="signal-item">
+                      <a href={s.url}>
+                        <span class="code">{s.code}</span>
+                        <span class="signal-item__title" lang={s.lang}>{s.title}</span>
+                        <span class={`status status--${s.status}`}>{s.kind === 'note' ? 'NOTE' : statusLabel(s.status)}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )
+          }
 
           <footer class="identity-footer">
             <div class="identity-links">
               <a href={profile.github} rel="noopener">GitHub ↗</a>
               <a href={`mailto:${profile.email}`}>Email</a>
+              <a href="/research/">Research</a>
               <a href="/publications/">Publications</a>
-              <a href="/notes/">Notes</a>
             </div>
             <p class="affiliation-badge">{profile.affiliation} · {profile.location} · {profile.timezone}</p>
           </footer>
         </div>
       </section>
 
-      <!-- ── Right: the research sky (tablet and desktop) ── -->
-      <section class="atlas-pane" aria-label="Research atlas">
-        <Atlas graph={graph} mode="home" heading="Research sky / Live atlas" />
-      </section>
-
-      <!-- ── Phones: a static preview, the full atlas one tap away ── -->
-      <section class="atlas-preview" aria-labelledby="preview-heading">
-        <div class="atlas-preview__head">
-          <h2 id="preview-heading" class="eyebrow">Atlas / Preview</h2>
-          <span class="signals-count">{String(graph.nodes.length).padStart(2, '0')} signals</span>
-        </div>
-        <a class="atlas-preview__map" href="/atlas/" aria-label="Open the research atlas">
-          <svg viewBox={`40 60 ${VIEW.w - 60} ${VIEW.h - 100}`} aria-hidden="true">
-            {graph.edges.map((e) => {
-              const a = byId.get(e.source)!;
-              const b = byId.get(e.target)!;
-              return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} class="pv-edge" />;
-            })}
-            {graph.nodes.map((n) =>
-              n.featured ? (
-                <g>
-                  <circle cx={n.x} cy={n.y} r="26" class="pv-orbit" />
-                  <circle cx={n.x} cy={n.y} r="11" class="pv-core pv-core--featured" />
-                </g>
-              ) : (
-                <circle cx={n.x} cy={n.y} r="8" class={`pv-core pv-core--${n.type}`} />
-              ),
-            )}
-          </svg>
-        </a>
-        <div class="atlas-preview__actions">
-          <a class="btn" href="/atlas/">Open atlas</a>
-          <a class="btn btn--ghost" href="/research/">Research list →</a>
-        </div>
+      <!-- ── Right: the research universe ── -->
+      <section class="atlas-pane" aria-label="Research universe">
+        <Universe results={results} mode="home" heading="Research universe" />
       </section>
     </div>
   </div>
@@ -221,8 +179,7 @@ const byId = new Map(graph.nodes.map((n) => [n.id, n]));
     border-top: 1px solid var(--hairline-soft);
   }
 
-  .current-signals__head,
-  .atlas-preview__head {
+  .current-signals__head {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -309,13 +266,9 @@ const byId = new Map(graph.nodes.map((n) => [n.id, n]));
     height: clamp(560px, calc(100vh - var(--nav-h) - 96px), 820px);
   }
 
-  .atlas-pane :global(.atlas) {
+  .atlas-pane :global(.universe) {
     flex: 1;
     min-height: 0;
-  }
-
-  .atlas-preview {
-    display: none;
   }
 
   @media (max-width: 1199px) {
@@ -333,68 +286,15 @@ const byId = new Map(graph.nodes.map((n) => [n.id, n]));
       height: auto;
     }
 
-    .atlas-pane :global(.atlas__map) {
+    .atlas-pane :global(.universe__map) {
       flex: none;
       aspect-ratio: 1000 / 700;
     }
   }
 
-  /* B1 §11.1: phones get a static preview, never a squeezed desktop graph */
   @media (max-width: 767px) {
-    .atlas-pane {
-      display: none;
-    }
-
-    .atlas-preview {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .atlas-preview__map {
-      display: block;
-      border: 1px solid var(--hairline-soft);
-      border-radius: var(--radius-md);
-      background: radial-gradient(ellipse at 55% 50%, rgb(22 48 68 / 0.9), rgb(7 19 32 / 0.6) 75%);
-    }
-
-    .atlas-preview__map svg {
-      width: 100%;
-      height: auto;
-    }
-
-    .pv-edge {
-      stroke: #8fc3b4;
-      stroke-opacity: 0.45;
-      stroke-width: 2;
-    }
-
-    .pv-core {
-      fill: #ecf3f0;
-    }
-
-    .pv-core--question,
-    .pv-core--method {
-      fill: #0b1d30;
-      stroke: #82d0dc;
-      stroke-width: 3;
-    }
-
-    .pv-core--featured {
-      fill: #e9c18f;
-    }
-
-    .pv-orbit {
-      fill: none;
-      stroke: #e9c18f;
-      stroke-opacity: 0.5;
-      stroke-width: 2;
-    }
-
-    .atlas-preview__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
+    .atlas-pane :global(.universe__map) {
+      aspect-ratio: auto;
     }
 
     .hero-actions .btn {

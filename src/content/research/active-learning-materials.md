@@ -4,9 +4,9 @@ title: Active Learning for Materials Science
 summary: Reproduce published active-learning work first, then turn it into one closed loop that can move to other material systems.
 question: How few new labels does it take to learn a whole structure–property map, phase diagram or potential-energy surface?
 status: ongoing
-topic: discovery
-methods: [m-surrogate, m-query, m-eval]
+topic: ml
 updatedAt: 2026-11-04
+draft: true
 ---
 
 ## Question

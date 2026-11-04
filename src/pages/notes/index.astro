@@ -1,11 +1,9 @@
 ---
-import { getCollection } from 'astro:content';
-import { topics } from '../../data/atlas';
+import { galaxyById } from '../../data/galaxies';
 import Base from '../../layouts/Base.astro';
+import { publishedNotes } from '../../lib/universe';
 
-const topicLabel = new Map(topics.map((t) => [t.id, t.label]));
-
-const allNotes = (await getCollection('notes')).sort(
+const allNotes = (await publishedNotes()).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime()
 );
 ---
@@ -22,7 +20,13 @@ const allNotes = (await getCollection('notes')).sort(
     </header>
 
     <div class="section">
-      <ul class="signals">
+      {allNotes.length === 0 && (
+        <div class="empty">
+          <strong>No notes yet</strong>
+          <p>Notes will appear here once they are written.</p>
+        </div>
+      )}
+      <ul class="signals" hidden={allNotes.length === 0}>
         {allNotes.map((note) => (
           <li class="signal">
             <a href={`/notes/${note.id}/`}>
@@ -32,9 +36,8 @@ const allNotes = (await getCollection('notes')).sort(
                 <p class="signal__summary" lang={note.data.lang}>{note.data.summary}</p>
               </div>
               <div class="signal__meta">
-                <span>{topicLabel.get(note.data.topic) ?? note.data.topic}</span>
+                <span>{galaxyById.get(note.data.topic)?.name}</span>
                 <span>{note.data.lang === 'zh' ? '中文' : 'English'}</span>
-                {note.data.sample && <span class="sample-tag">SAMPLE</span>}
                 <time datetime={note.data.date.toISOString().slice(0, 10)}>
                   {note.data.date.toISOString().slice(0, 10)}
                 </time>
