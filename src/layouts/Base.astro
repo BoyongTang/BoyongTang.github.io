@@ -7,6 +7,7 @@ import '@fontsource/ibm-plex-mono/500.css';
 import '@fontsource/ibm-plex-mono/600.css';
 import 'katex/dist/katex.min.css';
 import '../styles/global.css';
+import StarGlow from '../components/StarGlow.astro';
 import { cvHref, profile } from '../data/profile';
 
 interface Props {
@@ -57,6 +58,7 @@ const year = new Date().getFullYear();
     </script>
   </head>
   <body>
+    <StarGlow />
     <slot name="intro" />
     <a class="skip-link" href="#main">Skip to content</a>
 

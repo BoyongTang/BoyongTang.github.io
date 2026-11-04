@@ -2,7 +2,7 @@
 // The detailed chart inside a galaxy: fine instrument rings, a dense star layer and one labelled star per
 // real result. No connecting lines — a result's place says only "in this field".
 import type { Galaxy } from '../data/galaxies';
-import { galaxyStars, resultPositions } from '../lib/stars';
+import { galaxyStars, resultPositions, starFill } from '../lib/stars';
 import { kindLabel, statusLabel, type Result } from '../lib/universe';
 
 interface Props {
@@ -47,7 +47,7 @@ const short = (t: string) => (t.length > 26 ? `${t.slice(0, 24).trimEnd()}…` :
   </g>
 
   <g class="chart__dense" aria-hidden="true" data-dense>
-    {dense.map((st) => <circle cx={st.x} cy={st.y} r={st.r} opacity={st.o} />)}
+    {dense.map((st) => <circle cx={st.x} cy={st.y} r={st.r} opacity={st.o} fill={starFill(st)} />)}
   </g>
 
   <g class="chart__results">
@@ -95,10 +95,6 @@ const short = (t: string) => (t.length > 26 ? `${t.slice(0, 24).trimEnd()}…` :
 
   .chart__tick--long {
     stroke: #6f8ea0;
-  }
-
-  .chart__dense circle {
-    fill: #e6f1ef;
   }
 
   .rstar {

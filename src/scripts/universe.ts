@@ -1,5 +1,5 @@
 import { galaxies } from '../data/galaxies';
-import { galaxyStars } from '../lib/stars';
+import { galaxyStars, starFill } from '../lib/stars';
 import { play, primeBurst, reducedMotion, stop } from './form';
 
 // Progressive enhancement for the research universe. Without this script every galaxy is a plain link
@@ -85,6 +85,7 @@ export function initUniverse(root: HTMLElement) {
       c.setAttribute('cy', String(st.y));
       c.setAttribute('r', String(st.r));
       c.setAttribute('opacity', String(st.o));
+      c.setAttribute('fill', starFill(st));
       frag.append(c);
     }
     layer.append(frag);
