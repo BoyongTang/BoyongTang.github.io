@@ -811,6 +811,20 @@ main {
   color: var(--starlight);
 }
 
+/* shared by the galaxy "forming" and "arriving" animations */
+@keyframes star-burst {
+  from {
+    transform: translate(var(--dx, 0), var(--dy, 0));
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* ── motion preferences ──────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
@@ -818,6 +832,7 @@ main {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;

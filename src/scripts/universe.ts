@@ -1,5 +1,6 @@
 import { galaxies } from '../data/galaxies';
 import { galaxyStars } from '../lib/stars';
+import { play, primeBurst, reducedMotion, stop } from './form';
 
 // Progressive enhancement for the research universe. Without this script every galaxy is a plain link
 // to its own page and the List view is still in the page.
@@ -7,8 +8,11 @@ import { galaxyStars } from '../lib/stars';
 const VIEW = { x: 0, y: 0, w: 1000, h: 700 };
 type Box = typeof VIEW;
 
-const reducedMotion = () =>
-  document.documentElement.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const out = (t: number) => 1 - Math.pow(1 - t, 4);
+
+/** Opening timeline (ms). Galaxies form one after another; see the .is-intro / .is-forming CSS. */
+const INTRO = { dolly: 2700, firstGalaxy: 750, between: 380, end: 3500, greet: 1800 };
 
 export function initUniverse(root: HTMLElement) {
   const svg = root.querySelector<SVGSVGElement>('[data-svg]')!;
@@ -33,7 +37,7 @@ export function initUniverse(root: HTMLElement) {
   };
 
   /** Restrained camera move (B1 §10.2: 200–350 ms for a reset, instant under reduced motion). */
-  function moveTo(target: Box, ms = 520) {
+  function moveTo(target: Box, ms = 520, ease = inOut) {
     cancelAnimationFrame(frame);
     clearTimeout(settle);
     if (reducedMotion()) return setView(target);
@@ -44,7 +48,6 @@ export function initUniverse(root: HTMLElement) {
     }, ms + 80);
     const from = { ...vb };
     const t0 = performance.now();
-    const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
     const step = (now: number) => {
       const t = Math.min(1, (now - t0) / ms);
       const k = ease(t);
@@ -94,9 +97,15 @@ export function initUniverse(root: HTMLElement) {
     root.classList.add('is-zoomed');
     wraps.forEach((w, gid) => w.classList.toggle('is-selected', gid === id));
     fillDense(id);
+    // fly in, then the chart arrives: dial ticks sweep on, stars burst from the core, results rise
+    const chart = wraps.get(id)?.querySelector<SVGGElement>('.chart') ?? null;
+    if (!reducedMotion()) {
+      primeBurst(chart?.querySelector<SVGGElement>('[data-dense]') ?? null);
+      play(chart, 'is-arriving', 2400);
+    }
     panels.forEach((p, pid) => (p.hidden = pid !== id));
     panelWrap.hidden = false;
-    moveTo(boxFor(el));
+    moveTo(boxFor(el), 900);
     if (focusPanel) panels.get(id)?.focus({ preventScroll: true });
   }
 
@@ -127,18 +136,100 @@ export function initUniverse(root: HTMLElement) {
     if (ev.key === 'Escape' && selected) leave();
   });
 
+  /* ── opening: the camera pulls in, the sky lights up, each galaxy forms from its core ── */
+  const replayBtn = root.querySelector<HTMLButtonElement>('[data-replay]');
+  const arts = [...galaxyEls.values()].map((a) => a.querySelector<SVGGElement>('.galaxy-art')!);
+  let introTimer = 0;
+
+  function primeIntro() {
+    root.querySelectorAll<SVGCircleElement>('.u-star').forEach((c, i) => c.style.setProperty('--k', ((i * 0.618034) % 1).toFixed(3)));
+    arts.forEach((a) => primeBurst(a.querySelector<SVGGElement>('.galaxy-art__stars')));
+  }
+
+  function endIntro() {
+    clearTimeout(introTimer);
+    if (!root.classList.contains('is-intro')) return;
+    root.classList.remove('is-intro');
+    arts.forEach((a) => stop(a, 'is-forming'));
+    if (!selected) setView({ ...VIEW });
+    if (!reducedMotion()) play(root, 'is-greet', INTRO.greet);
+  }
+
+  function skipIntro() {
+    if (!root.classList.contains('is-intro')) return;
+    cancelAnimationFrame(frame);
+    clearTimeout(settle);
+    endIntro();
+  }
+
+  function playIntro() {
+    root.classList.remove('is-intro-wait');
+    if (reducedMotion()) return;
+    if (selected) leave();
+    showList(false);
+    primeIntro();
+    stop(root, 'is-greet');
+    root.classList.remove('is-intro');
+    root.getBoundingClientRect();
+    root.classList.add('is-intro');
+    arts.forEach((a, i) => {
+      a.style.setProperty('--d0', `${INTRO.firstGalaxy + i * INTRO.between}ms`);
+      play(a, 'is-forming', INTRO.end + 400);
+    });
+    // start far out and pull in to the whole universe
+    const far = 2.6;
+    setView({ x: VIEW.w / 2 - (VIEW.w * far) / 2, y: VIEW.h / 2 - (VIEW.h * far) / 2, w: VIEW.w * far, h: VIEW.h * far });
+    moveTo({ ...VIEW }, INTRO.dolly, out);
+    introTimer = window.setTimeout(endIntro, INTRO.end);
+    try {
+      sessionStorage.setItem(`oq.intro.${root.dataset.mode}`, '1');
+    } catch {
+      /* private mode: the opening may play again, which is harmless */
+    }
+  }
+
+  // any interaction during the opening skips straight to the finished sky
+  root.addEventListener('pointerdown', skipIntro);
+  root.addEventListener('wheel', skipIntro, { passive: true });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' || ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Tab') skipIntro();
+  });
+  window.addEventListener('oq:motion', () => reducedMotion() && skipIntro());
+
+  if (replayBtn) {
+    const syncReplay = () => (replayBtn.hidden = reducedMotion());
+    syncReplay();
+    window.addEventListener('oq:motion', syncReplay);
+    replayBtn.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+    replayBtn.addEventListener('click', playIntro);
+  }
+
   /* map / list */
   const viewBtns = root.querySelectorAll<HTMLButtonElement>('[data-view]');
-  const showList = (list: boolean) => {
+  function showList(list: boolean) {
     viewBtns.forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.view === 'list') === list)));
     mapEl.hidden = list;
     listEl.hidden = !list;
-  };
+  }
   viewBtns.forEach((b) => b.addEventListener('click', () => showList(b.dataset.view === 'list')));
 
   // deep link: /atlas/#ml opens that galaxy
   if (root.dataset.mode === 'full') {
     const hash = decodeURIComponent(location.hash.slice(1));
     if (galaxyEls.has(hash)) enter(hash, { focusPanel: false });
+  }
+
+  // play the opening once the map is actually on screen (on phones it sits below the profile)
+  if (root.classList.contains('is-intro-wait')) {
+    root.dataset.introReady = '1';
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        playIntro();
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(mapEl);
   }
 }
