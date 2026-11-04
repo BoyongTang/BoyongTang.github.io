@@ -1,0 +1,261 @@
+---
+import Atlas from '../components/Atlas.astro';
+import { profile } from '../data/profile';
+import Base from '../layouts/Base.astro';
+import { loadGraph } from '../lib/graph';
+
+const graph = await loadGraph();
+const signals = graph.nodes
+  .filter((n) => n.type === 'research' || n.type === 'note')
+  .slice(0, 3);
+---
+
+<Base>
+  <div class="home-viewport">
+    <div class="wrap home-grid">
+      <!-- ── Left Column: Identity & Direct Access ── -->
+      <section class="identity-pane" aria-labelledby="observer-heading">
+        <div class="identity-pane__inner">
+          <div class="identity-header">
+            <p class="eyebrow">OBSERVER / PROFILE 001</p>
+            <h1 id="observer-heading" class="hero-title">{profile.tagline}</h1>
+            <p class="hero-subline">{profile.role}</p>
+            <p class="hero-bio">{profile.bio}</p>
+            {profile.bioZh && <p class="hero-bio-zh">{profile.bioZh}</p>}
+          </div>
+
+          <div class="hero-actions">
+            <a class="btn btn--primary" href="/research/">Explore Research</a>
+            {profile.cv ? (
+              <a class="btn" href={profile.cv}>View CV</a>
+            ) : (
+              <a class="btn" href="/about/">About &amp; Profile</a>
+            )}
+          </div>
+
+          <!-- Current Signals (Recent Work / Questions) -->
+          <div class="current-signals" aria-labelledby="signals-heading">
+            <div class="current-signals__head">
+              <h2 id="signals-heading" class="eyebrow">Current Signals</h2>
+              <span class="signals-count">{String(signals.length).padStart(2, '0')}</span>
+            </div>
+            <ul class="signals-list">
+              {signals.map((s) => (
+                <li class="signal-item">
+                  <a href={s.url} {...(s.external ? { target: '_blank', rel: 'noopener' } : {})}>
+                    <span class="code">{s.code}</span>
+                    <span class="signal-item__title">{s.title}</span>
+                    <span class={`status status--${s.status}`}>{s.status}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <!-- Quick external links -->
+          <footer class="identity-footer">
+            <div class="identity-links">
+              <a href={profile.github} target="_blank" rel="noopener">GitHub ↗</a>
+              <a href={`mailto:${profile.email}`}>Email</a>
+              <a href="/publications/">Publications</a>
+            </div>
+            <p class="affiliation-badge">{profile.affiliation} · {profile.location}</p>
+          </footer>
+        </div>
+      </section>
+
+      <!-- ── Right Column: Interactive Research Sky ── -->
+      <section class="atlas-pane" aria-label="Research Sky and Knowledge Atlas">
+        <Atlas graph={graph} mode="home" heading="Research Sky / Live Atlas" />
+      </section>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .home-viewport {
+    min-height: calc(100vh - var(--nav-h) - 75px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(20px, 3vh, 40px) 0;
+  }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: minmax(380px, 460px) minmax(560px, 1fr);
+    gap: clamp(24px, 4vw, 56px);
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .identity-pane {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 1px solid var(--hairline-soft);
+    padding-right: clamp(20px, 3vw, 44px);
+  }
+
+  .identity-pane__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .identity-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hero-title {
+    font-size: clamp(34px, 4vw, 52px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--starlight);
+  }
+
+  .hero-subline {
+    font: 500 14px/1.4 var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--signal-cyan);
+    margin: 0;
+  }
+
+  .hero-bio {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.65;
+    margin: 4px 0 0;
+    max-width: 44ch;
+  }
+
+  .hero-bio-zh {
+    color: var(--dim);
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 44ch;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .current-signals {
+    border-top: 1px solid var(--hairline-soft);
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .current-signals__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .signals-count {
+    font: 500 12px var(--font-mono);
+    color: var(--dim);
+  }
+
+  .signals-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .signal-item a {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--starlight);
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: background-color var(--t-identify), border-color var(--t-identify);
+  }
+
+  .signal-item a:hover {
+    background: rgb(130 208 220 / 0.08);
+    border-color: var(--hairline-soft);
+  }
+
+  .signal-item__title {
+    font-size: 14.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .signal-item a:hover .signal-item__title {
+    color: var(--signal-cyan);
+  }
+
+  .identity-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline-soft);
+  }
+
+  .identity-links {
+    display: flex;
+    gap: 18px;
+    font: 500 12.5px/1 var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .identity-links a {
+    color: var(--dim);
+    text-decoration: none;
+  }
+
+  .identity-links a:hover {
+    color: var(--starlight);
+  }
+
+  .affiliation-badge {
+    font: 400 12px/1.4 var(--font-mono);
+    color: var(--dim);
+    margin: 0;
+  }
+
+  .atlas-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 520px;
+  }
+
+  @media (max-width: 1080px) {
+    .home-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .identity-pane {
+      border-right: none;
+      border-bottom: 1px solid var(--hairline-soft);
+      padding-right: 0;
+      padding-bottom: 32px;
+    }
+
+    .atlas-pane {
+      min-height: 480px;
+    }
+  }
+</style>

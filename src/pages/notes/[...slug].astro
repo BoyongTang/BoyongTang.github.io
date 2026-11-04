@@ -1,0 +1,134 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { loadGraph, relationsOf } from '../../lib/graph';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('notes');
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const graph = await loadGraph();
+
+const thisNode = graph.nodes.find((n) => n.url === `/notes/${entry.id}/`);
+const related = thisNode ? relationsOf(graph, thisNode.id) : [];
+---
+
+<Base title={entry.data.title} description={entry.data.summary}>
+  <div class="wrap note-container">
+    <article class="note-main reading">
+      <header class="note-header">
+        <div class="note-meta">
+          <span class="code">{entry.data.code}</span>
+          <span class="note-meta__divider">/</span>
+          <span class="eyebrow">{entry.data.topic}</span>
+          {entry.data.sample && <span class="sample-tag">SAMPLE</span>}
+          <span class="note-meta__divider">/</span>
+          <time datetime={entry.data.date.toISOString().slice(0, 10)}>
+            {entry.data.date.toISOString().slice(0, 10)}
+          </time>
+        </div>
+        <h1 class="note-title">{entry.data.title}</h1>
+        <p class="note-lead">{entry.data.summary}</p>
+      </header>
+
+      <div class="prose note-body" lang={entry.data.lang}>
+        <Content />
+      </div>
+
+      {related.length > 0 && (
+        <footer class="note-footer">
+          <h2 class="eyebrow">Related Research Signals</h2>
+          <ul class="related-notes">
+            {related.map((r) => (
+              <li>
+                <span class="related-edge">{r.edge.relationLabel}</span>
+                <a href={r.other.url}>
+                  <span class="code">{r.other.code}</span> {r.other.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </footer>
+      )}
+    </article>
+  </div>
+</Base>
+
+<style>
+  .note-container {
+    padding: clamp(32px, 5vw, 64px) var(--gutter);
+    max-width: 860px;
+  }
+
+  .note-main {
+    padding: clamp(32px, 6vw, 64px);
+    border-radius: var(--radius-md);
+  }
+
+  .note-header {
+    border-bottom: 1px solid var(--reading-rule);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+  }
+
+  .note-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: 500 12.5px var(--font-mono);
+    margin-bottom: 14px;
+  }
+
+  .note-meta__divider {
+    color: var(--reading-muted);
+  }
+
+  .note-title {
+    font-size: clamp(26px, 4vw, 38px);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--reading-ink);
+    margin: 0 0 14px;
+  }
+
+  .note-lead {
+    font-size: 17.5px;
+    line-height: 1.6;
+    color: var(--reading-muted);
+    margin: 0;
+  }
+
+  .note-footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--reading-rule);
+  }
+
+  .related-notes {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .related-notes li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14.5px;
+  }
+
+  .related-edge {
+    font: 500 11.5px var(--font-mono);
+    text-transform: uppercase;
+    color: var(--reading-accent);
+  }
+</style>

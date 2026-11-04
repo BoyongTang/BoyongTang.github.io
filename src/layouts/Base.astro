@@ -1,0 +1,117 @@
+---
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '@fontsource/ibm-plex-mono/600.css';
+import 'katex/dist/katex.min.css';
+import '../styles/global.css';
+import { profile } from '../data/profile';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description = `${profile.name} — ${profile.role}. ${profile.subline}` } = Astro.props;
+const fullTitle = title ? `${title} · ${profile.name}` : `${profile.name} · The Observatory of Questions`;
+const path = Astro.url.pathname;
+const canonical = new URL(path, Astro.site);
+
+const nav = [
+  { href: '/research/', label: 'Research' },
+  { href: '/publications/', label: 'Publications' },
+  { href: '/projects/', label: 'Projects' },
+  { href: '/notes/', label: 'Notes' },
+  { href: '/about/', label: 'About' },
+];
+const current = (href: string) => (path.startsWith(href) ? 'page' : undefined);
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#071320" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/og.png', Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script is:inline>
+      try {
+        if (localStorage.getItem('oq.motion') === 'reduce') document.documentElement.dataset.motion = 'reduce';
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="brand" href="/" aria-label={`${profile.name} — home`}>
+          <span class="brand__mark">O<i>/</i>Q</span>
+          <span class="brand__name">{profile.name} · Observatory of Questions</span>
+        </a>
+        <button class="icon-btn menu-btn" type="button" aria-expanded="false" aria-controls="site-nav" data-menu>
+          <span aria-hidden="true">≡</span><span class="visually-hidden">Menu</span>
+        </button>
+        <nav class="nav" id="site-nav" aria-label="Main">
+          <ul>
+            {nav.map((n) => <li><a href={n.href} aria-current={current(n.href)}>{n.label}</a></li>)}
+            {profile.cv && <li><a class="nav__cv" href={profile.cv}>CV ↓</a></li>}
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <span>© {year} {profile.name} · O/Q Observatory of Questions</span>
+        <span>Atlas: conceptual relationships, not physical coordinates.</span>
+        <span>
+          <a href={`mailto:${profile.email}`}>{profile.email}</a>
+          &nbsp;·&nbsp;
+          <button type="button" data-motion-toggle aria-pressed="false">Reduce motion</button>
+        </span>
+      </div>
+    </footer>
+
+    <script>
+      const menu = document.querySelector<HTMLButtonElement>('[data-menu]');
+      const nav = document.getElementById('site-nav');
+      menu?.addEventListener('click', () => {
+        const open = menu.getAttribute('aria-expanded') !== 'true';
+        menu.setAttribute('aria-expanded', String(open));
+        nav?.setAttribute('data-open', String(open));
+      });
+
+      const toggle = document.querySelector<HTMLButtonElement>('[data-motion-toggle]');
+      const root = document.documentElement;
+      const sync = () => toggle?.setAttribute('aria-pressed', String(root.dataset.motion === 'reduce'));
+      sync();
+      toggle?.addEventListener('click', () => {
+        const reduce = root.dataset.motion !== 'reduce';
+        if (reduce) root.dataset.motion = 'reduce';
+        else delete root.dataset.motion;
+        try {
+          localStorage.setItem('oq.motion', reduce ? 'reduce' : 'full');
+        } catch {}
+        sync();
+        window.dispatchEvent(new CustomEvent('oq:motion'));
+      });
+    </script>
+  </body>
+</html>

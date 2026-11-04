@@ -1,0 +1,64 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="404 — Signal Not Found" description="The requested celestial coordinate does not exist.">
+  <div class="wrap error-wrap">
+    <div class="error-box">
+      <p class="kicker">COORDINATE ERROR</p>
+      <h1 class="error-title">Signal Not Found</h1>
+      <p class="error-lead">
+        The requested path does not correspond to any known question, method, or published record in this observatory.
+      </p>
+      <div class="error-actions">
+        <a class="btn btn--primary" href="/">Return to Observatory</a>
+        <a class="btn" href="/research/">Browse Research</a>
+        <a class="btn" href="/atlas/">Open Atlas</a>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .error-wrap {
+    min-height: calc(100vh - var(--nav-h) - 120px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .error-box {
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+    background: rgb(11 29 48 / 0.7);
+    padding: clamp(32px, 6vw, 56px);
+    max-width: 580px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+    align-items: center;
+  }
+
+  .error-title {
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--starlight);
+    margin: 0;
+  }
+
+  .error-lead {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+</style>

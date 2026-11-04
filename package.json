@@ -1,0 +1,21 @@
+{
+  "name": "boyongtang.github.io",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check:atlas": "node scripts/check-atlas.mjs"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.5",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "astro": "^7.4.5",
+    "katex": "^0.19.1",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0"
+  }
+}

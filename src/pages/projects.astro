@@ -1,0 +1,146 @@
+---
+import { profile } from '../data/profile';
+import Base from '../layouts/Base.astro';
+
+interface Project {
+  code: string;
+  name: string;
+  tagline: string;
+  desc: string;
+  tech: string[];
+  status: string;
+  repo: string;
+  demo?: string;
+  sample?: boolean;
+}
+
+const projects: Project[] = [
+  {
+    code: 'T-01',
+    name: 'Observatory of Questions',
+    tagline: 'Deep-space personal research atlas & academic homepage',
+    desc: 'The code powering this site: Astro, TypeScript, SVG-based knowledge graph, accessible semantic list fallback, and zero heavy 3D overhead.',
+    tech: ['Astro', 'TypeScript', 'SVG', 'KaTeX'],
+    status: 'ACTIVE',
+    repo: 'https://github.com/BoyongTang/BoyongTang.github.io',
+    sample: false,
+  },
+  {
+    code: 'T-02',
+    name: 'ML-Practice & Notes',
+    tagline: 'Foundations of machine learning from mathematical first principles',
+    desc: 'Lecture notes, numerical simulations, and reference implementations for classic and modern machine learning algorithms.',
+    tech: ['Python', 'Jupyter', 'NumPy', 'PyTorch'],
+    status: 'ACTIVE',
+    repo: 'https://github.com/BoyongTang/ML-practice',
+    sample: false,
+  },
+];
+---
+
+<Base title="Projects & Instruments" description="Open-source tools, scientific code, and software experiments.">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="kicker">04 / INSTRUMENTS</p>
+      <h1>Projects &amp; Instruments</h1>
+      <p>
+        Computational tools, research code, and software repositories.
+        Clear division between experimental prototypes and maintained libraries.
+      </p>
+    </header>
+
+    <div class="section">
+      <div class="projects-grid">
+        {projects.map((proj) => (
+          <article class="proj-card">
+            <header class="proj-card__head">
+              <span class="code">{proj.code}</span>
+              <span class="status status--active">{proj.status}</span>
+            </header>
+            <h2 class="proj-card__title">{proj.name}</h2>
+            <p class="proj-card__tagline">{proj.tagline}</p>
+            <p class="proj-card__desc">{proj.desc}</p>
+            <div class="proj-card__tech">
+              {proj.tech.map((t) => <span class="tech-tag">{t}</span>)}
+            </div>
+            <div class="proj-card__links">
+              <a class="btn" href={proj.repo} target="_blank" rel="noopener">
+                Repository ↗
+              </a>
+              {proj.demo && (
+                <a class="btn btn--ghost" href={proj.demo} target="_blank" rel="noopener">
+                  Demo ↗
+                </a>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 24px;
+  }
+
+  .proj-card {
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+    background: rgb(11 29 48 / 0.5);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .proj-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .proj-card__title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--starlight);
+    margin: 0;
+  }
+
+  .proj-card__tagline {
+    color: var(--signal-cyan);
+    font: 500 13.5px var(--font-mono);
+    margin: 0;
+  }
+
+  .proj-card__desc {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+    flex: 1;
+  }
+
+  .proj-card__tech {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tech-tag {
+    font: 500 11.5px var(--font-mono);
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: rgb(56 84 103 / 0.35);
+    color: var(--starlight);
+  }
+
+  .proj-card__links {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+</style>

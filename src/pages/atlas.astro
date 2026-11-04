@@ -1,0 +1,41 @@
+---
+import Atlas from '../components/Atlas.astro';
+import Base from '../layouts/Base.astro';
+import { loadGraph } from '../lib/graph';
+
+const graph = await loadGraph();
+---
+
+<Base title="Research Atlas" description="Interactive celestial knowledge map of questions, methods, and evidence.">
+  <div class="wrap atlas-page-wrap">
+    <header class="page-head">
+      <p class="kicker">06 / CELESTIAL KNOWLEDGE MAP</p>
+      <h1>Research Atlas</h1>
+      <p>
+        An interactive map of questions, methods, and evidence.
+        Explore how problems motivate approaches, and how field notes document emerging questions.
+      </p>
+    </header>
+
+    <div class="atlas-full-container">
+      <Atlas graph={graph} mode="full" heading="Full Research Sky" />
+    </div>
+  </div>
+</Base>
+
+<style>
+  .atlas-page-wrap {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - var(--nav-h));
+    padding-bottom: 48px;
+  }
+
+  .atlas-full-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-top: 24px;
+    min-height: 720px;
+  }
+</style>

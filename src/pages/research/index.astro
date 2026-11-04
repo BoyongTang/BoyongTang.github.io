@@ -1,0 +1,56 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { statusLabel } from '../../lib/graph';
+
+const research = (await getCollection('research')).sort(
+  (a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime()
+);
+
+const topics = [...new Set(research.map((r) => r.data.topic))];
+---
+
+<Base title="Research Index" description="Research questions, methods, and ongoing inquiries.">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="kicker">01 / RESEARCH INDEX</p>
+      <h1>Research Inquiries</h1>
+      <p>
+        A collection of open research questions, experimental investigations, and methodological explorations.
+        Organized by inquiry status and relation to core problems.
+      </p>
+      <div class="head-actions">
+        <a class="btn" href="/atlas/">Open Research Atlas ↗</a>
+      </div>
+    </header>
+
+    <div class="section">
+      <ul class="signals">
+        {research.map((item) => (
+          <li class="signal">
+            <a href={`/research/${item.id}/`}>
+              <span class="code">{item.data.code}</span>
+              <div>
+                <span class="signal__title">{item.data.title}</span>
+                <p class="signal__summary">{item.data.question}</p>
+              </div>
+              <div class="signal__meta">
+                <span class={`status status--${item.data.status}`}>{statusLabel(item.data.status)}</span>
+                {item.data.sample && <span class="sample-tag">SAMPLE</span>}
+                <time datetime={item.data.updatedAt.toISOString().slice(0, 10)}>
+                  {item.data.updatedAt.toISOString().slice(0, 10)}
+                </time>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .head-actions {
+    margin-top: 24px;
+  }
+</style>

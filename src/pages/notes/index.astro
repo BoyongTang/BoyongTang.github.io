@@ -1,0 +1,44 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+const allNotes = (await getCollection('notes')).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+---
+
+<Base title="Field Notes" description="Derivations, proofs, experiment notes, and mathematical readings.">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="kicker">02 / FIELD LOG</p>
+      <h1>Field Notes</h1>
+      <p>
+        Working notes, mathematical derivations, reading summaries, and laboratory logs.
+        Reflections from the edge of certainty.
+      </p>
+    </header>
+
+    <div class="section">
+      <ul class="signals">
+        {allNotes.map((note) => (
+          <li class="signal">
+            <a href={`/notes/${note.id}/`}>
+              <span class="code">{note.data.code}</span>
+              <div>
+                <span class="signal__title">{note.data.title}</span>
+                <p class="signal__summary">{note.data.summary}</p>
+              </div>
+              <div class="signal__meta">
+                <span class="status status--completed">{note.data.topic}</span>
+                {note.data.sample && <span class="sample-tag">SAMPLE</span>}
+                <time datetime={note.data.date.toISOString().slice(0, 10)}>
+                  {note.data.date.toISOString().slice(0, 10)}
+                </time>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</Base>

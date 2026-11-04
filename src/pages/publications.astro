@@ -1,0 +1,108 @@
+---
+import { publications } from '../data/profile';
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Publications" description="Academic publications, preprints, and formal reports.">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="kicker">03 / PUBLIC RECORD</p>
+      <h1>Publications &amp; Preprints</h1>
+      <p>
+        Formally verified papers, peer-reviewed articles, and public preprints.
+        Strict boundary between published work and ongoing investigation.
+      </p>
+    </header>
+
+    <div class="section">
+      {publications.length > 0 ? (
+        <ul class="publications-list">
+          {publications.map((pub) => (
+            <li class="pub-card">
+              <span class="pub-card__year">{pub.year}</span>
+              <div class="pub-card__content">
+                <h2 class="pub-card__title">{pub.title}</h2>
+                <p class="pub-card__authors">{pub.authors}</p>
+                <p class="pub-card__venue">
+                  <em>{pub.venue}</em> · <span class="status status--completed">{pub.status}</span>
+                </p>
+                {pub.links && pub.links.length > 0 && (
+                  <div class="pub-card__links">
+                    {pub.links.map((link) => (
+                      <a class="btn btn--ghost" href={link.href} target="_blank" rel="noopener">
+                        {link.label} ↗
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div class="empty">
+          <strong>No public records yet</strong>
+          <p>
+            No formal peer-reviewed publications or public preprints are currently listed.
+            Active investigations and preliminary work can be found in the
+            <a href="/research/">Research</a> section.
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .publications-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .pub-card {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--hairline-soft);
+  }
+
+  .pub-card__year {
+    font: 600 20px var(--font-mono);
+    color: var(--selection-gold);
+  }
+
+  .pub-card__title {
+    font-size: 21px;
+    font-weight: 600;
+    color: var(--starlight);
+    margin: 0 0 8px;
+  }
+
+  .pub-card__authors {
+    color: var(--muted);
+    font-size: 15.5px;
+    margin: 0 0 6px;
+  }
+
+  .pub-card__venue {
+    color: var(--dim);
+    font: 500 13px var(--font-mono);
+    margin: 0 0 12px;
+  }
+
+  .pub-card__links {
+    display: flex;
+    gap: 10px;
+  }
+
+  @media (max-width: 600px) {
+    .pub-card {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
