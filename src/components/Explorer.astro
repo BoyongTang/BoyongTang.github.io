@@ -1,11 +1,11 @@
 ---
 // The Pillars of Creation as the interface: one big image to explore like a map. Drag, scroll or pinch to
-// move through it; the five parts of me sit on places where stars are born. Choosing one (or simply zooming
+// move through it; the four parts of me sit on places where stars are born. Choosing one (or simply zooming
 // in close to it) flies there and unfolds its stars on the pillar; a star opens its card. The living sky
 // behind it is drawn by Backdrop.astro; this component holds everything you can touch.
 // Without JavaScript the parts are plain links to their pages and every star is in the lists below.
 import { facets, type FacetId } from '../data/facets';
-import { PILLARS, spots } from '../data/pillars';
+import { creditLine, labelLeft, PILLARS, spots } from '../data/pillars';
 import { profile } from '../data/profile';
 import { fitPillars, objectPosition } from '../lib/pillars-fit';
 import type { SkyFacet } from '../lib/sky';
@@ -47,7 +47,6 @@ const REF = { wide: { w: 1440, h: 830 }, tall: { w: 390, h: 720 } };
 const fw = fitPillars(REF.wide.w, REF.wide.h);
 const ft = fitPillars(REF.tall.w, REF.tall.h);
 const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
-const n = (f: SkyFacet) => f.items.length;
 ---
 
 <script is:inline>
@@ -68,7 +67,7 @@ const n = (f: SkyFacet) => f.items.length;
 
 <section
   class:list={['ex', home && 'ex--home']}
-  aria-label="The Pillars of Creation, with the five parts of me. Drag to look around, scroll or pinch to zoom, choose a part to open it."
+  aria-label="The Pillars of Creation, with the four parts of me. Drag to look around, scroll or pinch to zoom, choose a part to open it."
   data-ex
   data-home={home ? '1' : '0'}
   data-focus={focus ?? ''}
@@ -78,7 +77,7 @@ const n = (f: SkyFacet) => f.items.length;
   <img
     class="ex__still"
     src={PILLARS.variants.tall.src}
-    alt="Webb's image of the Pillars of Creation: towering columns of gold-brown gas and dust against a deep blue field of stars."
+    alt="The Pillars of Creation: three columns of rust-brown dust rising into a black, starry sky, edged with teal light."
     loading="lazy"
     decoding="async"
     style={`--pw:${objectPosition(fw, REF.wide.w, REF.wide.h)};--pt:${objectPosition(ft, REF.tall.w, REF.tall.h)}`}
@@ -139,7 +138,7 @@ const n = (f: SkyFacet) => f.items.length;
     }
   </svg>
 
-  <nav class="ex__parts" aria-label="Five parts of me">
+  <nav class="ex__parts" aria-label="Four parts of me">
     {
       parts.map(({ f }, i) => {
         const [x, y] = spots[f.id];
@@ -147,12 +146,12 @@ const n = (f: SkyFacet) => f.items.length;
         const [tx, ty] = ft.at(x, y);
         return (
           <a
-            class:list={['part', wx > REF.wide.w * 0.78 && 'part--flip-wide', tx > REF.tall.w * 0.5 && 'part--flip-tall']}
+            class:list={['part', labelLeft[f.id].wide && 'part--flip-wide', labelLeft[f.id].tall && 'part--flip-tall']}
             href={`/sky/${f.id}/`}
             id={`n-${f.id}`}
             data-part={f.id}
             style={`--wx:${pct(wx, REF.wide.w)};--wy:${pct(wy, REF.wide.h)};--tx:${pct(tx, REF.tall.w)};--ty:${pct(ty, REF.tall.h)};--c:${f.color};--i:${i}`}
-            aria-label={`${f.name}, ${f.nameZh}: ${f.line} ${n(f)} ${n(f) === 1 ? 'star' : 'stars'}.`}
+            aria-label={`${f.name}, ${f.nameZh}: ${f.line}`}
           >
             <span class="part__halo" aria-hidden="true" />
             <span class="part__ring" aria-hidden="true" />
@@ -160,7 +159,7 @@ const n = (f: SkyFacet) => f.items.length;
             <span class="part__label" aria-hidden="true">
               <span class="part__name">{f.name}</span>
               <span class="part__zh" lang="zh">
-                {f.nameZh} · {String(n(f)).padStart(2, '0')}
+                {f.nameZh}
               </span>
             </span>
           </a>
@@ -169,53 +168,42 @@ const n = (f: SkyFacet) => f.items.length;
     }
   </nav>
 
-  {
-    home && (
-      <div class="ex__id">
-        <p class="ex__eyebrow">O / Q · Observatory of Questions</p>
-        <h1 class="ex__name">{profile.name}</h1>
-        {profile.altNames.length > 0 && <p class="ex__alt">{profile.altNames.join(' · ')}</p>}
-        <p class="ex__role">
-          {profile.role} · {profile.affiliation}
-        </p>
-        <p class="ex__tagline">{profile.tagline}</p>
-        <p class="ex__hint">Five parts of me, where stars are born. Drag, zoom, choose one.</p>
-      </div>
-    )
-  }
-
-  <!-- the open part -->
-  {
-    sky.map((f) => (
-      <div class="ex__open" data-open={f.id} style={`--c:${f.color}`} hidden>
-        <button type="button" class="ex__back" data-overview>
-          ← All five parts
-        </button>
-        <p class="ex__code">{f.code} · {f.nameZh}</p>
-        {focus === f.id ? <h1 class="ex__title">{f.name}</h1> : <h2 class="ex__title">{f.name}</h2>}
-        <p class="ex__line">
-          {f.line} <span>{String(n(f)).padStart(2, '0')} {n(f) === 1 ? 'star' : 'stars'}</span>
-        </p>
-      </div>
-    ))
-  }
+  <!-- the caption, bottom centre: the name, or the open part -->
+  <div class="ex__caption" aria-live="polite">
+    {
+      home && (
+        <div class="ex__cap ex__cap--home">
+          <h1 class="ex__name">{profile.name}</h1>
+          <p class="ex__tag">{profile.tagline}</p>
+        </div>
+      )
+    }
+    {
+      sky.map((f) => (
+        <div class="ex__cap" data-open={f.id} style={`--c:${f.color}`} hidden>
+          {focus === f.id ? <h1 class="ex__name">{f.name}</h1> : <h2 class="ex__name">{f.name}</h2>}
+          <p class="ex__tag">
+            <span lang="zh">{f.nameZh}</span> · {f.line}
+          </p>
+        </div>
+      ))
+    }
+  </div>
 
   <aside class="ex__card" aria-live="polite" data-card hidden>
     <button type="button" class="ex__close" data-close aria-label="Close">×</button>
     <div data-card-body></div>
   </aside>
 
-  <div class="ex__tools" role="toolbar" aria-label="View">
-    <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
-    <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
-    <button type="button" data-overview aria-label="See all five parts">⤢</button>
-  </div>
+
+  {!home && <a class="ex__home" href="/">← The pillars</a>}
 
   <div class="ex__foot">
     <p class="ex__credit">
-      <a href={PILLARS.url} rel="noopener">{PILLARS.title}</a> · {PILLARS.credit} · {PILLARS.license}
+      {creditLine}
     </p>
     <a class="ex__down" href={home ? '#me' : '#list'}>{home ? 'About me ↓' : 'As a list ↓'}</a>
+
   </div>
 </section>
 
@@ -283,9 +271,7 @@ const n = (f: SkyFacet) => f.items.length;
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background:
-      radial-gradient(ellipse 55% 60% at 12% 32%, rgb(3 6 16 / 0.62), transparent 70%),
-      linear-gradient(180deg, rgb(3 6 16 / 0.3), transparent 20%, transparent 84%, rgb(3 6 16 / 0.55));
+    background: linear-gradient(180deg, rgb(1 2 6 / 0.35), transparent 16%, transparent 70%, rgb(1 2 6 / 0.7));
     transition: opacity 600ms ease;
   }
 
@@ -386,7 +372,7 @@ const n = (f: SkyFacet) => f.items.length;
     animation-delay: calc(200ms + var(--i) * 90ms);
   }
 
-  /* ── the five parts ── */
+  /* ── the four parts ── */
   .part {
     position: absolute;
     left: var(--wx);
@@ -399,7 +385,12 @@ const n = (f: SkyFacet) => f.items.length;
     text-decoration: none;
     outline: none;
     z-index: 1;
-    transition: opacity 400ms ease;
+    transition: opacity 900ms ease-out;
+  }
+
+  /* the parts come out with the sky, not before it */
+  :global(html.js:not(.sky-ready)) .part {
+    opacity: 0;
   }
 
   @media (max-aspect-ratio: 9 / 10) {
@@ -434,19 +425,9 @@ const n = (f: SkyFacet) => f.items.length;
     margin: -48px 0 0 -48px;
     background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 55%, transparent), color-mix(in srgb, var(--c) 12%, transparent) 55%, transparent);
     mix-blend-mode: screen;
-    opacity: 0.7;
+    opacity: 0;
+    transform: scale(0.7);
     transition: opacity 500ms ease, transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    :global(html:not([data-motion='reduce'])) .part__halo {
-      animation: part-breathe calc(5s + var(--i) * 0.9s) ease-in-out infinite;
-    }
-  }
-
-  @keyframes part-breathe {
-    0%, 100% { opacity: 0.55; transform: scale(0.92); }
-    50% { opacity: 0.85; transform: scale(1.06); }
   }
 
   .part__ring {
@@ -454,16 +435,40 @@ const n = (f: SkyFacet) => f.items.length;
     height: 30px;
     margin: -15px 0 0 -15px;
     border: 1px solid color-mix(in srgb, var(--c) 70%, #fff);
-    opacity: 0.55;
+    opacity: 0;
+    transform: scale(0.6);
     transition: opacity 300ms ease, transform 500ms cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
+  /* at rest, just a star among the others: faint, now and then a little brighter */
   .part__core {
-    width: 5px;
-    height: 5px;
-    margin: -2.5px 0 0 -2.5px;
+    width: 4px;
+    height: 4px;
+    margin: -2px 0 0 -2px;
     background: #fff;
-    box-shadow: 0 0 6px 2px color-mix(in srgb, var(--c) 85%, transparent);
+    box-shadow: 0 0 5px 1px color-mix(in srgb, var(--c) 70%, transparent);
+    opacity: 0.55;
+    transition: opacity 300ms ease, transform 300ms ease;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .part__core {
+      animation: part-twinkle calc(7s + var(--i) * 1.3s) ease-in-out calc(var(--i) * -2.1s) infinite;
+    }
+  }
+
+  @keyframes part-twinkle {
+    0%, 100% { opacity: 0.4; }
+    45% { opacity: 0.4; }
+    55% { opacity: 0.95; }
+    65% { opacity: 0.45; }
+  }
+
+  .part:hover .part__core,
+  .part:focus-visible .part__core {
+    opacity: 1;
+    transform: scale(1.4);
+    animation: none;
   }
 
   .part__label {
@@ -476,6 +481,13 @@ const n = (f: SkyFacet) => f.items.length;
     white-space: nowrap;
     pointer-events: none;
     text-shadow: 0 0 3px #030610, 0 0 8px #030610, 0 0 16px rgb(3 6 16 / 0.85);
+    opacity: 0.55;
+    transition: opacity 300ms ease;
+  }
+
+  .part:hover .part__label,
+  .part:focus-visible .part__label {
+    opacity: 1;
   }
 
   .part--flip-wide .part__label {
@@ -514,8 +526,7 @@ const n = (f: SkyFacet) => f.items.length;
   .part:hover .part__halo,
   .part:focus-visible .part__halo {
     opacity: 1;
-    transform: scale(1.35);
-    animation: none;
+    transform: scale(1.2);
   }
 
   .part:hover .part__ring,
@@ -528,135 +539,49 @@ const n = (f: SkyFacet) => f.items.length;
     border: 2px solid var(--selection-gold);
   }
 
-  /* ── the name (home), fading as you go in ── */
-  .ex__id {
+  /* ── the caption: one quiet line of spaced capitals at the bottom centre ── */
+  .ex__caption {
     position: absolute;
-    left: var(--gutter);
-    top: clamp(44px, 12vh, 120px);
-    max-width: min(560px, 50vw);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    left: 50%;
+    bottom: 54px;
+    transform: translateX(-50%);
+    width: min(720px, calc(100% - 2 * var(--gutter)));
+    text-align: center;
     pointer-events: none;
     z-index: 2;
-    opacity: var(--id-o, 1);
-    transition: opacity 300ms ease;
   }
 
-  .ex__eyebrow,
-  .ex__alt,
-  .ex__hint {
-    margin: 0;
-    font: 500 11.5px/1.5 var(--font-mono);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #b7c6da;
-    text-shadow: 0 1px 8px rgb(0 0 0 / 0.9);
+  .ex__cap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    animation: fade-in 700ms ease-out both;
   }
 
-  .ex__alt {
-    text-transform: none;
-    font-size: 13px;
-    letter-spacing: 0.16em;
+  .ex.is-open .ex__cap--home {
+    display: none;
   }
 
   .ex__name {
-    margin: 0;
-    font: 600 clamp(42px, 6vw, 84px) / 1 var(--font-display);
-    letter-spacing: -0.025em;
-    color: #f4f7fb;
-    text-shadow: 0 2px 30px rgb(0 0 0 / 0.7);
-  }
-
-  .ex__role {
-    margin: 8px 0 0;
-    font: 500 12px/1.6 var(--font-mono);
-    letter-spacing: 0.14em;
+    margin: 0 0 0 0.42em; /* the tracking after the last letter, so it centres */
+    font: 500 clamp(15px, 1.5vw, 21px) / 1.2 var(--font-display);
+    letter-spacing: 0.42em;
     text-transform: uppercase;
-    color: #d5e0ec;
-    text-shadow: 0 1px 10px rgb(0 0 0 / 0.8);
+    color: #f4f2ee;
+    text-shadow: 0 1px 16px rgb(0 0 0 / 0.9);
   }
 
-  .ex__tagline {
-    position: relative;
-    margin: 10px 0 0;
-    padding-top: 16px;
-    font: 400 clamp(18px, 1.7vw, 22px) / 1.35 var(--font-display);
-    color: #f4f7fb;
-    text-shadow: 0 1px 12px rgb(0 0 0 / 0.8);
+  .ex__cap[data-open] .ex__name {
+    color: color-mix(in srgb, var(--c) 35%, #f4f2ee);
   }
 
-  .ex__tagline::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 72px;
-    height: 1px;
-    background: var(--selection-gold);
-  }
-
-  .ex__hint {
-    margin-top: 14px;
-  }
-
-  /* ── the open part's title ── */
-  .ex__open {
-    position: absolute;
-    left: var(--gutter);
-    top: 22px;
-    max-width: min(440px, 70vw);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    z-index: 2;
-    text-shadow: 0 1px 14px rgb(0 0 0 / 0.85);
-  }
-
-  .ex__back,
-  .ex__code {
-    font: 500 11.5px/1.4 var(--font-mono);
+  .ex__tag {
+    margin: 0;
+    font: 400 12px/1.5 var(--font-mono);
     letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
-  .ex__back {
-    align-self: flex-start;
-    margin-bottom: 8px;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: #d5e0ec;
-    cursor: pointer;
-  }
-
-  .ex__back:hover {
-    color: #fff;
-  }
-
-  .ex__code {
-    margin: 0;
-    color: color-mix(in srgb, var(--c) 75%, #b7c6da);
-  }
-
-  .ex__title {
-    margin: 0;
-    font: 600 clamp(30px, 4vw, 48px) / 1.05 var(--font-display);
-    letter-spacing: -0.02em;
-  }
-
-  .ex__line {
-    margin: 0;
-    color: #d5e0ec;
-    font-size: 15px;
-  }
-
-  .ex__line span {
-    margin-left: 8px;
-    font: 500 11.5px var(--font-mono);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #b7c6da;
+    color: rgb(230 226 220 / 0.68);
+    text-shadow: 0 1px 10px rgb(0 0 0 / 0.95);
   }
 
   /* ── a star's card ── */
@@ -698,37 +623,6 @@ const n = (f: SkyFacet) => f.items.length;
   }
 
   /* ── tools and foot ── */
-  .ex__tools {
-    position: absolute;
-    right: var(--gutter);
-    bottom: 52px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    z-index: 2;
-  }
-
-  .ex__tools button {
-    display: grid;
-    place-items: center;
-    width: 38px;
-    height: 38px;
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-sm);
-    background: rgb(3 6 11 / 0.6);
-    color: var(--starlight);
-    font: 500 17px/1 var(--font-mono);
-    cursor: pointer;
-  }
-
-  .ex__tools button:hover {
-    border-color: var(--signal-cyan);
-  }
-
-  .ex:not(.is-live) .ex__tools {
-    display: none;
-  }
-
   .ex__foot {
     position: absolute;
     left: var(--gutter);
@@ -764,24 +658,34 @@ const n = (f: SkyFacet) => f.items.length;
     text-shadow: 0 1px 6px rgb(0 0 0 / 0.95);
   }
 
-  .ex__down:hover {
+  .ex__down:hover,
+  .ex__home:hover {
     color: #fff;
   }
 
-  @media (max-aspect-ratio: 9 / 10) {
-    .ex__veil {
-      background: linear-gradient(180deg, rgb(3 6 16 / 0.3), transparent 18%, transparent 48%, rgb(3 6 16 / 0.82) 78%, rgb(3 6 16 / 0.92));
-    }
+  .ex__home {
+    position: absolute;
+    left: var(--gutter);
+    top: 22px;
+    z-index: 2;
+    font: 500 11.5px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #d5e0ec;
+    text-decoration: none;
+    text-shadow: 0 1px 6px rgb(0 0 0 / 0.95);
+  }
 
-    .ex__id {
-      top: auto;
-      bottom: 84px;
-      max-width: none;
-      right: var(--gutter);
-    }
-
-    .ex__hint {
+  /* on a computer there is nothing below: no down link */
+  @media (hover: hover) and (pointer: fine) {
+    .ex__down {
       display: none;
+    }
+  }
+
+  @media (max-aspect-ratio: 9 / 10) {
+    .ex__caption {
+      bottom: 78px;
     }
 
     .ex__foot {
@@ -801,12 +705,7 @@ const n = (f: SkyFacet) => f.items.length;
       font-size: 10px;
     }
 
-    .ex__tools {
-      bottom: auto;
-      top: 18px;
-    }
-
-    .ex__card {
+      .ex__card {
       top: auto;
       bottom: 0;
       right: 0;
@@ -818,35 +717,12 @@ const n = (f: SkyFacet) => f.items.length;
   }
 
   /* ── the opening (home): each part lights up, then the name ── */
-  :global(html.sky-intro) .part {
-    animation: part-ignite 1200ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
-    animation-delay: calc(1500ms + var(--i) * 280ms);
+  :global(html.sky-intro) .ex__cap--home {
+    animation: ex-rise 1400ms cubic-bezier(0.2, 0.7, 0.2, 1) 900ms both;
   }
 
-  :global(html.sky-intro) .part__label {
-    animation: fade-in 900ms ease-out both;
-    animation-delay: calc(2000ms + var(--i) * 280ms);
-  }
-
-  :global(html.sky-intro) .ex__id > * {
-    animation: ex-rise 1000ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-
-  :global(html.sky-intro) .ex__eyebrow { animation-delay: 700ms; }
-  :global(html.sky-intro) .ex__name { animation-delay: 900ms; }
-  :global(html.sky-intro) .ex__alt { animation-delay: 1050ms; }
-  :global(html.sky-intro) .ex__role { animation-delay: 1200ms; }
-  :global(html.sky-intro) .ex__tagline { animation-delay: 1350ms; }
-  :global(html.sky-intro) .ex__hint { animation-delay: 3300ms; }
-
-  :global(html.sky-intro) .ex__foot,
-  :global(html.sky-intro) .ex__tools {
+  :global(html.sky-intro) .ex__foot {
     animation: fade-in 900ms ease-out 3000ms both;
-  }
-
-  @keyframes part-ignite {
-    from { opacity: 0; transform: scale(0.3); }
-    to { opacity: 1; transform: none; }
   }
 
   @keyframes ex-rise {

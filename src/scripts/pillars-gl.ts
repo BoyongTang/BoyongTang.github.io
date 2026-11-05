@@ -1,4 +1,4 @@
-// The living Pillars of Creation: Webb's photo drawn with WebGL so it has depth and quietly moves.
+// The living Pillars of Creation: the picture drawn with WebGL so it has depth and quietly moves.
 // A depth mask (public/sky/pillars-maps.png, R) splits it into near pillars and far haze and stars, so the
 // far layer slides behind the near one (parallax); gas streams off the pillars toward the light above;
 // the red star-forming knots (G) pulse; stars, found from the photo's own local contrast, twinkle.
@@ -79,7 +79,7 @@ void main() {
   float t = uTime * uLife;
 
   // gas streaming off the pillars: a two-phase flow, strongest at their edges, toward the light above
-  vec2 e = vec2(1.0 / 320.0, 1.0 / 554.0);
+  vec2 e = 1.0 / vec2(textureSize(uMap, 0));
   vec2 grad = vec2(depthAt(uv + vec2(e.x, 0.0)) - depthAt(uv - vec2(e.x, 0.0)), depthAt(uv + vec2(0.0, e.y)) - depthAt(uv - vec2(0.0, e.y)));
   float edge = clamp(length(grad) * 5.0, 0.0, 1.0);
   vec2 wob = vec2(fbm(uv * 6.0 + 3.1), fbm(uv * 6.0 + 7.7)) - 0.5;
@@ -93,15 +93,50 @@ void main() {
   float wA = 1.0 - abs(1.0 - 2.0 * f0);
   vec3 col = cA * wA + cB * (1.0 - wA);
 
-  // stars twinkle: points brighter than the ring round them
+  // refine: the picture is small and stretched, so restore edge contrast. An unsharp mask whose radius
+  // follows how much each picture pixel is magnified on screen (kept off the smooth black sky).
   vec2 tp = 1.0 / uImgPx;
+  float mag = clamp(uRect.z / uImgPx.x, 1.0, 4.0);       // screen px per texture px
+  vec2 r1 = tp * (0.9 + 0.35 * mag);
+  vec3 ring = 0.25 * (img(uv + vec2(r1.x, 0.0), 0.0) + img(uv - vec2(r1.x, 0.0), 0.0) +
+                      img(uv + vec2(0.0, r1.y), 0.0) + img(uv - vec2(0.0, r1.y), 0.0));
+  vec3 ring2 = 0.25 * (img(uv + r1 * 2.2, 0.6) + img(uv - r1 * 2.2, 0.6) +
+                       img(uv + vec2(r1.x, -r1.y) * 2.2, 0.6) + img(uv + vec2(-r1.x, r1.y) * 2.2, 0.6));
+  vec3 base = img(uv, 0.0);
+  float body = smoothstep(0.03, 0.14, lum(base));        // where there is cloud, not empty sky
+  col += ((base - ring) * 0.45 + (base - ring2) * 0.3) * body * (1.0 - 0.6 * uBlur);
+
+  // fine grain in the dust: filaments a few screen pixels wide, following the cloud's own light,
+  // so a close look finds texture rather than a smear
+  vec2 gq = uv * uImgPx / 1.6;
+  float fil = fbm(gq * vec2(1.0, 2.3) + fbm(gq * 0.35) * 2.0) - 0.5;
+  float grain = noise(uv * uRect.zw / 1.3) - 0.5;
+  col *= 1.0 + (fil * 0.16 + grain * 0.05) * body * smoothstep(0.25, 0.6, d) * smoothstep(1.2, 2.5, mag);
+  col = max(col, 0.0);
+
+  // stars twinkle: points brighter than the ring round them
   float lc = lum(img(uv, 0.0));
   float lr = 0.25 * (lum(img(uv + vec2(2.5, 0.0) * tp, 0.0)) + lum(img(uv - vec2(2.5, 0.0) * tp, 0.0)) +
                      lum(img(uv + vec2(0.0, 2.5) * tp, 0.0)) + lum(img(uv - vec2(0.0, 2.5) * tp, 0.0)));
   float star = smoothstep(0.1, 0.32, lc - lr) * smoothstep(0.45, 0.85, lc) * (1.0 - 0.6 * smoothstep(0.5, 0.9, d));
   vec2 cell = floor(uv * uImgPx / 4.0);
   float tw = sin(t * (0.8 + 2.2 * hash(cell)) + 6.2831 * hash(cell + 3.7));
-  col *= 1.0 + star * tw * 0.45 * uLife;
+  col *= 1.0 + star * tw * 0.25 * uLife;
+
+  // a few crisp stars of our own over the dark sky, scattered sparsely as in the picture:
+  // at most one per (large) cell, and only in a few cells, each a point a pixel or two across on screen
+  vec2 cellUV = uv * vec2(70.0, 70.0 * uRect.w / uRect.z);
+  vec2 ci = floor(cellUV);
+  float hs = hash(ci + 11.3);
+  if (hs > 0.955) {
+    vec2 sp = (ci + vec2(hash(ci + 1.7), hash(ci + 5.1))) / vec2(70.0, 70.0 * uRect.w / uRect.z);
+    float dpx = length((uv - sp) * uRect.zw);
+    float size = 0.6 + 1.3 * pow(hash(ci + 9.2), 4.0);
+    float tw2 = 0.75 + 0.25 * sin(t * (0.6 + 2.0 * hash(ci + 2.2)) + 6.28 * hs);
+    float pt = exp(-dpx * dpx / (size * size)) * (0.35 + 0.65 * hash(ci + 4.4)) * tw2;
+    vec3 tint = mix(vec3(0.8, 0.9, 1.0), vec3(1.0, 0.85, 0.7), step(0.8, hash(ci + 6.6)));
+    col += tint * pt * (1.0 - smoothstep(0.3, 0.7, d)) * 0.85;
+  }
 
   // the red knots where stars are forming breathe
   float glow = texture(uMap, clamp(uv, 0.0, 1.0)).g;
@@ -109,7 +144,7 @@ void main() {
 
   // the far haze drifts
   float hz = fbm(uv * 3.0 + vec2(t * 0.004, -t * 0.007));
-  col += vec3(0.22, 0.38, 0.95) * (hz - 0.45) * 0.09 * (1.0 - d) * uLife;
+  col += vec3(0.08, 0.32, 0.38) * (hz - 0.45) * 0.07 * (1.0 - d) * uLife;
 
   // beyond the image: a soft, dark continuation of its edge
   vec2 cuv = clamp(uv0, 0.0, 1.0);
@@ -181,7 +216,8 @@ export class LivingPillars {
       lp.texture(1, b, false);
       lp.imgPx = [a.naturalWidth, a.naturalHeight];
       return lp;
-    } catch {
+    } catch (e) {
+      console.warn('[pillars] living sky unavailable, showing the still image:', e);
       return null;
     }
   }
@@ -223,7 +259,7 @@ export class LivingPillars {
     const c = this.canvas;
     const cw = c.clientWidth;
     const ch = c.clientHeight;
-    const k = Math.min(devicePixelRatio || 1, 1.5) * this.scale;
+    const k = Math.min(devicePixelRatio || 1, 2) * this.scale; // full Retina resolution
     const w = Math.max(1, Math.round(cw * k));
     const h = Math.max(1, Math.round(ch * k));
     if (c.width !== w || c.height !== h) {

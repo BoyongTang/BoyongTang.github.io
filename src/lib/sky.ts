@@ -87,18 +87,8 @@ async function drafts(): Promise<Record<FacetId, Draft[]>> {
       mag: 1,
     });
 
-  const toolbox: Draft[] = profile.stack.map((t) => ({ id: slug(t), name: t, kind: 'Tool', text: 'Used day to day.' }));
-
-  const path: Draft[] = profile.education.map((e, i) => ({
-    id: `edu-${i + 1}`,
-    name: e.where.split(',')[0],
-    kind: 'Education',
-    sub: e.when.toUpperCase(),
-    text: e.what,
-    facts: [{ label: 'Where', value: e.where }],
-    mag: 1,
-  }));
-  path.push({ id: 'chengdu', name: profile.location, kind: 'Place', sub: profile.timezone });
+  // the personal introduction: not written yet, so no stars for now
+  const intro: Draft[] = [];
 
   const works: Draft[] = projects
     .filter((p) => !p.draft)
@@ -133,7 +123,7 @@ async function drafts(): Promise<Record<FacetId, Draft[]>> {
     { id: 'about', name: profile.cv ? 'CV' : 'About & CV', kind: 'Page', sub: profile.cv ? 'PDF' : '/about/', links: [link(profile.cv ? 'Download the CV' : 'Open About', cvHref)] },
   ];
 
-  return { research, toolbox, path, works, contact };
+  return { research, intro, works, contact };
 }
 
 /** Rough width of a star's label, in world units (name at 21–25, the mono line under it at 12.5). */
@@ -242,6 +232,11 @@ function place(widths: number[], edges: [number, number][], seed: number, tall: 
 
 /** One layout, centred in the world, with the view that frames it (labels included). */
 function arrange(widths: number[], edges: [number, number][], seed: number, tall: boolean) {
+  if (!widths.length) {
+    const w = tall ? 560 : 1100;
+    const h = tall ? 900 : 760;
+    return { pos: [], view: { x: WORLD.w / 2 - w / 2, y: WORLD.h / 2 - h / 2, w, h } };
+  }
   const raw = place(widths, edges, seed, tall);
   const left = (i: number) => raw[i].x - (raw[i].side === 'left' ? widths[i] : 0);
   const right = (i: number) => raw[i].x + (raw[i].side === 'right' ? widths[i] : 0);

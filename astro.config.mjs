@@ -15,6 +15,9 @@ export default defineConfig({
     '/atlas/math': '/sky/research/',
     '/atlas/ai': '/sky/research/',
     '/atlas/teaching': '/sky/research/',
+    // the Toolbox part was removed and Path became the personal introduction
+    '/sky/toolbox': '/',
+    '/sky/path': '/sky/intro/',
   },
   markdown: {
     processor: unified({

@@ -842,3 +842,21 @@ html[data-motion='reduce'] *::after {
   animation: none !important;
   transition-duration: 0.01ms !important;
 }
+
+/* ── bare pages (home, the four parts): only the pillars ── */
+html.bare {
+  --nav-h: 0px;
+}
+
+/* on a computer the pillars are the whole page: nothing to scroll down to */
+@media (hover: hover) and (pointer: fine) {
+  html.bare,
+  html.bare body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html.bare main > :not([data-ex]) {
+    display: none;
+  }
+}

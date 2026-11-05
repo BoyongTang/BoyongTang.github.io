@@ -1,11 +1,11 @@
-// Five parts of Boyong, each sitting on a place in the Pillars of Creation where stars are born
+// Four parts of Boyong, each sitting on a place in the Pillars of Creation where stars are born
 // (src/data/pillars.ts). Entering one opens its star map: every star there is something real from
 // src/data/profile.ts or the content collections.
 // A part with little in it simply has few stars; nothing is invented to fill the sky.
 //
 // No Astro imports here, so scripts/make-og.mjs can use it directly.
 
-export type FacetId = 'research' | 'toolbox' | 'path' | 'works' | 'contact';
+export type FacetId = 'research' | 'intro' | 'works' | 'contact';
 
 export interface Facet {
   id: FacetId;
@@ -22,10 +22,9 @@ export interface Facet {
 
 export const facets: Facet[] = [
   { id: 'research', code: 'N-01', name: 'Research', nameZh: '研究', line: 'What I study.', color: '#a9cbff', deep: '#3d5ea8', seed: 41 },
-  { id: 'toolbox', code: 'N-02', name: 'Toolbox', nameZh: '工具', line: 'What I work with.', color: '#ffc47a', deep: '#a0602a', seed: 73 },
-  { id: 'path', code: 'N-03', name: 'Path', nameZh: '经历', line: 'Where I have been.', color: '#ff8f7d', deep: '#8a3040', seed: 17 },
-  { id: 'works', code: 'N-04', name: 'Works', nameZh: '作品', line: 'What I have made.', color: '#8fe3d2', deep: '#2a7468', seed: 29 },
-  { id: 'contact', code: 'N-05', name: 'Contact', nameZh: '联系', line: 'How to reach me.', color: '#cdbcff', deep: '#5a4699', seed: 89 },
+  { id: 'intro', code: 'N-02', name: 'Intro', nameZh: '个人介绍', line: 'Who I am.', color: '#ff8f7d', deep: '#8a3040', seed: 17 },
+  { id: 'works', code: 'N-03', name: 'Works', nameZh: '作品', line: 'What I have made.', color: '#8fe3d2', deep: '#2a7468', seed: 29 },
+  { id: 'contact', code: 'N-04', name: 'Contact', nameZh: '联系', line: 'How to reach me.', color: '#cdbcff', deep: '#5a4699', seed: 89 },
 ];
 
 /** A nebula's star map world, in its own units. */
@@ -45,14 +44,7 @@ export const constellations: Record<FacetId, [string, string][]> = {
     ['bayesian-optimization', 'surrogate-models-uncertainty'],
     ['surrogate-models-uncertainty', 'trustworthy-evaluation'],
   ],
-  // DeepChem builds on RDKit; the rest are Python libraries and tools
-  toolbox: [
-    ['python', 'jupyter'],
-    ['python', 'scikit-learn'],
-    ['python', 'rdkit'],
-    ['rdkit', 'deepchem'],
-  ],
-  path: [['edu-1', 'chengdu']],
+  intro: [],
   works: [],
   contact: [
     ['email', 'github'],

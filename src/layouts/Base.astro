@@ -9,7 +9,7 @@ import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 import Backdrop, { type Sky } from '../components/Backdrop.astro';
 import StarGlow from '../components/StarGlow.astro';
-import { PILLARS, spots } from '../data/pillars';
+import { creditLine, spots } from '../data/pillars';
 import { cvHref, profile } from '../data/profile';
 
 interface Props {
@@ -17,6 +17,8 @@ interface Props {
   description?: string;
   /** Where this page sits in the Pillars of Creation (see Backdrop.astro). */
   sky?: Sky;
+  /** Only the pillars: no site header or footer (the home page and the four parts). */
+  bare?: boolean;
 }
 
 const { title, description = `${profile.name} — ${profile.role}. ${profile.subline}` } = Astro.props;
@@ -47,7 +49,7 @@ const year = new Date().getFullYear();
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class:list={[Astro.props.bare && 'bare']}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -69,6 +71,7 @@ const year = new Date().getFullYear();
       try {
         if (localStorage.getItem('oq.motion') === 'reduce') document.documentElement.dataset.motion = 'reduce';
       } catch {}
+      document.documentElement.classList.add('js');
       // the living sky needs WebGL 2; without it pages keep a still image (?still forces that)
       try {
         if (!/[?&]still\b/.test(location.search) && document.createElement('canvas').getContext('webgl2')) document.documentElement.classList.add('has-gl');
@@ -81,6 +84,7 @@ const year = new Date().getFullYear();
     <slot name="intro" />
     <a class="skip-link" href="#main">Skip to content</a>
 
+    {!Astro.props.bare && (
     <header class="site-header">
       <div class="site-header__inner">
         <a class="brand" href="/" aria-label={`${profile.name} — home`}>
@@ -98,15 +102,17 @@ const year = new Date().getFullYear();
         </nav>
       </div>
     </header>
+    )}
 
     <main id="main">
       <slot />
     </main>
 
+    {!Astro.props.bare && (
     <footer class="site-footer">
       <div class="site-footer__inner">
         <span>© {year} {profile.name} · O/Q Observatory of Questions</span>
-        <span>Sky: <a href={PILLARS.url} rel="noopener">{PILLARS.title}</a>, {PILLARS.credit}, {PILLARS.license}. Every star on it is real content.</span>
+        <span>Sky: {creditLine}. Every star on it is real content.</span>
         <span>
           <a href={`mailto:${profile.email}`}>{profile.email}</a>
           &nbsp;·&nbsp;
@@ -114,6 +120,7 @@ const year = new Date().getFullYear();
         </span>
       </div>
     </footer>
+    )}
 
     <script>
       const menu = document.querySelector<HTMLButtonElement>('[data-menu]');

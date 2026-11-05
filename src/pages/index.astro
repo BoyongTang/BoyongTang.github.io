@@ -12,7 +12,7 @@ const results = await loadResults();
 const signals = results.filter((r) => r.date).slice(0, 3);
 ---
 
-<Base sky={{ mode: 'explore' }}>
+<Base sky={{ mode: 'explore' }} bare>
   <Explorer sky={sky} />
 
   <section id="me" class="wrap me" aria-labelledby="me-heading">
@@ -48,7 +48,7 @@ const signals = results.filter((r) => r.date).slice(0, 3);
           </div>
         )
       }
-      <ul class="me__parts" aria-label="Five parts of me">
+      <ul class="me__parts" aria-label="Four parts of me">
         {
           sky.map((f) => (
             <li>
