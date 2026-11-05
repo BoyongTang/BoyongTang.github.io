@@ -14,7 +14,7 @@ const W = 1200;
 const H = 630;
 const mono = "'IBM Plex Mono', Menlo, 'Courier New', monospace";
 const sans = "'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif";
-const full = fileURLToPath(new URL('../public/sky/pillars-max.webp', import.meta.url));
+const full = fileURLToPath(new URL('../public/sky/pillars-wide.webp', import.meta.url));
 
 // where the whole image lands for a 1200 × 630 screen
 const fit = fitPillars(W, H, 'wide');

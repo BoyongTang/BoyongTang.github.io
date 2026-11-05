@@ -22,7 +22,8 @@ const W = PILLARS.size.w;
 const H = PILLARS.size.h;
 
 // each part's constellation, laid out round its spot in image pixels (wide and tall screens)
-const R = { wide: 760, tall: 560 };
+// a constellation spans about half the image's width on wide screens, a little less on tall ones
+const R = { wide: W * 0.52, tall: W * 0.38 };
 const parts = sky.map((f) => {
   const [sx, sy] = spots[f.id];
   const lay = (shape: 'wide' | 'tall') => {
