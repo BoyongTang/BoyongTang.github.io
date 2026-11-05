@@ -4,7 +4,7 @@
 // screen-reader and no-JavaScript visitors get.
 import Explorer from '../../components/Explorer.astro';
 import PartItems from '../../components/PartItems.astro';
-import { PILLARS } from '../../data/pillars';
+import { creditLine } from '../../data/pillars';
 import Base from '../../layouts/Base.astro';
 import { loadSky, type SkyFacet } from '../../lib/sky';
 
@@ -23,7 +23,7 @@ const n = f.items.length;
 const count = `${String(n).padStart(2, '0')} ${n === 1 ? 'star' : 'stars'}`;
 ---
 
-<Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line} ${count} on Webb's Pillars of Creation.`} sky={{ mode: 'explore' }}>
+<Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line} ${count} on the Pillars of Creation.`} sky={{ mode: 'explore' }} bare>
   <Explorer sky={sky} focus={f.id} />
 
   <section id="list" class="wrap slist" aria-labelledby="slist-heading" style={`--c:${f.color}`}>
@@ -31,8 +31,8 @@ const count = `${String(n).padStart(2, '0')} ${n === 1 ? 'star' : 'stars'}`;
     <PartItems f={f} />
     <p class="slist__note">
       Every star here is real: an interest, a tool, a place, a piece of work or a way to reach me. More appear as they happen. Lines join
-      things that are actually related; positions mean nothing. Behind them: Webb's
-      <a href={PILLARS.url} rel="noopener">{PILLARS.title}</a>, {PILLARS.credit}, {PILLARS.license}.
+      things that are actually related; positions mean nothing. Behind them: 
+      {creditLine}.
     </p>
   </section>
 

@@ -1,19 +1,14 @@
 // Where the Pillars of Creation sit on a screen of a given size, and so where any point of the image lands.
-// The photo always covers the screen; a chosen point of it is kept near a chosen point of the screen.
+// The photo always fills the screen; a chosen point of it is kept near a chosen point of the screen.
 // Shared by the home page markup (the layout without JavaScript) and its script (the real screen).
 import { PILLARS } from '../data/pillars.ts';
 
 export type Shape = 'wide' | 'tall';
 
-/** Wider than this, wide screens show the photo at full height on the right. */
-export const FRAMED = 1.18;
-
 export const shapeFor = (w: number, h: number): Shape => (w / Math.max(1, h) >= 0.9 ? 'wide' : 'tall');
 
 export interface Fit {
   shape: Shape;
-  /** True when the photo stands at full height on the right instead of covering the screen. */
-  framed: boolean;
   /** Displayed size of the photo and its top-left corner, in px. */
   iw: number;
   ih: number;
@@ -34,14 +29,6 @@ export function fitPillars(w: number, h: number, shape: Shape = shapeFor(w, h)):
     oy + (y - y0) * PILLARS.size.h * s,
   ];
 
-  // wide screens: the pillars stand at full height on the right, unless that would not reach across
-  // (the same as CSS object-fit: contain with object-position: right, so it also holds without JavaScript)
-  if (shape === 'wide' && w / h > FRAMED) {
-    const s = h / ch;
-    const iw = cw * s;
-    return { shape, framed: true, iw, ih: h, ox: w - iw, oy: 0, at: at(s, w - iw, 0) };
-  }
-
   const s = Math.max(w / cw, h / ch);
   const iw = cw * s;
   const ih = ch * s;
@@ -51,7 +38,6 @@ export function fitPillars(w: number, h: number, shape: Shape = shapeFor(w, h)):
   const oy = clamp(f.to[1] * h - (f.at[1] - y0) * PILLARS.size.h * s, h - ih, 0);
   return {
     shape,
-    framed: false,
     iw,
     ih,
     ox,

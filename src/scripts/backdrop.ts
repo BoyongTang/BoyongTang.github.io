@@ -101,8 +101,7 @@ export function initBackdrop(el: HTMLElement) {
     if (hero) {
       const b = hero.getBoundingClientRect();
       const fit = fitPillars(b.width, b.height);
-      // standing at full height on the right, the photo fades in from the dark on its left
-      edge = fit.framed ? 0.22 : 0.02;
+      edge = 0.02;
       const [x0, y0] = fit.at(0, 0);
       const [x1, y1] = fit.at(1, 1);
       return { x: b.left + x0, y: b.top + y0, w: x1 - x0, h: y1 - y0 };
@@ -197,10 +196,11 @@ export function initBackdrop(el: HTMLElement) {
     frame(now);
   };
 
-  LivingPillars.create(canvas, wide ? '/sky/pillars-full.webp' : PILLARS.variants.tall.src, '/sky/pillars-maps.png').then((p) => {
+  LivingPillars.create(canvas, wide ? PILLARS.variants.wide.src : PILLARS.variants.tall.src, '/sky/pillars-maps.png').then((p) => {
     if (!p) {
       // no WebGL after all: show the still image instead
       html.classList.remove('has-gl');
+      html.classList.add('sky-ready');
       return;
     }
     lp = p;
@@ -221,6 +221,8 @@ export function initBackdrop(el: HTMLElement) {
     lp.setScale(mode === 'page' ? 0.6 : mode === 'map' ? 0.85 : 1);
     frame(performance.now());
     el.classList.add('is-live');
+    // the parts on the home page come out with the sky
+    requestAnimationFrame(() => html.classList.add('sky-ready'));
     requestAnimationFrame(loop);
   });
 }

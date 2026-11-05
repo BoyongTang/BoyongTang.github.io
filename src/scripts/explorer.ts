@@ -1,4 +1,4 @@
-import { PILLARS } from '../data/pillars';
+import { labelLeft, PILLARS } from '../data/pillars';
 import { fitPillars } from '../lib/pillars-fit';
 import { reducedMotion } from './form';
 
@@ -43,7 +43,14 @@ export function initExplorer(root: HTMLElement) {
   const parts: Part[] = JSON.parse(root.dataset.parts ?? '[]');
   const byId = new Map(parts.map((p) => [p.id, p]));
   const still = root.querySelector<HTMLImageElement>('[data-still]')!;
-  const idBlock = root.querySelector<HTMLElement>('.ex__id');
+  // without the living sky, the parts come out with the still image
+  const ready = () => html.classList.add('sky-ready');
+  if (!html.classList.contains('has-gl')) {
+    if (still.complete) ready();
+    else still.addEventListener('load', ready, { once: true });
+  }
+  // whatever happens to the sky, never leave the parts hidden for long
+  setTimeout(ready, 4000);
   const card = root.querySelector<HTMLElement>('[data-card]')!;
   const cardBody = root.querySelector<HTMLElement>('[data-card-body]')!;
   const markers = new Map<string, HTMLAnchorElement>();
@@ -73,8 +80,9 @@ export function initExplorer(root: HTMLElement) {
   };
   let ov = overview();
   let cam: Cam = { ...ov };
-  const sMin = () => ov.s * 0.8;
-  const sMax = () => Math.max(ov.s * 9, 2.4);
+  const sMin = () => ov.s; // never smaller than filling the screen
+  // the upscaled picture holds detail to about 3 screen px per frame px
+  const sMax = () => Math.max(ov.s * 4, 3);
   /** Keep the view on the photo: wider than the window, it fills it; narrower, it stays within it. */
   const clampCam = (c: Cam): Cam => {
     const s = Math.min(sMax(), Math.max(sMin(), c.s));
@@ -102,7 +110,9 @@ export function initExplorer(root: HTMLElement) {
       const [x, y] = toScreen(p.spot[0] * W, p.spot[1] * H);
       a.style.left = `${x.toFixed(1)}px`;
       a.style.top = `${y.toFixed(1)}px`;
-      const flip = x > w * (sh === 'wide' ? 0.78 : 0.5);
+      // each part's label keeps its side (src/data/pillars.ts), unless it would run off the screen
+      const side = labelLeft[p.id as keyof typeof labelLeft][sh];
+      const flip = x + 125 > w ? true : x - 125 < 0 ? false : side;
       a.classList.toggle('part--flip-wide', flip);
       a.classList.toggle('part--flip-tall', flip);
     }
@@ -145,9 +155,7 @@ export function initExplorer(root: HTMLElement) {
       });
     }
 
-    // the name fades as you go in
     const zr = cam.s / ov.s;
-    idBlock?.style.setProperty('--id-o', String(Math.max(0, Math.min(1, 1 - (zr - 1.05) * 2.2)) * (current ? 0 : 1)));
 
     // closer in, a sharper copy of the photo
     if (!sharp && zr > 1.7) {
@@ -254,7 +262,7 @@ export function initExplorer(root: HTMLElement) {
         best = p.id;
       }
     }
-    if (best && bd < Math.min(w, h) * 0.38) openPart(best, { fly: false });
+    if (best && bd < Math.min(w, h) * 0.38) openPart(best); // and glide over to frame it
   }
   let settleTimer = 0;
   const settleSoon = () => {
@@ -305,7 +313,7 @@ export function initExplorer(root: HTMLElement) {
   let vel = { x: 0, y: 0, t: 0 };
   let glide = 0;
   const stopGlide = () => cancelAnimationFrame(glide);
-  const ui = (t: EventTarget | null) => (t as Element | null)?.closest?.('.ex__card, .ex__tools, .ex__open, .ex__foot, button');
+  const ui = (t: EventTarget | null) => (t as Element | null)?.closest?.('.ex__card, .ex__foot, .ex__home, button');
 
   root.addEventListener('pointerdown', (ev) => {
     if (ui(ev.target) || (ev.pointerType === 'mouse' && ev.button !== 0)) return;
@@ -378,7 +386,7 @@ export function initExplorer(root: HTMLElement) {
     'wheel',
     (ev) => {
       // pulled all the way out, the wheel scrolls the page on to what is below
-      if (ev.deltaY > 0 && cam.s <= sMin() * 1.001 && !ev.ctrlKey) return;
+      if (ev.deltaY > 0 && cam.s <= sMin() * 1.001 && !ev.ctrlKey && document.documentElement.scrollHeight > innerHeight + 4) return;
       ev.preventDefault();
       const rr = root.getBoundingClientRect();
       const d = ev.deltaMode === 1 ? ev.deltaY * 16 : ev.deltaY;
@@ -409,20 +417,12 @@ export function initExplorer(root: HTMLElement) {
       select(a.dataset.star!);
     }),
   );
+  // a click anywhere else steps back: first the card, then the open part
   root.addEventListener('click', (ev) => {
     if (moved > 6 || ui(ev.target) || (ev.target as Element).closest('[data-star], [data-part]')) return;
-    closeCard();
+    if (selected) closeCard();
+    else if (current) closePart({ fly: true });
   });
-
-  root.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((b) =>
-    b.addEventListener('click', () => zoomAt(b.dataset.zoom === 'in' ? 1.7 : 1 / 1.7, w / 2, h / 2, 350)),
-  );
-  root.querySelectorAll<HTMLButtonElement>('[data-overview]').forEach((b) =>
-    b.addEventListener('click', () => {
-      if (current) closePart({ fly: true });
-      else flyTo(ov);
-    }),
-  );
 
   document.addEventListener('keydown', (ev) => {
     if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
