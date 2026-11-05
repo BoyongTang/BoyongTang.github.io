@@ -1,60 +1,38 @@
-// Everything about the person lives here. The rest of the site reads from this file,
-// from src/content/ (research dossiers and notes), src/data/galaxies.ts (research fields) and
-// src/data/facets.ts (the four parts of me on the home page's Pillars of Creation).
-//
-// Rule of the observatory: only write what is true. Leave a field empty ('' or []) to hide it.
+// Who you are: the only file for your own details (the four parts' stars are in src/data/stars.ts).
+// Keep it short. Anything left empty ('' or []) simply does not show anywhere.
 
 export const profile = {
-  /** Display name, set large on the home page. */
+  // ── the basics ───────────────────────────────────────────────────────────
   name: 'Boyong Tang',
-  /** Secondary names, shown small beside the main one. */
-  altNames: ['Kelvin', 'けるゔぃん・とう'],
-  handle: 'BoyongTang',
-
-  /** One line, plain and factual. */
-  role: 'Undergraduate · Applied Mathematics & Artificial Intelligence',
+  /** One plain line under your name. */
+  role: 'Undergraduate · Applied Mathematics & AI',
   affiliation: 'Sichuan University',
-  location: 'Chengdu, China',
-  timezone: 'UTC+08:00',
-
-  tagline: 'Observe the unanswered.',
-  subline: 'Mapping questions, methods, and the evidence between them.',
-  /** The short bio on the home page (2–3 sentences). */
-  bio:
-    'I study applied mathematics and AI at Sichuan University. My current work is active learning for materials science: reproducing published methods on public papers, data and author code, then turning them into a closed loop that can move to new material systems.',
-  /** 中文一句话简介（可留空）。 */
-  bioZh: '四川大学本科生，用应用数学与机器学习研究材料科学中的主动学习。',
-
-  interests: [
-    'Active learning',
-    'Bayesian optimization',
-    'Surrogate models & uncertainty',
-    'Trustworthy evaluation',
-    'Machine learning for materials',
-  ],
-  /** Tools actually used day to day. */
-  stack: ['Python', 'Jupyter', 'scikit-learn', 'RDKit', 'DeepChem', 'C++'],
-
   email: 'boyong.tang.math.ai@gmail.com',
   github: 'https://github.com/BoyongTang',
-  /** Path to a PDF in /public, e.g. '/cv/Boyong_Tang_CV.pdf'. Empty: CV links point to /about/#cv instead. */
-  cv: '',
-  /** Other profiles. Empty href hides the link. */
-  links: [
-    { label: 'GitHub', href: 'https://github.com/BoyongTang' },
-    { label: 'Google Scholar', href: '' },
-    { label: 'ORCID', href: '' },
-  ],
+  /** The quiet line under your name on the home page. */
+  tagline: 'Observe the unanswered.',
 
-  /** About page. Keep it true; add rows (with real dates) as they happen. */
-  education: [
-    {
-      when: 'In progress',
-      what: 'Undergraduate · Applied Mathematics & Artificial Intelligence',
-      where: 'Sichuan University, Chengdu',
-      note: '',
-    },
-  ],
+  // ── optional: fill in only what you want shown ───────────────────────────
+  /** Other names, shown small beside the main one, e.g. ['Kelvin']. */
+  altNames: [] as string[],
+  /** e.g. 'Chengdu, China'. */
+  location: '',
+  /** A few sentences about you (About page, and on phones below the pillars). */
+  bio: '',
+  /** 中文简介（可留空）。 */
+  bioZh: '',
+  /** e.g. ['Active learning', 'Bayesian optimization']. */
+  interests: [] as string[],
+  /** Tools you use, e.g. ['Python', 'PyTorch']. */
+  stack: [] as string[],
+  /** e.g. [{ when: '2024 –', what: 'BSc, Applied Mathematics & AI', where: 'Sichuan University', note: '' }]. */
+  education: [] as { when: string; what: string; where: string; note?: string }[],
+  /** A PDF in /public, e.g. '/cv.pdf'. Empty: "CV" links go to the About page instead. */
+  cv: '',
+  /** Other profiles, e.g. { label: 'Google Scholar', href: 'https://…' }. */
+  links: [] as { label: string; href: string }[],
+  /** One sentence for search engines and link previews (optional). */
+  subline: '',
 };
 
 /** Where every "CV" link goes: the PDF when there is one, otherwise the CV section of About. */
@@ -96,15 +74,4 @@ export interface Project {
   draft?: boolean;
 }
 
-export const projects: Project[] = [
-  {
-    id: 't-01',
-    code: 'T-01',
-    name: 'Observatory of Questions',
-    summary: 'The source of this site: static pages from content collections, and a sky of four parts that open into star maps, each also a plain list.',
-    scope: ['Static-first Astro build', 'Declared relations, checked at build time', 'Keyboard, list and reduced-motion fallbacks'],
-    tech: ['Astro', 'TypeScript', 'SVG', 'KaTeX'],
-    status: 'Active',
-    repo: 'https://github.com/BoyongTang/BoyongTang.github.io',
-  },
-];
+export const projects: Project[] = [];

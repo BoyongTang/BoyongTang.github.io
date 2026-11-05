@@ -25,10 +25,11 @@ import Base from '../layouts/Base.astro';
             )}
           </p>
           <p class="about-role">{profile.role}</p>
-          <p class="about-text">{profile.bio}</p>
+          {profile.bio && <p class="about-text">{profile.bio}</p>}
           {profile.bioZh && <p class="about-text about-text--zh" lang="zh">{profile.bioZh}</p>}
         </section>
 
+        {profile.education.length > 0 && (
         <section class="about-sec">
           <h2 class="eyebrow">Education</h2>
           <ul class="edu-list">
@@ -44,7 +45,9 @@ import Base from '../layouts/Base.astro';
             ))}
           </ul>
         </section>
+        )}
 
+        {profile.interests.length > 0 && (
         <section class="about-sec">
           <h2 class="eyebrow">Research interests</h2>
           <ul class="interests-tags">
@@ -52,11 +55,8 @@ import Base from '../layouts/Base.astro';
               <li class="interest-chip">{interest}</li>
             ))}
           </ul>
-          <p class="about-text about-text--small">
-            Current work is in <a href="/research/">Research</a>; how these connect is drawn in the
-            <a href="/sky/research/">Research nebula</a>.
-          </p>
         </section>
+        )}
 
         {profile.stack.length > 0 && (
           <section class="about-sec">
@@ -81,16 +81,24 @@ import Base from '../layouts/Base.astro';
               <span class="contact-label">Affiliation</span>
               <span class="contact-val">{profile.affiliation}</span>
             </li>
-            <li>
-              <span class="contact-label">Location</span>
-              <span class="contact-val">{profile.location} ({profile.timezone})</span>
-            </li>
+            {profile.location && (
+              <li>
+                <span class="contact-label">Location</span>
+                <span class="contact-val">{profile.location}</span>
+              </li>
+            )}
             <li>
               <span class="contact-label">GitHub</span>
               <a href={profile.github} target="_blank" rel="noopener" class="contact-val">
-                @{profile.handle} ↗
+                @{profile.github.replace(/\/$/, '').split('/').pop()} ↗
               </a>
             </li>
+            {profile.links.filter((l) => l.href).map((l) => (
+              <li>
+                <span class="contact-label">{l.label}</span>
+                <a href={l.href} target="_blank" rel="noopener" class="contact-val">Open ↗</a>
+              </li>
+            ))}
           </ul>
 
           <div class="cv-download" id="cv">

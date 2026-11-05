@@ -17,6 +17,12 @@ const projects = allProjects.filter((p) => !p.draft);
     </header>
 
     <div class="section">
+      {projects.length === 0 && (
+        <div class="empty">
+          <strong>Nothing here yet</strong>
+          <p>Projects will appear here once they are public.</p>
+        </div>
+      )}
       <div class="projects-grid">
         {projects.map((proj) => (
           <article class="proj-card" id={proj.id}>
