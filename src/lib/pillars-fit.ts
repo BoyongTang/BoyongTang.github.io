@@ -1,6 +1,7 @@
 // Where the Pillars of Creation sit on a screen of a given size, and so where any point of the image lands.
-// The photo always fills the screen; a chosen point of it is kept near a chosen point of the screen.
-// Shared by the home page markup (the layout without JavaScript) and its script (the real screen).
+// A chosen stretch of the image fills the screen's height (PILLARS.frame); the image is centred on a chosen
+// point across. Where the screen is wider than the image, the sky continues past its edges.
+// Shared by the home page markup (the layout without JavaScript) and its scripts (the real screen).
 import { PILLARS } from '../data/pillars.ts';
 
 export type Shape = 'wide' | 'tall';
@@ -9,7 +10,7 @@ export const shapeFor = (w: number, h: number): Shape => (w / Math.max(1, h) >= 
 
 export interface Fit {
   shape: Shape;
-  /** Displayed size of the photo and its top-left corner, in px. */
+  /** Displayed size of the image and its top-left corner, in px. */
   iw: number;
   ih: number;
   ox: number;
@@ -18,32 +19,17 @@ export interface Fit {
   at: (x: number, y: number) => [number, number];
 }
 
-/** `shape` picks the web copy; by default the one the screen's shape would load. */
 export function fitPillars(w: number, h: number, shape: Shape = shapeFor(w, h)): Fit {
-  const v = PILLARS.variants[shape];
-  const [x0, y0, x1, y1] = v.crop;
-  const cw = (x1 - x0) * PILLARS.size.w;
-  const ch = (y1 - y0) * PILLARS.size.h;
-  const at = (s: number, ox: number, oy: number) => (x: number, y: number): [number, number] => [
-    ox + (x - x0) * PILLARS.size.w * s,
-    oy + (y - y0) * PILLARS.size.h * s,
-  ];
-
-  const s = Math.max(w / cw, h / ch);
-  const iw = cw * s;
-  const ih = ch * s;
-  const f = PILLARS.focus[shape];
-  const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-  const ox = clamp(f.to[0] * w - (f.at[0] - x0) * PILLARS.size.w * s, w - iw, 0);
-  const oy = clamp(f.to[1] * h - (f.at[1] - y0) * PILLARS.size.h * s, h - ih, 0);
-  return {
-    shape,
-    iw,
-    ih,
-    ox,
-    oy,
-    at: at(s, ox, oy),
-  };
+  const { w: W, h: H } = PILLARS.size;
+  const f = PILLARS.frame[shape];
+  const s = h / ((f.y[1] - f.y[0]) * H);
+  const iw = W * s;
+  const ih = H * s;
+  // centred on f.x; if the image is wider than the screen, never past its edges
+  let ox = w / 2 - f.x * iw;
+  if (iw >= w) ox = Math.min(0, Math.max(w - iw, ox));
+  const oy = -f.y[0] * ih;
+  return { shape, iw, ih, ox, oy, at: (x, y) => [ox + x * iw, oy + y * ih] };
 }
 
 /** The same placement as CSS object-position percentages (for the layout without JavaScript). */

@@ -14,7 +14,7 @@ const W = 1200;
 const H = 630;
 const mono = "'IBM Plex Mono', Menlo, 'Courier New', monospace";
 const sans = "'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif";
-const full = fileURLToPath(new URL('../public/sky/pillars-max.webp', import.meta.url));
+const full = fileURLToPath(new URL('../public/sky/pillars-wide.webp', import.meta.url));
 
 // where the whole image lands for a 1200 × 630 screen
 const fit = fitPillars(W, H, 'wide');
@@ -22,9 +22,18 @@ const [x0, y0] = fit.at(0, 0);
 const [x1, y1] = fit.at(1, 1);
 const iw = Math.round(x1 - x0);
 const ih = Math.round(y1 - y0);
-const photo = await sharp(full)
-  .resize(iw, ih, { fit: 'fill' })
-  .extract({ left: Math.round(-x0), top: Math.round(-y0), width: W, height: H })
+// the framed image, with the sky continuing on either side (a soft, dark wash of the image itself)
+const top = Math.round(-y0);
+const left = Math.round(x0);
+const strip = await sharp(full).resize(iw, ih, { fit: 'fill' }).extract({ left: 0, top, width: iw, height: Math.min(H, ih - top) }).toBuffer();
+const fadeW = Math.round(iw * 0.12);
+const fade = Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${iw}" height="${H}"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="${(fadeW / iw).toFixed(3)}" stop-color="#fff"/><stop offset="${(1 - fadeW / iw).toFixed(3)}" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect width="${iw}" height="${H}" fill="url(#g)"/></svg>`,
+);
+const front = await sharp(strip).ensureAlpha().composite([{ input: fade, blend: 'dest-in' }]).png().toBuffer();
+const back = await sharp(full).resize(W, H, { fit: 'cover', position: 'top' }).blur(24).modulate({ brightness: 0.45 }).toBuffer();
+const photo = await sharp(back)
+  .composite([{ input: front, left: Math.max(0, left), top: 0 }])
   .toBuffer();
 
 const parts = facets

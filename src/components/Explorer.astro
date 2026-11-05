@@ -1,8 +1,8 @@
 ---
-// The Pillars of Creation as the interface: one big image to explore like a map. Drag, scroll or pinch to
-// move through it; the four parts of me sit on places where stars are born. Choosing one (or simply zooming
-// in close to it) flies there and unfolds its stars on the pillar; a star opens its card. The living sky
-// behind it is drawn by Backdrop.astro; this component holds everything you can touch.
+// The Pillars of Creation as the interface: one still view of the whole pillars, with no zooming or
+// dragging. The four parts of me sit on places where stars are born; choosing one unfolds its stars right
+// there, a star opens its card, and a click anywhere else steps back. The living sky behind it is drawn by
+// Backdrop.astro; this component holds everything you can touch.
 // Without JavaScript the parts are plain links to their pages and every star is in the lists below.
 import { facets, type FacetId } from '../data/facets';
 import { creditLine, labelLeft, PILLARS, spots } from '../data/pillars';
@@ -22,7 +22,8 @@ const W = PILLARS.size.w;
 const H = PILLARS.size.h;
 
 // each part's constellation, laid out round its spot in image pixels (wide and tall screens)
-const R = { wide: 760, tall: 560 };
+// a constellation spans about half the image's width on wide screens, a little less on tall ones
+const R = { wide: W * 0.6, tall: W * 0.72 };
 const parts = sky.map((f) => {
   const [sx, sy] = spots[f.id];
   const lay = (shape: 'wide' | 'tall') => {
@@ -37,7 +38,7 @@ const parts = sky.map((f) => {
       const p = shape === 'wide' ? s : s.tall;
       return { id: s.id, x: +(cx + (p.x - vx) * k).toFixed(1), y: +(cy + (p.y - vy) * k).toFixed(1), side: p.side };
     });
-    return { cx, cy, w: v.w * k, h: v.h * k, pts };
+    return { cx, cy, w: v.w * k, h: v.h * k, vw: v.w, vh: v.h, pts };
   };
   return { f, wide: lay('wide'), tall: lay('tall') };
 });
@@ -67,7 +68,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
 
 <section
   class:list={['ex', home && 'ex--home']}
-  aria-label="The Pillars of Creation, with the four parts of me. Drag to look around, scroll or pinch to zoom, choose a part to open it."
+  aria-label="The Pillars of Creation, with the four parts of me. Choose a part to open it."
   data-ex
   data-home={home ? '1' : '0'}
   data-focus={focus ?? ''}
@@ -222,14 +223,8 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     overflow: hidden;
     isolation: isolate;
     background: #050a1a;
-    touch-action: none;
-    cursor: grab;
     user-select: none;
     -webkit-user-select: none;
-  }
-
-  .ex.is-dragging {
-    cursor: grabbing;
   }
 
   :global(.has-gl) .ex {
