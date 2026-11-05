@@ -843,7 +843,7 @@ html[data-motion='reduce'] *::after {
   transition-duration: 0.01ms !important;
 }
 
-/* ── bare pages (home, the five parts): only the pillars ── */
+/* ── bare pages (home, the four parts): only the pillars ── */
 html.bare {
   --nav-h: 0px;
 }

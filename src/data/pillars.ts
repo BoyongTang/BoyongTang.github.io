@@ -1,6 +1,6 @@
 // The sky behind the site: a picture of the Pillars of Creation (assets-src/pillars-of-creation.webp, found on
-// Pinterest; its maker is not named there). The five parts of me sit on five places in it: the three
-// pillar heads, a finger of dust between them and the bright star beside the tallest.
+// Pinterest; its maker is not named there). The four parts of me sit on four places in it: the three
+// pillar heads and the bright star beside the tallest.
 //
 // Positions are fractions of the picture as the site uses it (the source without its baked-in title,
 // 0–1 across, 0–1 down). Web copies and masks are made by scripts/make-pillars.py.
@@ -22,7 +22,7 @@ export const PILLARS = {
     wide: { src: '/sky/pillars-wide.webp', crop: [0, 0, 1, 1], width: 1800 },
     tall: { src: '/sky/pillars-tall.webp', crop: [0, 0, 1, 1], width: 1300 },
   },
-  /** Filling the screen, keep this point of the picture near this point of it: the five parts in view. */
+  /** Filling the screen, keep this point of the picture near this point of it: the four parts in view. */
   focus: {
     wide: { at: [0.56, 0.42], to: [0.5, 0.46] },
     tall: { at: [0.56, 0.44], to: [0.5, 0.42] },
@@ -36,16 +36,14 @@ export const creditLine = `${PILLARS.title}: ${PILLARS.credit}`;
 export const spots: Record<FacetId, [number, number]> = {
   research: [0.4, 0.3194], // the tall left pillar's glowing head
   contact: [0.298, 0.4212], // the bright star beside it
-  path: [0.632, 0.3987], // the middle pillar's head
+  intro: [0.632, 0.3987], // the middle pillar's head
   works: [0.82, 0.4984], // the right pillar's head
-  toolbox: [0.47, 0.5305], // a finger of dust between the pillars
 };
 
 /** Which side each part's label runs on wide and on tall screens, so neighbours never collide. */
 export const labelLeft: Record<FacetId, { wide: boolean; tall: boolean }> = {
   research: { wide: false, tall: false },
   contact: { wide: false, tall: false },
-  path: { wide: false, tall: false },
+  intro: { wide: false, tall: false },
   works: { wide: true, tall: true },
-  toolbox: { wide: false, tall: true },
 };

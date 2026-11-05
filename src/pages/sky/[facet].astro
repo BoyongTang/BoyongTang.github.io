@@ -20,15 +20,14 @@ interface Props {
 
 const { f, sky } = Astro.props;
 const n = f.items.length;
-const count = `${String(n).padStart(2, '0')} ${n === 1 ? 'star' : 'stars'}`;
 ---
 
-<Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line} ${count} on the Pillars of Creation.`} sky={{ mode: 'explore' }} bare>
+<Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line} On the Pillars of Creation.`} sky={{ mode: 'explore' }} bare>
   <Explorer sky={sky} focus={f.id} />
 
   <section id="list" class="wrap slist" aria-labelledby="slist-heading" style={`--c:${f.color}`}>
-    <h2 id="slist-heading" class="eyebrow">Stars in {f.name} / {String(n).padStart(2, '0')}</h2>
-    <PartItems f={f} />
+    <h2 id="slist-heading" class="eyebrow">{f.name} · {f.nameZh}</h2>
+    {n > 0 ? <PartItems f={f} /> : <p class="slist__empty">Still being written.</p>}
     <p class="slist__note">
       Every star here is real: an interest, a tool, a place, a piece of work or a way to reach me. More appear as they happen. Lines join
       things that are actually related; positions mean nothing. Behind them: 
@@ -46,6 +45,11 @@ const count = `${String(n).padStart(2, '0')} ${n === 1 ? 'star' : 'stars'}`;
   .slist {
     padding-top: clamp(40px, 7vh, 72px);
     padding-bottom: clamp(48px, 8vh, 88px);
+  }
+
+  .slist__empty {
+    margin: 18px 0 0;
+    color: var(--muted);
   }
 
   .slist__note {

@@ -1,6 +1,6 @@
 ---
 // The Pillars of Creation as the interface: one big image to explore like a map. Drag, scroll or pinch to
-// move through it; the five parts of me sit on places where stars are born. Choosing one (or simply zooming
+// move through it; the four parts of me sit on places where stars are born. Choosing one (or simply zooming
 // in close to it) flies there and unfolds its stars on the pillar; a star opens its card. The living sky
 // behind it is drawn by Backdrop.astro; this component holds everything you can touch.
 // Without JavaScript the parts are plain links to their pages and every star is in the lists below.
@@ -47,7 +47,6 @@ const REF = { wide: { w: 1440, h: 830 }, tall: { w: 390, h: 720 } };
 const fw = fitPillars(REF.wide.w, REF.wide.h);
 const ft = fitPillars(REF.tall.w, REF.tall.h);
 const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
-const n = (f: SkyFacet) => f.items.length;
 ---
 
 <script is:inline>
@@ -68,7 +67,7 @@ const n = (f: SkyFacet) => f.items.length;
 
 <section
   class:list={['ex', home && 'ex--home']}
-  aria-label="The Pillars of Creation, with the five parts of me. Drag to look around, scroll or pinch to zoom, choose a part to open it."
+  aria-label="The Pillars of Creation, with the four parts of me. Drag to look around, scroll or pinch to zoom, choose a part to open it."
   data-ex
   data-home={home ? '1' : '0'}
   data-focus={focus ?? ''}
@@ -139,7 +138,7 @@ const n = (f: SkyFacet) => f.items.length;
     }
   </svg>
 
-  <nav class="ex__parts" aria-label="Five parts of me">
+  <nav class="ex__parts" aria-label="Four parts of me">
     {
       parts.map(({ f }, i) => {
         const [x, y] = spots[f.id];
@@ -152,7 +151,7 @@ const n = (f: SkyFacet) => f.items.length;
             id={`n-${f.id}`}
             data-part={f.id}
             style={`--wx:${pct(wx, REF.wide.w)};--wy:${pct(wy, REF.wide.h)};--tx:${pct(tx, REF.tall.w)};--ty:${pct(ty, REF.tall.h)};--c:${f.color};--i:${i}`}
-            aria-label={`${f.name}, ${f.nameZh}: ${f.line} ${n(f)} ${n(f) === 1 ? 'star' : 'stars'}.`}
+            aria-label={`${f.name}, ${f.nameZh}: ${f.line}`}
           >
             <span class="part__halo" aria-hidden="true" />
             <span class="part__ring" aria-hidden="true" />
@@ -160,7 +159,7 @@ const n = (f: SkyFacet) => f.items.length;
             <span class="part__label" aria-hidden="true">
               <span class="part__name">{f.name}</span>
               <span class="part__zh" lang="zh">
-                {f.nameZh} · {String(n(f)).padStart(2, '0')}
+                {f.nameZh}
               </span>
             </span>
           </a>
@@ -184,7 +183,7 @@ const n = (f: SkyFacet) => f.items.length;
         <div class="ex__cap" data-open={f.id} style={`--c:${f.color}`} hidden>
           {focus === f.id ? <h1 class="ex__name">{f.name}</h1> : <h2 class="ex__name">{f.name}</h2>}
           <p class="ex__tag">
-            <span lang="zh">{f.nameZh}</span> · {f.line} · {String(n(f)).padStart(2, '0')} {n(f) === 1 ? 'star' : 'stars'}
+            <span lang="zh">{f.nameZh}</span> · {f.line}
           </p>
         </div>
       ))
@@ -373,7 +372,7 @@ const n = (f: SkyFacet) => f.items.length;
     animation-delay: calc(200ms + var(--i) * 90ms);
   }
 
-  /* ── the five parts ── */
+  /* ── the four parts ── */
   .part {
     position: absolute;
     left: var(--wx);
