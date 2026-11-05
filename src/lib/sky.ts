@@ -1,10 +1,7 @@
-// What each nebula holds: stars made only from real content (src/data/profile.ts and the published
-// research and notes), and where they sit on the nebula's star map.
-import { constellations, facets, WORLD, type Facet, type FacetId } from '../data/facets';
-import { galaxyById } from '../data/galaxies';
-import { cvHref, profile, projects, publications } from '../data/profile';
+// What each part holds: the stars written in src/data/stars.ts, and where they sit on the part's star map.
+import { facets, WORLD, type Facet, type FacetId } from '../data/facets';
+import { stars as input } from '../data/stars';
 import { seeded } from './stars';
-import { publishedNotes, publishedResearch, statusLabel } from './universe';
 
 export interface SkyLink {
   label: string;
@@ -56,74 +53,46 @@ export const slug = (s: string) =>
     .replace(/^-|-$/g, '');
 
 const link = (label: string, href: string): SkyLink => ({ label, href, external: /^(https?:|mailto:)/.test(href) });
-const fieldName = (id?: string) => (id ? galaxyById.get(id)?.name : undefined);
 type Draft = Omit<SkyItem, 'x' | 'y' | 'mag' | 'side' | 'tall'> & { mag?: 1 | 2 };
 
-async function drafts(): Promise<Record<FacetId, Draft[]>> {
-  const research: Draft[] = [];
-  const current = profile.bio.split(/(?<=\.)\s+/).slice(1).join(' ');
-  if (current)
-    research.push({ id: 'current', name: 'Active learning for materials science', kind: 'Current work', sub: 'Now', text: current, mag: 1 });
-  for (const i of profile.interests) research.push({ id: slug(i), name: i, kind: 'Interest' });
-  for (const e of await publishedResearch())
-    research.push({
-      id: slug(e.data.code),
-      name: e.data.title,
-      kind: 'Research',
-      sub: `${e.data.code} · ${statusLabel(e.data.status)}`,
-      text: e.data.summary,
-      facts: [{ label: 'Question', value: e.data.question }, ...(fieldName(e.data.topic) ? [{ label: 'Field', value: fieldName(e.data.topic)! }] : [])],
-      links: [link('Read the dossier', `/research/${e.id}/`)],
-      mag: 1,
+function drafts(): Record<FacetId, Draft[]> {
+  const out = {} as Record<FacetId, Draft[]>;
+  for (const f of facets) {
+    const seen = new Set<string>();
+    out[f.id] = input[f.id].stars.map((st, i) => {
+      let id = slug(st.name) || `${f.id}-${i + 1}`;
+      while (seen.has(id)) id = `${id}-${i + 1}`;
+      seen.add(id);
+      const links = [...(st.link ? [link(st.link.startsWith('mailto:') ? 'Write an email' : 'Open', st.link)] : []), ...(st.links ?? []).map((l) => link(l.label, l.href))];
+      return {
+        id,
+        name: st.name,
+        nameZh: st.zh,
+        kind: st.kind ?? '',
+        sub: st.note,
+        text: st.text,
+        links: links.length ? links : undefined,
+        mag: st.bright ? 1 : undefined,
+      };
     });
-  for (const p of publications)
-    research.push({
-      id: slug(p.id),
-      name: p.title,
-      kind: 'Publication',
-      sub: `${p.year} · ${p.status.toUpperCase()}`,
-      text: `${p.authors}. ${p.venue}.`,
-      links: (p.links ?? []).map((l) => link(l.label, l.href)),
-      mag: 1,
+  }
+  return out;
+}
+
+/** 'A - B - C' → [A, B], [B, C], by star name (any case). An unknown name stops the build. */
+function chains(id: FacetId, ds: Draft[]): [number, number][] {
+  const byName = new Map(ds.map((d, i) => [d.name.trim().toLowerCase(), i]));
+  const edges: [number, number][] = [];
+  for (const chain of input[id].lines) {
+    const names = chain.split(/\s+-\s+|\s*—\s*|\s*→\s*/).map((n) => n.trim()).filter(Boolean);
+    const idx = names.map((n) => {
+      const k = byName.get(n.toLowerCase());
+      if (k === undefined) throw new Error(`src/data/stars.ts, ${id}: the line '${chain}' names '${n}', but no star in ${id} is called that.`);
+      return k;
     });
-
-  // the personal introduction: not written yet, so no stars for now
-  const intro: Draft[] = [];
-
-  const works: Draft[] = projects
-    .filter((p) => !p.draft)
-    .map((p) => ({
-      id: slug(p.id),
-      name: p.name,
-      nameZh: p.nameZh,
-      kind: 'Project',
-      sub: `${p.code} · ${p.status.toUpperCase()}`,
-      text: p.summary,
-      list: p.scope,
-      tags: p.tech,
-      links: [link('Project page', `/projects/#${p.id}`), ...(p.repo ? [link('Repository', p.repo)] : [])],
-      mag: 1,
-    }));
-  for (const n of await publishedNotes())
-    works.push({
-      id: slug(n.data.code),
-      name: n.data.title,
-      kind: 'Note',
-      sub: `${n.data.code} · ${n.data.date.toISOString().slice(0, 10)}`,
-      text: n.data.summary,
-      links: [link('Read the note', `/notes/${n.id}/`)],
-      lang: n.data.lang,
-    });
-
-  const contact: Draft[] = [
-    { id: 'email', name: 'Email', kind: 'Contact', sub: profile.email, links: [link('Write an email', `mailto:${profile.email}`)], mag: 1 },
-    ...profile.links
-      .filter((l) => l.href)
-      .map((l) => ({ id: slug(l.label), name: l.label, kind: 'Profile', sub: l.href.replace(/^https?:\/\/(www\.)?/, ''), links: [link(`Open ${l.label}`, l.href)] })),
-    { id: 'about', name: profile.cv ? 'CV' : 'About & CV', kind: 'Page', sub: profile.cv ? 'PDF' : '/about/', links: [link(profile.cv ? 'Download the CV' : 'Open About', cvHref)] },
-  ];
-
-  return { research, intro, works, contact };
+    for (let i = 1; i < idx.length; i++) if (idx[i] !== idx[i - 1]) edges.push([idx[i - 1], idx[i]]);
+  }
+  return edges;
 }
 
 /** Rough width of a star's label, in world units (name at 21–25, the mono line under it at 12.5). */
@@ -261,13 +230,10 @@ function arrange(widths: number[], edges: [number, number][], seed: number, tall
 }
 
 export async function loadSky(): Promise<SkyFacet[]> {
-  const all = await drafts();
+  const all = drafts();
   return facets.map((f) => {
     const ds = all[f.id];
-    const index = new Map(ds.map((d, i) => [d.id, i]));
-    const edges = constellations[f.id]
-      .filter(([a, b]) => index.has(a) && index.has(b))
-      .map(([a, b]) => [index.get(a)!, index.get(b)!] as [number, number]);
+    const edges = chains(f.id, ds);
     const degree = ds.map((_, i) => edges.filter((e) => e.includes(i)).length);
     const mags = ds.map((d, i) => d.mag ?? (degree[i] >= 3 ? 1 : 2));
     const widths = ds.map((d, i) => labelWidth(d, mags[i]));

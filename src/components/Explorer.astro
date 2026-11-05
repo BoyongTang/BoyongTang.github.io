@@ -117,7 +117,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
                 data-w={`${w.x} ${w.y} ${w.side}`}
                 data-t={`${t.x} ${t.y} ${t.side}`}
                 tabindex="-1"
-                aria-label={`${s.kind}: ${s.name}${s.sub ? `, ${s.sub}` : ''}`}
+                aria-label={[s.kind, s.name, s.sub].filter(Boolean).join(': ')}
                 style={`--i:${i}`}
               >
                 <circle class="xstar__hit" r="22" />
@@ -128,8 +128,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
                   {s.name}
                 </text>
                 <text class="xstar__sub" dy="1.5em">
-                  {s.kind.toUpperCase()}
-                  {s.sub ? ` · ${s.sub}` : ''}
+                  {[s.kind.toUpperCase(), s.sub].filter(Boolean).join(' · ')}
                 </text>
               </a>
             );
@@ -275,6 +274,12 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
   }
 
   /* ── an open part's stars ── */
+  /* the parts and an open constellation ride on the near layer, which shifts gently with the mouse */
+  .ex__stars,
+  .ex__parts {
+    transform: translate(var(--nx, 0px), var(--ny, 0px));
+  }
+
   .ex__stars {
     position: absolute;
     inset: 0;

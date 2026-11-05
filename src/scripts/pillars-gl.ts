@@ -157,7 +157,8 @@ void main() {
   if (edgeX > -0.07) {
     vec2 sp = vec2(0.0, 0.0);
     vec2 sz = vec2(0.55, 0.3);
-    vec2 skyUV = sp + mir((uv0 - sp) / sz) * sz;
+    // it is far sky: it shifts with the far layer, so it moves with the mouse like the rest
+    vec2 skyUV = sp + mir((uv0 - sh - sp) / sz) * sz;
     vec3 sky = texture(uImg, skyUV, uBlur).rgb;
     float hz2 = fbm(skyUV * 3.0 + vec2(t * 0.004, -t * 0.007));
     sky += vec3(0.08, 0.32, 0.38) * (hz2 - 0.45) * 0.07 * uLife;

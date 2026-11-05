@@ -31,23 +31,3 @@ export const facets: Facet[] = [
 export const WORLD = { w: 2400, h: 1600 };
 
 export const facetById = new Map(facets.map((f) => [f.id, f]));
-
-/**
- * Constellation lines: declared relations between stars, by item id (see src/lib/sky.ts for the ids).
- * A line whose ends are not both in the sky is dropped, so lines can be declared before a star exists.
- */
-export const constellations: Record<FacetId, [string, string][]> = {
-  research: [
-    ['current', 'active-learning'],
-    ['current', 'machine-learning-for-materials'],
-    ['active-learning', 'bayesian-optimization'],
-    ['bayesian-optimization', 'surrogate-models-uncertainty'],
-    ['surrogate-models-uncertainty', 'trustworthy-evaluation'],
-  ],
-  intro: [],
-  works: [],
-  contact: [
-    ['email', 'github'],
-    ['github', 'about'],
-  ],
-};
