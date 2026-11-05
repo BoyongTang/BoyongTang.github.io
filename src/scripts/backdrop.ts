@@ -126,11 +126,15 @@ export function initBackdrop(el: HTMLElement) {
     let dim = mode === 'home' || mode === 'explore' ? Math.min(0.5, (scrollY / vh) * 0.5) : mode === 'map' ? 0.28 : dimBase;
     const v: Partial<View> = { blur: mode === 'page' ? 1.1 : mode === 'map' ? 0.25 : 0, life: still ? 0 : mode === 'page' ? 0.7 : 1 };
 
+    let near: [number, number] = [0, 0];
     if (!still) {
       // a slow drift and the pointer move the far layer against the near one
       ptr.x += (ptr.tx - ptr.x) * 0.04;
       ptr.y += (ptr.ty - ptr.y) * 0.04;
       par = [Math.sin(t * 0.05) * 14 + ptr.x * 26, Math.cos(t * 0.037) * 10 + ptr.y * 18];
+      // and the near layer (the pillars, and the parts on them) a little the other way, so the whole
+      // scene moves in depth with the mouse
+      near = [-ptr.x * 12, -ptr.y * 8];
       if (mode === 'home' || mode === 'explore') par[1] += Math.min(vh, scrollY) * 0.06;
       if (mode === 'page') par[1] += Math.min(vh, scrollY) * 0.03;
     }
@@ -161,6 +165,14 @@ export function initBackdrop(el: HTMLElement) {
       const p = easeIn((now - dive.t0) / 700);
       rect = about(rect, dive.x, dive.y, 1 + 4 * p);
       dim = Math.max(dim, p * 0.9);
+    }
+
+    rect.x += near[0];
+    rect.y += near[1];
+    if (mode === 'explore') {
+      const ex = document.querySelector<HTMLElement>('[data-ex]');
+      ex?.style.setProperty('--nx', `${near[0].toFixed(2)}px`);
+      ex?.style.setProperty('--ny', `${near[1].toFixed(2)}px`);
     }
 
     // big shifts tear the photo where near meets far: keep the parallax a gentle one

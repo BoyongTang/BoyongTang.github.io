@@ -1,5 +1,6 @@
 # Dependencies
-node_modules/
+# the folder, or a link to one (worktrees)
+node_modules
 
 # Build outputs
 dist/
