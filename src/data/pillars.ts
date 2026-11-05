@@ -19,10 +19,14 @@ export const PILLARS = {
     wide: { src: '/sky/pillars-wide.webp', crop: [0, 0, 1, 1], width: 1800 },
     tall: { src: '/sky/pillars-tall.webp', crop: [0, 0, 1, 1], width: 1300 },
   },
-  /** Filling the screen, keep this point of the image near this point of it: the four parts in view. */
-  focus: {
-    wide: { at: [0.72, 0.33], to: [0.62, 0.45] },
-    tall: { at: [0.68, 0.36], to: [0.5, 0.4] },
+  /**
+   * How the image sits on a screen: the stretch from y[0] to y[1] fills the height, and x is the point of the
+   * image at the centre. Wide screens show the whole pillar group; where the image ends left or right, the sky
+   * continues (src/scripts/pillars-gl.ts). Tall screens show the image's full height.
+   */
+  frame: {
+    wide: { y: [0.12, 0.64], x: 0.57 },
+    tall: { y: [0, 1], x: 0.64 },
   },
 } as const;
 
@@ -40,7 +44,7 @@ export const spots: Record<FacetId, [number, number]> = {
 /** Which side each part's label runs on wide and on tall screens, so neighbours never collide. */
 export const labelLeft: Record<FacetId, { wide: boolean; tall: boolean }> = {
   research: { wide: true, tall: true },
-  contact: { wide: false, tall: false },
+  contact: { wide: false, tall: true },
   intro: { wide: true, tall: true },
   works: { wide: true, tall: true },
 };

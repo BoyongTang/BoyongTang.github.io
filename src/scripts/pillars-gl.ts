@@ -62,8 +62,10 @@ float fbm(vec2 p) {
   return s;
 }
 float lum(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
-float depthAt(vec2 uv) { return texture(uMap, clamp(uv, 0.0, 1.0)).r; }
-vec3 img(vec2 uv, float bias) { return texture(uImg, clamp(uv, 0.0, 1.0), bias).rgb; }
+// past the image's edges the sky continues as its own mirror image (and is quietened below)
+vec2 mir(vec2 u) { return abs(mod(u - 1.0, 2.0) - 1.0); }
+float depthAt(vec2 uv) { return texture(uMap, mir(uv)).r; }
+vec3 img(vec2 uv, float bias) { return texture(uImg, mir(uv), bias).rgb; }
 
 void main() {
   vec2 uv0 = (vPx - uRect.xy) / uRect.zw;
@@ -139,19 +141,29 @@ void main() {
   }
 
   // the red knots where stars are forming breathe
-  float glow = texture(uMap, clamp(uv, 0.0, 1.0)).g;
+  float glow = texture(uMap, mir(uv)).g;
   col += vec3(1.0, 0.3, 0.24) * glow * (0.12 + 0.12 * sin(t * 0.7 + uv.y * 40.0)) * uLife;
 
   // the far haze drifts
   float hz = fbm(uv * 3.0 + vec2(t * 0.004, -t * 0.007));
   col += vec3(0.08, 0.32, 0.38) * (hz - 0.45) * 0.07 * (1.0 - d) * uLife;
 
-  // beyond the image: a soft, dark continuation of its edge
+  // beyond the image the sky carries on: tiles (mirrored, so seamless) of a pillar-free patch of the image's
+  // own starfield, its top-left corner, blended in across the edge and a little darker further out
   vec2 cuv = clamp(uv0, 0.0, 1.0);
-  float out1 = length((uv0 - cuv) * uRect.zw) / max(uRes.x, uRes.y);
-  vec3 ext = img(cuv, 7.0) * 0.55;
-  float inside = smoothstep(0.0, 0.02, min(min(1.0 - uv0.x, uv0.y), 1.0 - uv0.y)) * smoothstep(0.0, uEdge, uv0.x);
-  col = mix(ext * exp(-out1 * 3.0), col, inside);
+  float outside = length((uv0 - cuv) * vec2(1.0, uRect.w / uRect.z));   // in image widths
+  // signed distance past the left or right edge (negative inside), to start the blend just inside
+  float edgeX = max(-uv0.x, uv0.x - 1.0);
+  if (edgeX > -0.07) {
+    vec2 sp = vec2(0.0, 0.0);
+    vec2 sz = vec2(0.55, 0.3);
+    vec2 skyUV = sp + mir((uv0 - sp) / sz) * sz;
+    vec3 sky = texture(uImg, skyUV, uBlur).rgb;
+    float hz2 = fbm(skyUV * 3.0 + vec2(t * 0.004, -t * 0.007));
+    sky += vec3(0.08, 0.32, 0.38) * (hz2 - 0.45) * 0.07 * uLife;
+    col = mix(col, sky, smoothstep(-0.07, 0.09, edgeX));
+    col *= mix(1.0, 0.66, smoothstep(0.0, 0.5, outside));
+  }
 
   // dim, and a gentle vignette
   vec2 q = vPx / uRes - 0.5;

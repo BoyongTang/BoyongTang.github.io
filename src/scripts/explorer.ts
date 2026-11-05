@@ -13,6 +13,9 @@ interface Lay {
   cy: number;
   w: number;
   h: number;
+  /** The constellation's own frame, in the units its labels were laid out for. */
+  vw: number;
+  vh: number;
   pts: { id: string; x: number; y: number; side: 'left' | 'right' }[];
 }
 interface Part {
@@ -78,22 +81,9 @@ export function initExplorer(root: HTMLElement) {
     const s = (x1 - x0) / W;
     return { cx: (w / 2 - x0) / s, cy: (h / 2 - y0) / s, s };
   };
+  // the view is fixed: the framed pillars, nothing to zoom or drag
   let ov = overview();
   let cam: Cam = { ...ov };
-  const sMin = () => ov.s; // never smaller than filling the screen
-  // the upscaled picture holds detail to about 3 screen px per frame px
-  const sMax = () => Math.max(ov.s * 4, 3);
-  /** Keep the view on the photo: wider than the window, it fills it; narrower, it stays within it. */
-  const clampCam = (c: Cam): Cam => {
-    const s = Math.min(sMax(), Math.max(sMin(), c.s));
-    const range = (size: number, view: number) => {
-      const a = view / (2 * s);
-      return [Math.min(a, size - a), Math.max(a, size - a)];
-    };
-    const [x0, x1] = range(W, w);
-    const [y0, y1] = range(H, h);
-    return { s, cx: Math.min(x1, Math.max(x0, c.cx)), cy: Math.min(y1, Math.max(y0, c.cy)) };
-  };
   const toScreen = (x: number, y: number): [number, number] => [w / 2 + (x - cam.cx) * cam.s, h / 2 + (y - cam.cy) * cam.s];
 
   let current: string | null = null;
@@ -121,6 +111,23 @@ export function initExplorer(root: HTMLElement) {
       const lay = byId.get(current)![sh];
       const pos = new Map<string, [number, number]>();
       for (const pt of lay.pts) pos.set(pt.id, toScreen(pt.x, pt.y));
+      // size it for its labels (laid out for ~21-unit type, shown at ~13 px), whatever the photo's scale: its
+      // frame (which already holds the labels) fits the screen, centred on the part's place, kept inside the
+      // edges and clear of the caption at the foot
+      if (pos.size) {
+        const want = Math.min(0.62, ((w - 24) / lay.vw) * 0.9, (h - 140) / lay.vh);
+        const k = want / ((lay.w / lay.vw) * cam.s);
+        let [cx, cy] = toScreen(lay.cx, lay.cy);
+        const hw = (lay.vw * want) / 2;
+        const hh = (lay.vh * want) / 2;
+        cx = Math.min(w - 12 - hw, Math.max(12 + hw, cx));
+        cy = Math.min(h - 120 - hh, Math.max(12 + hh, cy));
+        const [ox, oy] = toScreen(lay.cx, lay.cy);
+        pos.forEach((p) => {
+          p[0] = cx + (p[0] - ox) * k;
+          p[1] = cy + (p[1] - oy) * k;
+        });
+      }
       for (const a of starsOf(current)) {
         const pt = lay.pts.find((q) => q.id === a.dataset.star)!;
         const [x, y] = pos.get(pt.id)!;
@@ -155,69 +162,23 @@ export function initExplorer(root: HTMLElement) {
       });
     }
 
-    const zr = cam.s / ov.s;
-
-    // closer in, a sharper copy of the photo
-    if (!sharp && zr > 1.7) {
+    // on a large, sharp screen, the full-size copy of the photo
+    if (!sharp && W * cam.s * (devicePixelRatio || 1) > 1900) {
       sharp = true;
       dispatchEvent(new CustomEvent('pillars:sharpen'));
       if (!html.classList.contains('has-gl')) still.src = '/sky/pillars-max.webp';
     }
   }
 
-  /* ── camera moves ── */
-  let frame = 0;
+  /* ── the view ── */
   function set(c: Cam) {
-    cam = clampCam(c);
+    cam = c;
     apply();
   }
 
-  function flyTo(target: Cam, ms = 900, done?: () => void) {
-    cancelAnimationFrame(frame);
-    stopGlide();
-    const to = clampCam(target);
-    if (reducedMotion() || ms === 0) {
-      set(to);
-      done?.();
-      return;
-    }
-    const from = { ...cam };
-    const t0 = performance.now();
-    // zoom on a log scale, so flying in and out feels even
-    const ls0 = Math.log(from.s);
-    const ls1 = Math.log(to.s);
-    const step = (now: number) => {
-      const k = inOut(Math.min(1, (now - t0) / ms));
-      set({ cx: from.cx + (to.cx - from.cx) * k, cy: from.cy + (to.cy - from.cy) * k, s: Math.exp(ls0 + (ls1 - ls0) * k) });
-      if (k < 1) frame = requestAnimationFrame(step);
-      else done?.();
-    };
-    frame = requestAnimationFrame(step);
-  }
-
-  /** Zoom by k about a screen point, keeping the image point under it in place. */
-  function zoomAt(k: number, sx: number, sy: number, ms = 0) {
-    const s = Math.min(sMax(), Math.max(sMin(), cam.s * k));
-    const ix = cam.cx + (sx - w / 2) / cam.s;
-    const iy = cam.cy + (sy - h / 2) / cam.s;
-    const target = { s, cx: ix - (sx - w / 2) / s, cy: iy - (sy - h / 2) / s };
-    if (ms) flyTo(target, ms, settle);
-    else {
-      set(target);
-      settleSoon();
-    }
-  }
-
   /* ── opening a part ── */
-  function frameFor(id: string): Cam {
-    const lay = byId.get(id)![shape()];
-    const wide = shape() === 'wide';
-    const s = Math.min(sMax(), Math.max(ov.s * 1.8, Math.min((w * (wide ? 0.86 : 0.9)) / lay.w, (h * (wide ? 0.72 : 0.5)) / lay.h)));
-    // a little low, to leave room for the title (top left); on phones high, above where a card opens
-    return { s, cx: lay.cx, cy: lay.cy - (wide ? (h * 0.06) / s : (h * 0.1) / s) };
-  }
-
-  function openPart(id: string, { fly = true } = {}) {
+  /** Open a part: its stars unfold where it is. */
+  function openPart(id: string) {
     if (!byId.has(id)) return;
     const was = current;
     current = id;
@@ -228,11 +189,10 @@ export function initExplorer(root: HTMLElement) {
     groups.forEach((g, gid) => g.querySelectorAll('[data-star]').forEach((a) => a.setAttribute('tabindex', gid === id ? '0' : '-1')));
     if (was !== id) closeCard();
     if (home) history.replaceState(null, '', `${location.pathname}${location.search}#${id}`);
-    if (fly) flyTo(frameFor(id));
-    else apply();
+    apply();
   }
 
-  function closePart({ fly = false } = {}) {
+  function closePart() {
     if (!current) return;
     const last = current;
     current = null;
@@ -242,33 +202,9 @@ export function initExplorer(root: HTMLElement) {
     markers.forEach((a) => a.classList.remove('is-current'));
     opens.forEach((o) => (o.hidden = true));
     if (home) history.replaceState(null, '', location.pathname + location.search);
-    if (fly) flyTo(ov, 900);
-    else apply();
+    apply();
     markers.get(last)?.focus({ preventScroll: true });
   }
-
-  /** After a move: close in on a part opens it; pulling back far enough closes it. */
-  function settle() {
-    const zr = cam.s / ov.s;
-    if (current && zr < 1.45) return closePart();
-    if (current || zr < 2.1) return;
-    let best: string | null = null;
-    let bd = Infinity;
-    for (const p of parts) {
-      const lay = p[shape()];
-      const d = Math.hypot(lay.cx - cam.cx, lay.cy - cam.cy) * cam.s;
-      if (d < bd) {
-        bd = d;
-        best = p.id;
-      }
-    }
-    if (best && bd < Math.min(w, h) * 0.38) openPart(best); // and glide over to frame it
-  }
-  let settleTimer = 0;
-  const settleSoon = () => {
-    clearTimeout(settleTimer);
-    settleTimer = window.setTimeout(settle, 260);
-  };
 
   /* ── a star's card ── */
   let selected: string | null = null;
@@ -276,18 +212,13 @@ export function initExplorer(root: HTMLElement) {
     const part = partOfStar.get(id);
     const entry = document.querySelector<HTMLElement>(`[data-entry="${CSS.escape(id)}"]`);
     if (!part || !entry) return;
-    if (current !== part) openPart(part, { fly: false });
+    if (current !== part) openPart(part);
     selected = id;
     root.querySelectorAll('[data-star]').forEach((a) => a.classList.toggle('is-selected', (a as HTMLElement).dataset.star === id));
     cardBody.replaceChildren(entry.cloneNode(true));
     card.style.setProperty('--c', getComputedStyle(groups.get(part)!).getPropertyValue('--c'));
     card.hidden = false;
     history.replaceState(null, '', `${location.pathname}${location.search}#s-${id}`);
-    // keep the star clear of the card
-    const pt = byId.get(part)![shape()].pts.find((q) => q.id === id)!;
-    const [x, y] = toScreen(pt.x, pt.y);
-    if (shape() === 'wide' && x > w - 440) flyTo({ ...cam, cx: cam.cx + (x - (w - 520)) / cam.s }, 500);
-    if (shape() === 'tall' && y > h * 0.4) flyTo({ ...cam, cy: cam.cy + (y - h * 0.3) / cam.s }, 500);
   }
   function closeCard() {
     if (!selected) return;
@@ -306,100 +237,8 @@ export function initExplorer(root: HTMLElement) {
     select(a.dataset.goto!);
   });
 
-  /* ── dragging, gliding, pinching ── */
-  const pts = new Map<number, { x: number; y: number }>();
-  let moved = 0;
-  let pinch = 0;
-  let vel = { x: 0, y: 0, t: 0 };
-  let glide = 0;
-  const stopGlide = () => cancelAnimationFrame(glide);
+  const moved = 0; // nothing drags any more; kept so a click is always a click
   const ui = (t: EventTarget | null) => (t as Element | null)?.closest?.('.ex__card, .ex__foot, .ex__home, button');
-
-  root.addEventListener('pointerdown', (ev) => {
-    if (ui(ev.target) || (ev.pointerType === 'mouse' && ev.button !== 0)) return;
-    cancelAnimationFrame(frame);
-    stopGlide();
-    pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-    if (pts.size === 1) {
-      moved = 0;
-      vel = { x: 0, y: 0, t: performance.now() };
-    }
-    if (pts.size === 2) {
-      const [a, b] = [...pts.values()];
-      pinch = Math.hypot(a.x - b.x, a.y - b.y);
-    }
-  });
-
-  root.addEventListener('pointermove', (ev) => {
-    const last = pts.get(ev.pointerId);
-    if (!last) return;
-    const now = { x: ev.clientX, y: ev.clientY };
-    pts.set(ev.pointerId, now);
-    if (pts.size === 1) {
-      const dx = now.x - last.x;
-      const dy = now.y - last.y;
-      moved += Math.abs(dx) + Math.abs(dy);
-      if (moved > 4 && !root.hasPointerCapture(ev.pointerId)) {
-        root.setPointerCapture(ev.pointerId); // a drag, not a tap: keep it even off the map
-        root.classList.add('is-dragging');
-      }
-      const t = performance.now();
-      const dt = Math.max(1, t - vel.t);
-      vel = { x: dx / dt, y: dy / dt, t };
-      set({ ...cam, cx: cam.cx - dx / cam.s, cy: cam.cy - dy / cam.s });
-    } else if (pts.size === 2) {
-      const [a, b] = [...pts.values()];
-      const d = Math.hypot(a.x - b.x, a.y - b.y);
-      const rr = root.getBoundingClientRect();
-      if (pinch) zoomAt(d / pinch, (a.x + b.x) / 2 - rr.left, (a.y + b.y) / 2 - rr.top);
-      pinch = d;
-      moved += 10;
-    }
-  });
-
-  const up = (ev: PointerEvent) => {
-    if (!pts.has(ev.pointerId)) return;
-    pts.delete(ev.pointerId);
-    if (pts.size < 2) pinch = 0;
-    if (pts.size) return;
-    root.classList.remove('is-dragging');
-    // let it glide on a little
-    if (moved > 4 && !reducedMotion() && performance.now() - vel.t < 80) {
-      let { x: vx, y: vy } = vel;
-      let t = performance.now();
-      const step = (n: number) => {
-        const dt = n - t;
-        t = n;
-        vx *= Math.pow(0.92, dt / 16);
-        vy *= Math.pow(0.92, dt / 16);
-        set({ ...cam, cx: cam.cx - (vx * dt) / cam.s, cy: cam.cy - (vy * dt) / cam.s });
-        if (Math.hypot(vx, vy) > 0.02) glide = requestAnimationFrame(step);
-        else settle();
-      };
-      glide = requestAnimationFrame(step);
-    } else if (moved > 4) settle();
-  };
-  root.addEventListener('pointerup', up);
-  root.addEventListener('pointercancel', up);
-
-  root.addEventListener(
-    'wheel',
-    (ev) => {
-      // pulled all the way out, the wheel scrolls the page on to what is below
-      if (ev.deltaY > 0 && cam.s <= sMin() * 1.001 && !ev.ctrlKey && document.documentElement.scrollHeight > innerHeight + 4) return;
-      ev.preventDefault();
-      const rr = root.getBoundingClientRect();
-      const d = ev.deltaMode === 1 ? ev.deltaY * 16 : ev.deltaY;
-      zoomAt(Math.exp(-d * (ev.ctrlKey ? 0.01 : 0.0018)), ev.clientX - rr.left, ev.clientY - rr.top);
-    },
-    { passive: false },
-  );
-
-  root.addEventListener('dblclick', (ev) => {
-    if (ui(ev.target) || (ev.target as Element).closest('[data-star], [data-part]')) return;
-    const rr = root.getBoundingClientRect();
-    zoomAt(1.9, ev.clientX - rr.left, ev.clientY - rr.top, 450);
-  });
 
   /* ── choosing ── */
   markers.forEach((a, id) =>
@@ -421,32 +260,13 @@ export function initExplorer(root: HTMLElement) {
   root.addEventListener('click', (ev) => {
     if (moved > 6 || ui(ev.target) || (ev.target as Element).closest('[data-star], [data-part]')) return;
     if (selected) closeCard();
-    else if (current) closePart({ fly: true });
+    else if (current) closePart();
   });
 
   document.addEventListener('keydown', (ev) => {
-    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
-    const t = ev.target instanceof Element ? ev.target : null;
-    if (t?.closest('input, textarea, select, [contenteditable]')) return;
-    const rr = root.getBoundingClientRect();
-    if (rr.bottom < innerHeight * 0.5) return; // the map is scrolled away
-    const pan = (dx: number, dy: number) => flyTo({ ...cam, cx: cam.cx + (dx * w * 0.2) / cam.s, cy: cam.cy + (dy * h * 0.2) / cam.s }, 220, settle);
-    switch (ev.key) {
-      case 'ArrowLeft': pan(-1, 0); break;
-      case 'ArrowRight': pan(1, 0); break;
-      case 'ArrowUp': pan(0, -1); break;
-      case 'ArrowDown': pan(0, 1); break;
-      case '+': case '=': zoomAt(1.5, w / 2, h / 2, 260); break;
-      case '-': case '_': zoomAt(1 / 1.5, w / 2, h / 2, 260); break;
-      case '0': current ? closePart({ fly: true }) : flyTo(ov); break;
-      case 'Escape':
-        if (selected) closeCard();
-        else if (current) closePart({ fly: true });
-        else return;
-        break;
-      default: return;
-    }
-    ev.preventDefault();
+    if (ev.key !== 'Escape') return;
+    if (selected) closeCard();
+    else if (current) closePart();
   });
 
   /* ── the window ── */
@@ -455,25 +275,21 @@ export function initExplorer(root: HTMLElement) {
     const nw = root.clientWidth;
     const nh = root.clientHeight;
     if (nw === w && nh === h) return;
-    const zr = cam.s / ov.s;
     w = nw;
     h = nh;
     ov = overview();
-    if (current) set(frameFor(current));
-    else set(zr < 1.02 ? ov : { ...cam, s: ov.s * zr });
+    set(ov);
   }).observe(root);
 
   /* ── start: a part's own page, a shared link (#research, #s-python), or the whole pillars ── */
   const hash = decodeURIComponent(location.hash.slice(1));
   const star = hash.replace(/^[si]-/, '');
   if (partOfStar.has(star) && /^[si]-/.test(hash)) {
-    openPart(partOfStar.get(star)!, { fly: false });
-    set(frameFor(current!));
+    openPart(partOfStar.get(star)!);
     requestAnimationFrame(() => select(star));
     scrollTo(0, 0);
   } else if (root.dataset.focus || byId.has(hash)) {
-    openPart(root.dataset.focus || hash, { fly: false });
-    set(frameFor(current!));
+    openPart(root.dataset.focus || hash);
   } else apply();
 
   if (html.classList.contains('sky-intro')) {
