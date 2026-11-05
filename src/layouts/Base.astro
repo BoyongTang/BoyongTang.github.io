@@ -21,7 +21,7 @@ interface Props {
   bare?: boolean;
 }
 
-const { title, description = `${profile.name} — ${profile.role}. ${profile.subline}` } = Astro.props;
+const { title, description = [`${profile.name} — ${profile.role}.`, profile.subline].filter(Boolean).join(' ') } = Astro.props;
 const fullTitle = title ? `${title} · ${profile.name}` : `${profile.name} · The Observatory of Questions`;
 const path = Astro.url.pathname;
 const canonical = new URL(path, Astro.site);
