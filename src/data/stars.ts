@@ -1,9 +1,10 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 //  The stars of the four parts — the only file to edit to fill the sky.
 //
-//  Each part is a list of star chains. A chain is one field or theme (e.g. AI4S, XAI): its name is shown
-//  on the map beside it, and its stars are joined in the order you list them. Different chains are drawn
-//  apart, each as its own constellation.
+//  Each part is a list of star chains. A chain is one subfield or theme (e.g. AI4S, XAI): its name is
+//  shown on the map beside it, and its stars are joined in the order you list them. Different chains are
+//  drawn apart, each as its own constellation. In Research a star is usually one paper; in Works, one
+//  project.
 //
 //  A chain:
 //    chain  its name on the map, e.g. 'AI4S'                          (optional: leave out for no name)
@@ -47,45 +48,57 @@ export interface ChainInput {
 
 export const stars: Record<FacetId, ChainInput[]> = {
   // 研究 Research — on the tallest pillar's head
+  // One chain per subfield; one star per paper, listed oldest first so the line reads as a timeline.
+  // Keep `name` short (it is the label on the map); the full title can go in `text` or a link's label.
   research: [
-    // {
-    //   chain: 'AI4S',
-    //   zh: '科学智能',
-    //   stars: [
-    //     { name: 'Active learning', text: 'What it is and why it matters to me.', bright: true },
-    //     { name: 'Bayesian optimization' },
-    //     { name: 'A paper title', kind: 'Paper', note: '2026 · preprint', link: 'https://arxiv.org/abs/…' },
-    //     { name: 'Surrogate models', from: 'Active learning' }, // a branch off the first star
-    //   ],
-    // },
+    {
+      chain: 'AI4S',
+      zh: '科学智能',
+      stars: [
+        {
+          name: 'KolTa',
+          kind: 'Research Paper',
+          note: 'Under Submission',
+          text: 'A Physics-Informed Active Learning Framework for Formulation Discovery with Limited Data',
+          links: [
+            { label: 'arXiv', href: 'https://arxiv.org/abs/2611.06394' },
+            // { label: 'Code', href: 'https://github.com/…' }, // add once the code is public
+          ],
+          bright: true, // the paper that matters most
+        },
+        //{ name: 'Paper B', kind: 'Paper', note: '2026 · preprint', link: 'https://arxiv.org/abs/…' },
+        //{ name: 'Paper C', kind: 'Paper', note: '2026 · ICML', from: 'Paper A' }, // builds on Paper A: a branch
+      ],
+    },
     // {
     //   chain: 'XAI',
     //   zh: '可解释 AI',
     //   stars: [
-    //     { name: 'Feature attribution', bright: true },
-    //     { name: 'Trustworthy evaluation' },
+    //     { name: 'Paper D', kind: 'Paper', note: '2025 · AAAI', link: 'https://arxiv.org/abs/…', bright: true },
+    //     { name: 'Paper E', kind: 'Paper', note: '2026 · under review' },
     //   ],
     // },
   ],
 
   // 个人介绍 Intro — on the middle pillar's red tip
   intro: [
-    // {
-    //   stars: [
-    //     { name: 'Sichuan University', kind: 'Education', note: '2024 –' },
-    //     { name: 'Chengdu' },
-    //   ],
-    // },
+     {
+      stars: [
+         { name: 'Sichuan University', kind: 'Undergraduate', note: '2025 – now' },
+         { name: 'Chengdu' },
+       ],
+     },
   ],
 
   // 作品 Works — on the tip of the small pillar
   works: [
-    // {
-    //   chain: 'AI4S',
-    //   stars: [
-    //     { name: 'A project', kind: 'Project', text: 'What it does.', link: 'https://github.com/…' },
-    //   ],
-    // },
+     {
+       chain: 'AI4S',
+       stars: [
+         // add link: 'https://github.com/…' once the code is public
+         { name: 'KolTa', kind: 'Research Repo', note: 'Code coming soon', text: "The open code of KolTa's AL framework." },
+       ],
+     },
     // {
     //   chain: 'XAI',
     //   stars: [{ name: 'Another project', kind: 'Project' }],
@@ -94,11 +107,11 @@ export const stars: Record<FacetId, ChainInput[]> = {
 
   // 联系 Contact — on the small gas globule
   contact: [
-    // {
-    //   stars: [
-    //     { name: 'Email', link: 'mailto:boyong.tang.math.ai@gmail.com', bright: true },
-    //     { name: 'GitHub', link: 'https://github.com/BoyongTang' },
-    //   ],
-    // },
+     {
+       stars: [
+         { name: 'Scholar Email', link: 'mailto:boyong.tang.math.ai@gmail.com', bright: true },
+         { name: 'GitHub', link: 'https://github.com/BoyongTang' },
+       ],
+     },
   ],
 };

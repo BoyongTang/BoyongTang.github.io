@@ -7,7 +7,10 @@ export const profile = {
   /** One plain line about you, used in search results and link previews. */
   role: 'Undergraduate · Applied Mathematics & AI',
   affiliation: 'Sichuan University',
+  /** Your scholar email (学术邮箱), shown as "Scholar email" on the home page. */
   email: 'boyong.tang.math.ai@gmail.com',
+  /** For everything else (一般事务邮箱), shown as "General email" on the home page. Empty: none. */
+  generalEmail: 'tang.boyong@outlook.com',
   github: 'https://github.com/BoyongTang',
   /** The quiet line under your name on the home page, e.g. 'Observe the unanswered.' Empty: none. */
   tagline: '',
