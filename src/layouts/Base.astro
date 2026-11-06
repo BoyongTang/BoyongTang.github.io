@@ -5,19 +5,17 @@ import '@fontsource/ibm-plex-sans/600.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '@fontsource/ibm-plex-mono/600.css';
-import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 import Backdrop, { type Sky } from '../components/Backdrop.astro';
-import StarGlow from '../components/StarGlow.astro';
 import { creditLine, spots } from '../data/pillars';
-import { cvHref, profile } from '../data/profile';
+import { profile } from '../data/profile';
 
 interface Props {
   title?: string;
   description?: string;
   /** Where this page sits in the Pillars of Creation (see Backdrop.astro). */
   sky?: Sky;
-  /** Only the pillars: no site header or footer (the home page and the four parts). */
+  /** Only the pillars: no site header or footer (the home page and the four parts; only 404 has them). */
   bare?: boolean;
 }
 
@@ -28,28 +26,9 @@ const initials = profile.name
   .map((w) => w[0])
   .join('')
   .toUpperCase();
-const path = Astro.url.pathname;
-const canonical = new URL(path, Astro.site);
-// each section of the site floats over the part of the pillars it belongs to
-const placeFor = (p: string): [number, number] =>
-  p.startsWith('/research') || p.startsWith('/publications')
-    ? spots.research
-    : p.startsWith('/projects') || p.startsWith('/notes')
-      ? spots.works
-      : p.startsWith('/about')
-        ? spots.intro
-        : spots.contact;
-const sky: Sky = Astro.props.sky ?? { mode: 'page', at: placeFor(path) };
-
-const nav = [
-  { href: '/research/', label: 'Research' },
-  { href: '/publications/', label: 'Publications' },
-  { href: '/projects/', label: 'Projects' },
-  { href: '/notes/', label: 'Notes' },
-  { href: '/about/', label: 'About' },
-];
-const current = (href: string) => (path.startsWith(href) ? 'page' : undefined);
-// CV is always one click away: the PDF when it exists, otherwise the CV section of About.
+const canonical = new URL(Astro.url.pathname, Astro.site);
+// a page of text floats over the pillars' red tip, dimmed
+const sky: Sky = Astro.props.sky ?? { mode: 'page', at: spots.intro };
 const year = new Date().getFullYear();
 ---
 
@@ -85,7 +64,6 @@ const year = new Date().getFullYear();
   </head>
   <body>
     <Backdrop sky={sky} />
-    <StarGlow />
     <slot name="intro" />
     <a class="skip-link" href="#main">Skip to content</a>
 
@@ -96,15 +74,6 @@ const year = new Date().getFullYear();
           <span class="brand__mark">{initials}</span>
           <span class="brand__name">{profile.name}</span>
         </a>
-        <button class="icon-btn menu-btn" type="button" aria-expanded="false" aria-controls="site-nav" data-menu>
-          <span aria-hidden="true">≡</span><span class="visually-hidden">Menu</span>
-        </button>
-        <nav class="nav" id="site-nav" aria-label="Main">
-          <ul>
-            {nav.map((n) => <li><a href={n.href} aria-current={current(n.href)}>{n.label}</a></li>)}
-            <li><a class="nav__cv" href={cvHref}>{profile.cv ? 'CV ↓' : 'CV'}</a></li>
-          </ul>
-        </nav>
       </div>
     </header>
     )}
@@ -128,14 +97,6 @@ const year = new Date().getFullYear();
     )}
 
     <script>
-      const menu = document.querySelector<HTMLButtonElement>('[data-menu]');
-      const nav = document.getElementById('site-nav');
-      menu?.addEventListener('click', () => {
-        const open = menu.getAttribute('aria-expanded') !== 'true';
-        menu.setAttribute('aria-expanded', String(open));
-        nav?.setAttribute('data-open', String(open));
-      });
-
       const toggle = document.querySelector<HTMLButtonElement>('[data-motion-toggle]');
       const root = document.documentElement;
       const sync = () => toggle?.setAttribute('aria-pressed', String(root.dataset.motion === 'reduce'));

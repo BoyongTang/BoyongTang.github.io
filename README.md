@@ -16,14 +16,15 @@ places on the pillars are the four parts of me:
 
 Choosing a part unfolds its stars on the pillar; choosing a star opens its card; a click anywhere else steps
 back. Each part also has its own page (`/sky/<part>/`), and every star is in a plain list below, which is also
-what keyboard, screen-reader and no-JavaScript visitors get.
+what keyboard, screen-reader and no-JavaScript visitors get. That is the whole site: the home page and the
+four parts.
 
 ## Editing the content
 
 Everything personal lives in two files:
 
-- **[`src/data/profile.ts`](src/data/profile.ts):** name, one-line role, school, email, GitHub, and optional
-  bio, interests, education, CV and links. Anything left empty does not show.
+- **[`src/data/profile.ts`](src/data/profile.ts):** name, one-line role, school, email, GitHub, and an
+  optional bio, place and CV. Anything left empty does not show.
 - **[`src/data/stars.ts`](src/data/stars.ts):** the stars of the four parts. Each part is a list of chains:
 
   ```ts
@@ -47,9 +48,6 @@ Everything personal lives in two files:
 
 Other places to edit:
 
-- **Research write-ups and notes:** Markdown files in [`src/content/research/`](src/content/research/) and
-  [`src/content/notes/`](src/content/notes/) (with KaTeX for maths). `draft: true` keeps one off the site.
-- **Projects and publications:** `projects` and `publications` in [`src/data/profile.ts`](src/data/profile.ts).
 - **The parts' names and colours:** [`src/data/facets.ts`](src/data/facets.ts).
 - **Where each part sits on the picture, and how dark the sky is:** [`src/data/pillars.ts`](src/data/pillars.ts).
 
@@ -72,7 +70,7 @@ Pushing to `main` deploys to GitHub Pages (`.github/workflows/deploy.yml`).
   stars, and a darker sky round full-colour pillars. Without WebGL a still copy of the picture stands in.
 - The home page and the parts: [`src/components/Explorer.astro`](src/components/Explorer.astro) and
   [`src/scripts/explorer.ts`](src/scripts/explorer.ts). Star layout: [`src/lib/sky.ts`](src/lib/sky.ts).
-- Motion respects the system's reduced-motion setting, and there is a switch for it in the footer.
+- Motion respects the system's reduced-motion setting.
 
 ## The picture
 
