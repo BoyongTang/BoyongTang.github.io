@@ -1,10 +1,6 @@
 ---
-// One part of me, on its place in the Pillars of Creation: the page opens with its stars unfolded (choose a
-// star for its card), and below it the same stars are a plain list, which is also what keyboard,
-// screen-reader and no-JavaScript visitors get.
+// One part of me, on its own address (/sky/<part>/): the same one screen as the home page, opened on it.
 import Explorer from '../../components/Explorer.astro';
-import PartItems from '../../components/PartItems.astro';
-import { creditLine } from '../../data/pillars';
 import Base from '../../layouts/Base.astro';
 import { loadSky, type SkyFacet } from '../../lib/sky';
 
@@ -19,43 +15,8 @@ interface Props {
 }
 
 const { f, sky } = Astro.props;
-const n = f.items.length;
 ---
 
 <Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line}`} sky={{ mode: 'explore' }} bare>
   <Explorer sky={sky} focus={f.id} />
-
-  <section id="list" class="wrap slist" aria-labelledby="slist-heading" style={`--c:${f.color}`}>
-    <h2 id="slist-heading" class="eyebrow">{f.name} · {f.nameZh}</h2>
-    {n > 0 ? <PartItems f={f} /> : <p class="slist__empty">Still being written.</p>}
-    <p class="slist__note">
-      Every star here is real: an interest, a tool, a place, a piece of work or a way to reach me. More appear as they happen. Lines join
-      things that are actually related; positions mean nothing. Behind them: 
-      {creditLine}.
-    </p>
-  </section>
-
-  <!-- the other parts' stars: the cards the map shows if you wander over to them -->
-  <div hidden>
-    {sky.filter((o) => o.id !== f.id).map((o) => <PartItems f={o} />)}
-  </div>
 </Base>
-
-<style>
-  .slist {
-    padding-top: clamp(40px, 7vh, 72px);
-    padding-bottom: clamp(48px, 8vh, 88px);
-  }
-
-  .slist__empty {
-    margin: 18px 0 0;
-    color: var(--muted);
-  }
-
-  .slist__note {
-    max-width: 70ch;
-    margin: 26px 0 0;
-    color: var(--dim);
-    font-size: 14px;
-  }
-</style>

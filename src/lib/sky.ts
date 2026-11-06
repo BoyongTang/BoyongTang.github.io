@@ -1,7 +1,10 @@
 // What each part holds: the stars written in src/data/stars.ts, and where they sit on the part's star map.
-import { facets, WORLD, type Facet, type FacetId } from '../data/facets';
-import { stars as input } from '../data/stars';
-import { seeded } from './stars';
+// The profile part (Intro) has no stars: it opens the profile card (src/data/profile.ts).
+import { facets, PROFILE_PART, WORLD, type Facet, type FacetId } from '../data/facets';
+import { stars, type ChainInput } from '../data/stars';
+import { seeded } from './random';
+
+const chainsOf = (id: FacetId): ChainInput[] => (id === PROFILE_PART ? [] : stars[id]);
 
 export interface SkyLink {
   label: string;
@@ -21,13 +24,9 @@ export interface SkyItem {
   sub?: string;
   /** A paragraph in the star's card. */
   text?: string;
-  facts?: { label: string; value: string }[];
-  list?: string[];
-  tags?: string[];
   links?: SkyLink[];
   /** 1 is brightest. */
   mag: 1 | 2;
-  lang?: string;
   /** Which side of the star its label runs. */
   side: 'left' | 'right';
   x: number;
@@ -56,9 +55,7 @@ export interface SkyFacet extends Facet {
   tallView: { x: number; y: number; w: number; h: number };
 }
 
-export { WORLD };
-
-export const slug = (s: string) =>
+const slug = (s: string) =>
   s
     .toLowerCase()
     .replace(/\+\+/g, 'pp')
@@ -88,9 +85,9 @@ function build(id: FacetId) {
   // a star's id must be unique on the whole page: a name also used in another part gets this part's name
   // in front (e.g. KolTa in both Research and Works: research-kolta, works-kolta)
   const elsewhere = new Set(
-    (Object.keys(input) as FacetId[]).filter((o) => o !== id).flatMap((o) => input[o].flatMap((c) => c.stars.map((st) => slug(st.name)))),
+    facets.filter((o) => o.id !== id).flatMap((o) => chainsOf(o.id).flatMap((c) => c.stars.map((st) => slug(st.name)))),
   );
-  input[id].forEach((c, gi) => {
+  chainsOf(id).forEach((c, gi) => {
     const idx: number[] = [];
     const byName = new Map<string, number>();
     c.stars.forEach((st, k) => {
@@ -308,6 +305,7 @@ function arrange(widths: number[], edges: [number, number][], chains: Chain[], s
   };
 }
 
+/** Every part, with its stars laid out for wide and for tall screens. */
 export async function loadSky(): Promise<SkyFacet[]> {
   return facets.map((f) => {
     const { ds, edges, chains } = build(f.id);

@@ -1,6 +1,6 @@
 import { PILLARS } from '../data/pillars';
 import { fitPillars } from '../lib/pillars-fit';
-import { reducedMotion } from './form';
+import { reducedMotion } from './motion';
 import { LivingPillars, type Rect, type View } from './pillars-gl';
 
 // The one sky behind every page: the living Pillars of Creation, fixed to the window.
@@ -81,7 +81,8 @@ export function initBackdrop(el: HTMLElement) {
     const vh = innerHeight;
     let rect = baseRect();
     let par: [number, number] = [0, 0];
-    let dim = mode === 'explore' ? Math.min(0.5, (scrollY / vh) * 0.5) : dimBase;
+    // the explorer fills one screen and never scrolls; a page of text dims the sky behind it
+    let dim = mode === 'explore' ? 0 : dimBase;
     // on the home page the sky round the pillars sits darker than the photo (the pillars keep their light)
     const v: Partial<View> = { skyDim: mode === 'explore' ? PILLARS.dim : 0, blur: mode === 'page' ? 1.1 : 0, life: still ? 0 : mode === 'page' ? 0.7 : 1 };
 
@@ -94,7 +95,6 @@ export function initBackdrop(el: HTMLElement) {
       // and the near layer (the pillars, and the parts on them) a little the other way, so the whole
       // scene moves in depth with the mouse
       near = [-ptr.x * 12, -ptr.y * 8];
-      if (mode === 'explore') par[1] += Math.min(vh, scrollY) * 0.06;
       if (mode === 'page') par[1] += Math.min(vh, scrollY) * 0.03;
     }
 

@@ -1,28 +1,28 @@
-// Who you are: the only file for your own details (the four parts' stars are in src/data/stars.ts).
-// Keep it short. Anything left empty ('') simply does not show anywhere.
+// Who you are: the card that opens when Intro (个人介绍) is chosen on the pillars. The other three parts'
+// stars are in src/data/stars.ts. Keep it short. Anything left empty ('') simply does not show.
 
 export const profile = {
   // ── the basics ───────────────────────────────────────────────────────────
   name: 'Boyong Tang',
-  /** One plain line about you, used in search results and link previews. */
+  /** One plain line about you: under your name in the card, and in search results and link previews. */
   role: 'Undergraduate · Applied Mathematics & AI',
   affiliation: 'Sichuan University',
-  /** Your scholar email (学术邮箱), shown as "Scholar email" on the home page. */
+  /** Your scholar email (学术邮箱): the card's "Scholar email" button. */
   email: 'boyong.tang.math.ai@gmail.com',
-  /** For everything else (一般事务邮箱), shown as "General email" on the home page. Empty: none. */
+  /** For everything else (一般事务邮箱): the card's "General email" button. Empty: none. */
   generalEmail: 'tang.boyong@outlook.com',
   github: 'https://github.com/BoyongTang',
   /** The quiet line under your name on the home page, e.g. 'Observe the unanswered.' Empty: none. */
   tagline: '',
 
   // ── optional: fill in only what you want shown ───────────────────────────
-  /** e.g. 'Chengdu, China', shown beside the school below the pillars. */
-  location: '',
-  /** A few sentences about you, below the pillars on the home page. */
+  /** Shown beside the school at the top of the card. */
+  location: 'Chengdu',
+  /** A few sentences about you, in the card. */
   bio: '',
   /** 中文简介（可留空）。 */
   bioZh: '',
-  /** A PDF in /public, e.g. '/cv.pdf'. Empty: no CV button. */
+  /** A PDF in /public, e.g. '/cv.pdf': the card's "CV" button. Empty: none. */
   cv: '',
   /** One more sentence for search engines and link previews (optional). */
   subline: '',

@@ -19,10 +19,10 @@ export const PILLARS = {
   dim: 0.4,
   /** The coordinate frame for positions and layouts: weic2216b, the publication JPEG. */
   size: { w: 2309, h: 4000 },
-  /** Web copies: which part of the image each holds, as [x0, y0, x1, y1]. */
+  /** Web copies of the whole image (sizes in scripts/make-pillars.py): computers, and phones / no WebGL. */
   variants: {
-    wide: { src: '/sky/pillars-wide.webp', crop: [0, 0, 1, 1], width: 1800 },
-    tall: { src: '/sky/pillars-tall.webp', crop: [0, 0, 1, 1], width: 1300 },
+    wide: { src: '/sky/pillars-wide.webp' },
+    tall: { src: '/sky/pillars-tall.webp' },
   },
   /**
    * How the image sits on a screen: the stretch from y[0] to y[1] fills the height, and x is the point of the

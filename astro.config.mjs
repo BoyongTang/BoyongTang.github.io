@@ -6,16 +6,15 @@ export default defineConfig({
   site: 'https://boyongtang.github.io',
   trailingSlash: 'always',
   build: { format: 'directory' },
-  // the old research atlas became the star band (home) and its nebulae
+  // old addresses, so links to them still land somewhere: the research atlas, the Toolbox and Path parts,
+  // and the separate pages, which all became the four parts
   redirects: {
     '/atlas': '/',
     '/atlas/math': '/sky/research/',
     '/atlas/ai': '/sky/research/',
     '/atlas/teaching': '/sky/research/',
-    // the Toolbox part was removed and Path became the personal introduction
     '/sky/toolbox': '/',
     '/sky/path': '/sky/intro/',
-    // the separate pages became the four parts
     '/about': '/sky/intro/',
     '/research': '/sky/research/',
     '/publications': '/sky/research/',

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
-//  The stars of the four parts — the only file to edit to fill the sky.
+//  The stars of Research, Works and Contact (Intro is the profile card: src/data/profile.ts).
 //
 //  Each part is a list of star chains. A chain is one subfield or theme (e.g. AI4S, XAI): its name is
 //  shown on the map beside it, and its stars are joined in the order you list them. Different chains are
@@ -26,7 +26,7 @@
 //  A `from` name that matches no earlier star in the chain stops the build and says which one.
 //  Save, and the dev server (npm run dev) shows the change at once; nothing else needs touching.
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
-import type { FacetId } from './facets';
+import type { FacetId, PROFILE_PART } from './facets';
 
 export interface StarInput {
   name: string;
@@ -46,7 +46,10 @@ export interface ChainInput {
   stars: StarInput[];
 }
 
-export const stars: Record<FacetId, ChainInput[]> = {
+/** The parts that have stars: all but Intro, which is the profile card. */
+export type StarPart = Exclude<FacetId, typeof PROFILE_PART>;
+
+export const stars: Record<StarPart, ChainInput[]> = {
   // 研究 Research — on the tallest pillar's head
   // One chain per subfield; one star per paper, listed oldest first so the line reads as a timeline.
   // Keep `name` short (it is the label on the map); the full title can go in `text` or a link's label.
@@ -78,16 +81,6 @@ export const stars: Record<FacetId, ChainInput[]> = {
     //     { name: 'Paper E', kind: 'Paper', note: '2026 · under review' },
     //   ],
     // },
-  ],
-
-  // 个人介绍 Intro — on the middle pillar's red tip
-  intro: [
-     {
-      stars: [
-         { name: 'Sichuan University', kind: 'Undergraduate', note: '2025 – now' },
-         { name: 'Chengdu' },
-       ],
-     },
   ],
 
   // 作品 Works — on the tip of the small pillar

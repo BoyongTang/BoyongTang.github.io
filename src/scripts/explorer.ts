@@ -1,14 +1,14 @@
 import { labelLeft, PILLARS } from '../data/pillars';
-import { fitPillars } from '../lib/pillars-fit';
-import { reducedMotion } from './form';
+import { fitPillars, shapeFor, type Shape } from '../lib/pillars-fit';
+import { reducedMotion } from './motion';
 
 // The Pillars of Creation as a map to explore (src/components/Explorer.astro). The camera is a point of the
 // image at the centre of the view and a scale (screen px per image px). Everything on top (the four parts,
 // an open part's stars) is placed from it every frame, and the living sky behind the page reads it too
 // (window.__oqView, see src/scripts/backdrop.ts). Visitors cannot zoom or drag: choosing a part flies the
-// camera in to it, and its star chains come out once it arrives; stepping back flies out to the whole view.
+// camera in to it, and its star chains come out once it arrives (the profile part opens the profile card
+// instead); stepping back flies out to the whole view.
 
-type Shape = 'wide' | 'tall';
 interface Lay {
   cx: number;
   cy: number;
@@ -72,12 +72,13 @@ export function initExplorer(root: HTMLElement) {
   const partOfStar = new Map<string, string>();
   groups.forEach((g, id) => g.querySelectorAll<SVGAElement>('[data-star]').forEach((a) => partOfStar.set(a.dataset.star!, id)));
   const home = root.dataset.home === '1';
+  const profilePart = root.dataset.profilePart ?? '';
 
   root.classList.add('is-live');
 
   let w = root.clientWidth;
   let h = root.clientHeight;
-  const shape = (): Shape => (w / Math.max(1, h) >= 0.9 ? 'wide' : 'tall');
+  const shape = (): Shape => shapeFor(w, h);
 
   /** The whole pillars, framed as the page was designed. */
   const overview = (): Cam => {
@@ -259,7 +260,9 @@ export function initExplorer(root: HTMLElement) {
     // the stars come out once the camera is there
     groups.forEach((g) => g.classList.remove('is-open'));
     flyTo(focus(id), now ? 0 : FLY_IN, () => {
-      if (current === id) groups.get(id)?.classList.add('is-open');
+      if (current !== id) return;
+      groups.get(id)?.classList.add('is-open');
+      if (id === profilePart) showProfile();
     });
   }
 
@@ -291,6 +294,20 @@ export function initExplorer(root: HTMLElement) {
     card.hidden = false;
     history.replaceState(null, '', `${location.pathname}${location.search}#s-${id}`);
   }
+  /** The profile part's one card: who I am, from src/data/profile.ts. */
+  function showProfile() {
+    const entry = root.querySelector<HTMLElement>('[data-entry="profile"]');
+    if (!entry || !current) return;
+    selected = 'profile';
+    cardBody.replaceChildren(entry.cloneNode(true));
+    card.style.setProperty('--c', getComputedStyle(groups.get(current)!).getPropertyValue('--c'));
+    card.hidden = false;
+  }
+  /** One step back: a star's card, then the open part (the profile card is the whole part, so both). */
+  function back() {
+    if (selected && selected !== 'profile') closeCard();
+    else if (current) closePart();
+  }
   function closeCard() {
     if (!selected) return;
     const last = root.querySelector<SVGAElement>(`[data-star="${CSS.escape(selected)}"]`);
@@ -300,7 +317,7 @@ export function initExplorer(root: HTMLElement) {
     if (current && home) history.replaceState(null, '', `${location.pathname}${location.search}#${current}`);
     last?.focus({ preventScroll: true });
   }
-  root.querySelector('[data-close]')?.addEventListener('click', closeCard);
+  root.querySelector('[data-close]')?.addEventListener('click', back);
   card.addEventListener('click', (ev) => {
     const a = (ev.target as Element).closest<HTMLAnchorElement>('[data-goto]');
     if (!a) return;
@@ -327,18 +344,14 @@ export function initExplorer(root: HTMLElement) {
   // a click anywhere else steps back: first the card, then the open part
   root.addEventListener('click', (ev) => {
     if (ui(ev.target) || (ev.target as Element).closest('[data-star], [data-part]')) return;
-    if (selected) closeCard();
-    else if (current) closePart();
+    back();
   });
 
   document.addEventListener('keydown', (ev) => {
-    if (ev.key !== 'Escape') return;
-    if (selected) closeCard();
-    else if (current) closePart();
+    if (ev.key === 'Escape') back();
   });
 
   /* ── the window ── */
-  addEventListener('scroll', apply, { passive: true });
   new ResizeObserver(() => {
     const nw = root.clientWidth;
     const nh = root.clientHeight;
