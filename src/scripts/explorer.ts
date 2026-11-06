@@ -116,6 +116,8 @@ export function initExplorer(root: HTMLElement) {
       // edges and clear of the caption at the foot
       if (pos.size) {
         const want = Math.min(0.62, ((w - 24) / lay.vw) * 0.9, (h - 140) / lay.vh);
+        // squeezed smaller than designed, the type gives a little too (never below 80 %)
+        groups.get(current)!.style.setProperty('--xs', Math.max(0.8, Math.min(1, want / 0.62)).toFixed(3));
         const k = want / ((lay.w / lay.vw) * cam.s);
         let [cx, cy] = toScreen(lay.cx, lay.cy);
         const hw = (lay.vw * want) / 2;
@@ -141,6 +143,10 @@ export function initExplorer(root: HTMLElement) {
           t?.setAttribute('dx', `${left ? -em : em}em`);
         }
       }
+      groups.get(current)!.querySelectorAll<SVGTextElement>('[data-chain]').forEach((t) => {
+        const p = pos.get(t.dataset.chain!);
+        if (p) t.setAttribute('transform', `translate(${p[0].toFixed(1)} ${p[1].toFixed(1)})`);
+      });
       groups.get(current)!.querySelectorAll<SVGLineElement>('.xline').forEach((l) => {
         const a = pos.get(l.dataset.a!);
         const b = pos.get(l.dataset.b!);

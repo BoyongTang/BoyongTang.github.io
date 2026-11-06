@@ -17,7 +17,7 @@ const { f } = Astro.props;
           return (
             <li id={`i-${s.id}`} class="sitem">
               <article class="sitem__body" data-entry={s.id}>
-                {(s.kind || s.sub) && <p class="sitem__kind">{[s.kind, s.sub].filter(Boolean).join(' · ')}</p>}
+                {(s.chain || s.kind || s.sub) && <p class="sitem__kind">{[s.chain, s.kind, s.sub].filter(Boolean).join(' · ')}</p>}
                 <h3 class="sitem__name" lang={s.lang}>
                   {s.name}
                   {s.nameZh && <span lang="zh"> {s.nameZh}</span>}

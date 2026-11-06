@@ -13,8 +13,10 @@ export interface SkyItem {
   id: string;
   name: string;
   nameZh?: string;
-  /** What kind of star this is, e.g. Interest, Tool, Project. */
+  /** What kind of star this is, e.g. Paper, Project. */
   kind: string;
+  /** The chain (field) it belongs to, e.g. AI4S. */
+  chain?: string;
   /** Short line under the name on the map. */
   sub?: string;
   /** A paragraph in the star's card. */
@@ -34,9 +36,21 @@ export interface SkyItem {
   tall: { x: number; y: number; side: 'left' | 'right' };
 }
 
+/** A chain's name on the map, just above its stars. */
+export interface SkyChain {
+  id: string;
+  name: string;
+  nameZh?: string;
+  x: number;
+  y: number;
+  side: 'left' | 'right';
+  tall: { x: number; y: number; side: 'left' | 'right' };
+}
+
 export interface SkyFacet extends Facet {
   items: SkyItem[];
   lines: [SkyItem, SkyItem][];
+  chains: SkyChain[];
   /** Default framing of the map, in world units, for wide and for tall screens. */
   view: { x: number; y: number; w: number; h: number };
   tallView: { x: number; y: number; w: number; h: number };
@@ -54,45 +68,55 @@ export const slug = (s: string) =>
 
 const link = (label: string, href: string): SkyLink => ({ label, href, external: /^(https?:|mailto:)/.test(href) });
 type Draft = Omit<SkyItem, 'x' | 'y' | 'mag' | 'side' | 'tall'> & { mag?: 1 | 2 };
+interface Chain {
+  id: string;
+  name?: string;
+  nameZh?: string;
+  /** Its stars, as indexes into the part's drafts. */
+  idx: number[];
+}
 
-function drafts(): Record<FacetId, Draft[]> {
-  const out = {} as Record<FacetId, Draft[]>;
-  for (const f of facets) {
-    const seen = new Set<string>();
-    out[f.id] = input[f.id].stars.map((st, i) => {
-      let id = slug(st.name) || `${f.id}-${i + 1}`;
-      while (seen.has(id)) id = `${id}-${i + 1}`;
-      seen.add(id);
+/**
+ * A part's stars, lines and chains from src/data/stars.ts. In a chain each star joins the one listed
+ * before it, or, with `from`, an earlier star of the chain by name. An unknown `from` stops the build.
+ */
+function build(id: FacetId) {
+  const ds: Draft[] = [];
+  const edges: [number, number][] = [];
+  const chains: Chain[] = [];
+  const seen = new Set<string>();
+  input[id].forEach((c, gi) => {
+    const idx: number[] = [];
+    const byName = new Map<string, number>();
+    c.stars.forEach((st, k) => {
+      let sid = slug(st.name) || `${id}-${gi + 1}-${k + 1}`;
+      while (seen.has(sid)) sid += `-${gi + 1}`;
+      seen.add(sid);
       const links = [...(st.link ? [link(st.link.startsWith('mailto:') ? 'Write an email' : 'Open', st.link)] : []), ...(st.links ?? []).map((l) => link(l.label, l.href))];
-      return {
-        id,
+      const i = ds.length;
+      ds.push({
+        id: sid,
         name: st.name,
         nameZh: st.zh,
         kind: st.kind ?? '',
+        chain: c.chain,
         sub: st.note,
         text: st.text,
         links: links.length ? links : undefined,
         mag: st.bright ? 1 : undefined,
-      };
+      });
+      if (st.from) {
+        const j = byName.get(st.from.trim().toLowerCase());
+        if (j === undefined)
+          throw new Error(`src/data/stars.ts, ${id}: '${st.name}' says from: '${st.from}', but no earlier star in the chain${c.chain ? ` '${c.chain}'` : ''} is called that.`);
+        edges.push([j, i]);
+      } else if (idx.length) edges.push([idx[idx.length - 1], i]);
+      byName.set(st.name.trim().toLowerCase(), i);
+      idx.push(i);
     });
-  }
-  return out;
-}
-
-/** 'A - B - C' → [A, B], [B, C], by star name (any case). An unknown name stops the build. */
-function chains(id: FacetId, ds: Draft[]): [number, number][] {
-  const byName = new Map(ds.map((d, i) => [d.name.trim().toLowerCase(), i]));
-  const edges: [number, number][] = [];
-  for (const chain of input[id].lines) {
-    const names = chain.split(/\s+-\s+|\s*—\s*|\s*→\s*/).map((n) => n.trim()).filter(Boolean);
-    const idx = names.map((n) => {
-      const k = byName.get(n.toLowerCase());
-      if (k === undefined) throw new Error(`src/data/stars.ts, ${id}: the line '${chain}' names '${n}', but no star in ${id} is called that.`);
-      return k;
-    });
-    for (let i = 1; i < idx.length; i++) if (idx[i] !== idx[i - 1]) edges.push([idx[i - 1], idx[i]]);
-  }
-  return edges;
+    if (idx.length) chains.push({ id: `chain-${gi + 1}`, name: c.chain, nameZh: c.zh, idx });
+  });
+  return { ds, edges, chains };
 }
 
 /** Rough width of a star's label, in world units (name at 21–25, the mono line under it at 12.5). */
@@ -199,48 +223,99 @@ function place(widths: number[], edges: [number, number][], seed: number, tall: 
   return pos;
 }
 
-/** One layout, centred in the world, with the view that frames it (labels included). */
-function arrange(widths: number[], edges: [number, number][], seed: number, tall: boolean) {
+/** Rough width of a chain's name on the map. */
+const chainWidth = (c: Chain) => (c.name ? 30 + c.name.length * 17 + (c.nameZh ? c.nameZh.length * 17 + 24 : 0) : 0);
+
+/**
+ * One layout, centred in the world, with the view that frames it (labels included). Each chain is laid out
+ * as its own constellation; on wide screens they sit two to a row, on tall ones one under another. A
+ * chain's name sits just above its stars.
+ */
+function arrange(widths: number[], edges: [number, number][], chains: Chain[], seed: number, tall: boolean) {
   if (!widths.length) {
     const w = tall ? 560 : 1100;
     const h = tall ? 900 : 760;
-    return { pos: [], view: { x: WORLD.w / 2 - w / 2, y: WORLD.h / 2 - h / 2, w, h } };
+    return { pos: [], labels: [], view: { x: WORLD.w / 2 - w / 2, y: WORLD.h / 2 - h / 2, w, h } };
   }
-  const raw = place(widths, edges, seed, tall);
-  const left = (i: number) => raw[i].x - (raw[i].side === 'left' ? widths[i] : 0);
-  const right = (i: number) => raw[i].x + (raw[i].side === 'right' ? widths[i] : 0);
-  const idx = raw.map((_, i) => i);
-  const bx0 = Math.min(...idx.map(left));
-  const bx1 = Math.max(...idx.map(right));
-  const by0 = Math.min(...raw.map((p) => p.y));
-  const by1 = Math.max(...raw.map((p) => p.y));
-  const ox = WORLD.w / 2 - (bx0 + bx1) / 2;
-  const oy = WORLD.h / 2 - (by0 + by1) / 2;
-  const pos = raw.map((p) => ({ x: +(p.x + ox).toFixed(1), y: +(p.y + oy).toFixed(1), side: p.side }));
-  // frame: room round the labels, and above for the title
-  const x0 = bx0 + ox - (tall ? 70 : 160);
-  const x1 = bx1 + ox + (tall ? 70 : 160);
-  const y0 = by0 + oy - (tall ? 380 : 300);
-  const y1 = by1 + oy + (tall ? 200 : 240);
-  const w = Math.max(tall ? 560 : 1100, x1 - x0);
-  const h = Math.max(tall ? 900 : 760, y1 - y0);
-  const cx = (x0 + x1) / 2;
-  const cy = (y0 + y1) / 2;
-  return { pos, view: { x: cx - w / 2, y: cy - h / 2, w, h } };
+  // each chain on its own, at the origin
+  const figs = chains.map((c, gi) => {
+    const local = new Map(c.idx.map((g, l) => [g, l]));
+    const sub = edges.filter(([a, b]) => local.has(a) && local.has(b)).map(([a, b]) => [local.get(a)!, local.get(b)!] as [number, number]);
+    const p = place(c.idx.map((i) => widths[i]), sub, seed + gi * 7, tall);
+    const wOf = (l: number) => widths[c.idx[l]];
+    const bx0 = Math.min(...p.map((q, l) => q.x - (q.side === 'left' ? wOf(l) : 0)));
+    const bx1 = Math.max(...p.map((q, l) => q.x + (q.side === 'right' ? wOf(l) : 0)), bx0 + chainWidth(c));
+    const by0 = Math.min(...p.map((q) => q.y));
+    const by1 = Math.max(...p.map((q) => q.y));
+    return { c, p, bx0, bx1, by0, by1, top: by0 - (c.name ? 110 : 0) };
+  });
+
+  // the chains in rows of `cols`; returns where everything goes and the frame round it (labels included)
+  const lay = (cols: number) => {
+    const raw = widths.map(() => ({ x: 0, y: 0, side: 'right' as 'left' | 'right' }));
+    const labels: { x: number; y: number }[] = [];
+    let rowX = 0;
+    let rowY = 0;
+    let rowH = 0;
+    figs.forEach((g, gi) => {
+      if (gi > 0 && gi % cols === 0) {
+        rowX = 0;
+        rowY += rowH + 150;
+        rowH = 0;
+      }
+      const dx = rowX - g.bx0;
+      const dy = rowY - g.top;
+      g.p.forEach((q, l) => (raw[g.c.idx[l]] = { x: q.x + dx, y: q.y + dy, side: q.side }));
+      labels.push({ x: g.bx0 + dx, y: g.by0 - 75 + dy });
+      rowX += g.bx1 - g.bx0 + 200;
+      rowH = Math.max(rowH, g.by1 - g.top);
+    });
+    const idx = raw.map((_, i) => i);
+    const named = figs.map((g, gi) => [g.c, labels[gi]] as const).filter(([c]) => c.name);
+    const x0 = Math.min(...idx.map((i) => raw[i].x - (raw[i].side === 'left' ? widths[i] : 0)), ...named.map(([, l]) => l.x));
+    const x1 = Math.max(...idx.map((i) => raw[i].x + (raw[i].side === 'right' ? widths[i] : 0)), ...named.map(([c, l]) => l.x + chainWidth(c)));
+    const y0 = Math.min(...raw.map((q) => q.y), ...named.map(([, l]) => l.y)) - 45;
+    const y1 = Math.max(...raw.map((q) => q.y)) + 50;
+    return { raw, labels, x0: x0 - 30, x1: x1 + 30, y0, y1 };
+  };
+
+  // the arrangement that fits a typical screen of this shape best (the room src/scripts/explorer.ts gives it)
+  const room = tall ? { w: 390 * 0.9 - 24, h: 720 - 140 } : { w: 1280 * 0.9 - 24, h: 760 - 140 };
+  let best = lay(1);
+  let bestK = 0;
+  for (let cols = 1; cols <= (tall ? 1 : Math.min(3, figs.length)); cols++) {
+    const L = lay(cols);
+    const k = Math.min(room.w / (L.x1 - L.x0), room.h / (L.y1 - L.y0));
+    if (k > bestK + 1e-6) {
+      best = L;
+      bestK = k;
+    }
+  }
+
+  const { raw, labels, x0, x1, y0, y1 } = best;
+  const ox = WORLD.w / 2 - (x0 + x1) / 2;
+  const oy = WORLD.h / 2 - (y0 + y1) / 2;
+  return {
+    pos: raw.map((q) => ({ x: +(q.x + ox).toFixed(1), y: +(q.y + oy).toFixed(1), side: q.side })),
+    labels: labels.map((l) => ({ x: +(l.x + ox).toFixed(1), y: +(l.y + oy).toFixed(1), side: 'right' as const })),
+    view: { x: x0 + ox, y: y0 + oy, w: x1 - x0, h: y1 - y0 },
+  };
 }
 
 export async function loadSky(): Promise<SkyFacet[]> {
-  const all = drafts();
   return facets.map((f) => {
-    const ds = all[f.id];
-    const edges = chains(f.id, ds);
+    const { ds, edges, chains } = build(f.id);
     const degree = ds.map((_, i) => edges.filter((e) => e.includes(i)).length);
     const mags = ds.map((d, i) => d.mag ?? (degree[i] >= 3 ? 1 : 2));
     const widths = ds.map((d, i) => labelWidth(d, mags[i]));
-    const wide = arrange(widths, edges, f.seed, false);
-    const tall = arrange(widths, edges, f.seed, true);
+    const wide = arrange(widths, edges, chains, f.seed, false);
+    const tall = arrange(widths, edges, chains, f.seed, true);
     const items: SkyItem[] = ds.map((d, i) => ({ ...d, mag: mags[i], ...wide.pos[i], tall: tall.pos[i] }));
     const lines = edges.map(([a, b]) => [items[a], items[b]] as [SkyItem, SkyItem]);
-    return { ...f, items, lines, view: wide.view, tallView: tall.view };
+    const named: SkyChain[] = chains
+      .map((c, gi) => ({ c, gi }))
+      .filter(({ c }) => c.name)
+      .map(({ c, gi }) => ({ id: c.id, name: c.name!, nameZh: c.nameZh, ...wide.labels[gi], tall: tall.labels[gi] }));
+    return { ...f, items, lines, chains: named, view: wide.view, tallView: tall.view };
   });
 }

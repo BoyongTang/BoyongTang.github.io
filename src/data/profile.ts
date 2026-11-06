@@ -9,8 +9,8 @@ export const profile = {
   affiliation: 'Sichuan University',
   email: 'boyong.tang.math.ai@gmail.com',
   github: 'https://github.com/BoyongTang',
-  /** The quiet line under your name on the home page. */
-  tagline: 'Observe the unanswered.',
+  /** The quiet line under your name on the home page, e.g. 'Observe the unanswered.' Empty: none. */
+  tagline: '',
 
   // ── optional: fill in only what you want shown ───────────────────────────
   /** Other names, shown small beside the main one, e.g. ['Kelvin']. */
