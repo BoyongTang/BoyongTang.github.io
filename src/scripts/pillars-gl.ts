@@ -17,6 +17,8 @@ export interface View {
   par: [number, number];
   /** 0 = full brightness, 1 = black. */
   dim: number;
+  /** Like dim, but only for the sky round the pillars: the pillars keep their light. */
+  skyDim: number;
   /** Mip bias: 0 = sharp, ~2 = soft. */
   blur: number;
   /** 0 = still, 1 = fully alive (flow, twinkle, pulse). */
@@ -44,6 +46,7 @@ uniform vec2 uPar;
 uniform vec2 uImgPx;
 uniform float uTime;
 uniform float uDim;
+uniform float uSky;
 uniform float uBlur;
 uniform float uLife;
 uniform float uEdge;
@@ -166,6 +169,12 @@ void main() {
     col *= mix(1.0, 0.66, smoothstep(0.0, 0.5, outside));
   }
 
+  // the sky round the pillars sits darker; the pillars (deep in the mask, and only inside the image) keep
+  // their light
+  float beyond = smoothstep(-0.02, 0.06, max(-uv0.x, uv0.x - 1.0));
+  float pillar = smoothstep(0.14, 0.32, d) * (1.0 - beyond);
+  col *= 1.0 - uSky * (1.0 - pillar);
+
   // dim, and a gentle vignette
   vec2 q = vPx / uRes - 0.5;
   col *= (1.0 - uDim) * (1.0 - 0.35 * dot(q, q));
@@ -195,7 +204,7 @@ export class LivingPillars {
   private prog: WebGLProgram;
   private u: Record<string, WebGLUniformLocation | null> = {};
   private imgPx: [number, number] = [1, 1];
-  private view: View = { rect: { x: 0, y: 0, w: 1, h: 1 }, par: [0, 0], dim: 0, blur: 0, life: 1, edge: 0.02 };
+  private view: View = { rect: { x: 0, y: 0, w: 1, h: 1 }, par: [0, 0], dim: 0, skyDim: 0, blur: 0, life: 1, edge: 0.02 };
   private scale = 1;
 
   private constructor(
@@ -210,7 +219,7 @@ export class LivingPillars {
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) ?? 'link');
     this.prog = p;
-    for (const n of ['uImg', 'uMap', 'uRes', 'uRect', 'uPar', 'uImgPx', 'uTime', 'uDim', 'uBlur', 'uLife', 'uEdge']) this.u[n] = gl.getUniformLocation(p, n);
+    for (const n of ['uImg', 'uMap', 'uRes', 'uRect', 'uPar', 'uImgPx', 'uTime', 'uDim', 'uSky', 'uBlur', 'uLife', 'uEdge']) this.u[n] = gl.getUniformLocation(p, n);
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
@@ -290,6 +299,7 @@ export class LivingPillars {
     gl.uniform2f(this.u.uImgPx, this.imgPx[0], this.imgPx[1]);
     gl.uniform1f(this.u.uTime, time);
     gl.uniform1f(this.u.uDim, v.dim);
+    gl.uniform1f(this.u.uSky, v.skyDim);
     gl.uniform1f(this.u.uBlur, v.blur);
     gl.uniform1f(this.u.uLife, v.life);
     gl.uniform1f(this.u.uEdge, Math.max(0.001, v.edge));

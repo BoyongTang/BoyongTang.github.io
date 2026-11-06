@@ -123,9 +123,9 @@ export function initBackdrop(el: HTMLElement) {
     const vh = innerHeight;
     let rect = baseRect();
     let par: [number, number] = [0, 0];
-    // the home sky sits a little darker than the photo, and darker still as the page scrolls on
-    let dim = mode === 'home' || mode === 'explore' ? Math.min(0.6, PILLARS.dim + (scrollY / vh) * 0.4) : mode === 'map' ? 0.28 : dimBase;
-    const v: Partial<View> = { blur: mode === 'page' ? 1.1 : mode === 'map' ? 0.25 : 0, life: still ? 0 : mode === 'page' ? 0.7 : 1 };
+    let dim = mode === 'home' || mode === 'explore' ? Math.min(0.5, (scrollY / vh) * 0.5) : mode === 'map' ? 0.28 : dimBase;
+    // on the home page the sky round the pillars sits darker than the photo (the pillars keep their light)
+    const v: Partial<View> = { skyDim: mode === 'home' || mode === 'explore' ? PILLARS.dim : 0, blur: mode === 'page' ? 1.1 : mode === 'map' ? 0.25 : 0, life: still ? 0 : mode === 'page' ? 0.7 : 1 };
 
     let near: [number, number] = [0, 0];
     if (!still) {
