@@ -1,8 +1,5 @@
 // @ts-check
-import { unified } from '@astrojs/markdown-remark';
 import { defineConfig } from 'astro/config';
-import rehypeKatex from 'rehype-katex';
-import remarkMath from 'remark-math';
 
 // A user site (BoyongTang.github.io) is served from the domain root, so no `base` is needed.
 export default defineConfig({
@@ -18,11 +15,11 @@ export default defineConfig({
     // the Toolbox part was removed and Path became the personal introduction
     '/sky/toolbox': '/',
     '/sky/path': '/sky/intro/',
-  },
-  markdown: {
-    processor: unified({
-      remarkPlugins: [remarkMath],
-      rehypePlugins: [rehypeKatex],
-    }),
+    // the separate pages became the four parts
+    '/about': '/sky/intro/',
+    '/research': '/sky/research/',
+    '/publications': '/sky/research/',
+    '/projects': '/sky/works/',
+    '/notes': '/',
   },
 });

@@ -1,15 +1,11 @@
 ---
 import Explorer from '../components/Explorer.astro';
 import PartItems from '../components/PartItems.astro';
-import { cvHref, profile } from '../data/profile';
+import { profile } from '../data/profile';
 import Base from '../layouts/Base.astro';
 import { loadSky } from '../lib/sky';
-import { loadResults, statusLabel } from '../lib/universe';
 
 const sky = await loadSky();
-const results = await loadResults();
-// The three most recent dated results; the section disappears while there are none.
-const signals = results.filter((r) => r.date).slice(0, 3);
 ---
 
 <Base sky={{ mode: 'explore' }} bare>
@@ -22,32 +18,11 @@ const signals = results.filter((r) => r.date).slice(0, 3);
       {profile.bioZh && <p class="hero-bio-zh" lang="zh">{profile.bioZh}</p>}
       <div class="hero-actions">
         <a class="btn btn--primary" href="/sky/research/">Enter Research</a>
-        <a class="btn" href={cvHref}>{profile.cv ? 'View CV' : 'CV & Contact'}</a>
+        {profile.cv && <a class="btn" href={profile.cv}>View CV</a>}
       </div>
     </div>
 
     <div class="me__side">
-      {
-        signals.length > 0 && (
-          <div class="current-signals" aria-labelledby="signals-heading">
-            <div class="current-signals__head">
-              <h2 id="signals-heading" class="eyebrow">Latest</h2>
-              <span class="signals-count">{String(signals.length).padStart(2, '0')}</span>
-            </div>
-            <ul class="signals-list">
-              {signals.map((s) => (
-                <li class="signal-item">
-                  <a href={s.url}>
-                    <span class="code">{s.code}</span>
-                    <span class="signal-item__title" lang={s.lang}>{s.title}</span>
-                    <span class={`status status--${s.status}`}>{s.kind === 'note' ? 'NOTE' : statusLabel(s.status)}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      }
       <ul class="me__parts" aria-label="Four parts of me">
         {
           sky.map((f) => (
@@ -66,8 +41,6 @@ const signals = results.filter((r) => r.date).slice(0, 3);
         <div class="identity-links">
           <a href={profile.github} rel="noopener">GitHub ↗</a>
           <a href={`mailto:${profile.email}`}>Email</a>
-          <a href="/research/">Research</a>
-          <a href="/publications/">Publications</a>
         </div>
         <p class="affiliation-badge">{[profile.affiliation, profile.location].filter(Boolean).join(' · ')}</p>
       </footer>
@@ -176,62 +149,6 @@ const signals = results.filter((r) => r.date).slice(0, 3);
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-  }
-
-  .current-signals {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-top: 20px;
-    border-top: 1px solid var(--hairline-soft);
-  }
-
-  .current-signals__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .signals-count {
-    font: 500 12px var(--font-mono);
-    letter-spacing: 0.1em;
-    color: var(--dim);
-  }
-
-  .signals-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .signal-item a {
-    display: grid;
-    grid-template-columns: 52px minmax(0, 1fr) auto;
-    align-items: baseline;
-    gap: 12px;
-    padding: 9px 10px;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    color: var(--starlight);
-    text-decoration: none;
-    transition: background-color var(--t-identify), border-color var(--t-identify);
-  }
-
-  .signal-item a:hover {
-    background: rgb(130 208 220 / 0.08);
-    border-color: var(--hairline-soft);
-  }
-
-  .signal-item__title {
-    font-size: 14.5px;
-    line-height: 1.4;
-  }
-
-  .signal-item a:hover .signal-item__title {
-    color: var(--signal-cyan);
   }
 
   .identity-footer {
