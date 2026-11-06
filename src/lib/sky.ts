@@ -85,11 +85,17 @@ function build(id: FacetId) {
   const edges: [number, number][] = [];
   const chains: Chain[] = [];
   const seen = new Set<string>();
+  // a star's id must be unique on the whole page: a name also used in another part gets this part's name
+  // in front (e.g. KolTa in both Research and Works: research-kolta, works-kolta)
+  const elsewhere = new Set(
+    (Object.keys(input) as FacetId[]).filter((o) => o !== id).flatMap((o) => input[o].flatMap((c) => c.stars.map((st) => slug(st.name)))),
+  );
   input[id].forEach((c, gi) => {
     const idx: number[] = [];
     const byName = new Map<string, number>();
     c.stars.forEach((st, k) => {
       let sid = slug(st.name) || `${id}-${gi + 1}-${k + 1}`;
+      if (elsewhere.has(sid)) sid = `${id}-${sid}`;
       while (seen.has(sid)) sid += `-${gi + 1}`;
       seen.add(sid);
       const links = [...(st.link ? [link(st.link.startsWith('mailto:') ? 'Write an email' : 'Open', st.link)] : []), ...(st.links ?? []).map((l) => link(l.label, l.href))];
