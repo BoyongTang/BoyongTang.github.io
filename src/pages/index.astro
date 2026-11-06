@@ -40,7 +40,8 @@ const sky = await loadSky();
       <footer class="identity-footer">
         <div class="identity-links">
           <a href={profile.github} rel="noopener">GitHub ↗</a>
-          <a href={`mailto:${profile.email}`}>Email</a>
+          <a href={`mailto:${profile.email}`}>Scholar email</a>
+          {profile.generalEmail && <a href={`mailto:${profile.generalEmail}`}>General email</a>}
         </div>
         <p class="affiliation-badge">{[profile.affiliation, profile.location].filter(Boolean).join(' · ')}</p>
       </footer>
