@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────
-   O / Q · The Observatory of Questions — B1 Deep Field
-   Tokens follow the B1 design dossier, appendix A.
+   Boyong Tang · site styles
+   Colour, type and spacing tokens first; then the shared page parts.
    ───────────────────────────────────────────────────────────── */
 
 :root {
@@ -361,12 +361,6 @@ p {
 .brand__mark {
   font: 600 17px/1 var(--font-mono);
   letter-spacing: 0.18em;
-}
-
-.brand__mark i {
-  font-style: normal;
-  color: var(--selection-gold);
-  padding: 0 0.15em;
 }
 
 .brand__name {

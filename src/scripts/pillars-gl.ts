@@ -257,7 +257,7 @@ export class LivingPillars {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
 
-  /** Swap in a sharper copy of the photo (e.g. once the visitor zooms in). */
+  /** Swap in a sharper copy of the photo (on large, sharp screens). */
   replacePhoto(im: HTMLImageElement) {
     this.texture(0, im, true);
     this.imgPx = [im.naturalWidth, im.naturalHeight];

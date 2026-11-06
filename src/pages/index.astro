@@ -17,7 +17,7 @@ const signals = results.filter((r) => r.date).slice(0, 3);
 
   <section id="me" class="wrap me" aria-labelledby="me-heading">
     <div class="me__text">
-      <h2 id="me-heading" class="eyebrow">Observer / Profile 001</h2>
+      <h2 id="me-heading" class="eyebrow">About me</h2>
       {profile.bio && <p class="hero-bio">{profile.bio}</p>}
       {profile.bioZh && <p class="hero-bio-zh" lang="zh">{profile.bioZh}</p>}
       <div class="hero-actions">
@@ -31,7 +31,7 @@ const signals = results.filter((r) => r.date).slice(0, 3);
         signals.length > 0 && (
           <div class="current-signals" aria-labelledby="signals-heading">
             <div class="current-signals__head">
-              <h2 id="signals-heading" class="eyebrow">Current signals</h2>
+              <h2 id="signals-heading" class="eyebrow">Latest</h2>
               <span class="signals-count">{String(signals.length).padStart(2, '0')}</span>
             </div>
             <ul class="signals-list">
@@ -75,7 +75,7 @@ const signals = results.filter((r) => r.date).slice(0, 3);
   </section>
 
   <section class="wrap parts-list" aria-labelledby="parts-heading">
-    <h2 id="parts-heading" class="eyebrow">Everything on the pillars, as a list</h2>
+    <h2 id="parts-heading" class="eyebrow">The four parts, as a list</h2>
     {
       sky.map((f) => (
         <div class="parts-list__part" style={`--c:${f.color}`}>

@@ -124,7 +124,7 @@ const labelWidth = (d: Draft, mag: 1 | 2) =>
   36 + Math.max(d.name.length * (mag === 1 ? 13.5 : 11.5), (d.kind.length + (d.sub ? d.sub.length + 3 : 0)) * 9.6);
 
 /**
- * Lay a nebula's stars out as a constellation. From the brightest star, walk the declared lines outward:
+ * Lay a chain's stars out as a constellation. From the brightest star, walk the declared lines outward:
  * a chain zig-zags on, a fork fans out, so lines do not cross. Stars without lines sit round the figure.
  * Then labels are nudged apart. No randomness beyond the seed: the map is the same on every build.
  */

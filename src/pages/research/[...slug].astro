@@ -62,7 +62,7 @@ const pad = galaxy ? galaxy.r * 1.4 : 0;
           </div>
           {galaxy && (
             <>
-              <a class="mini-sky" href={`/sky/research/#s-${entry.data.code.toLowerCase()}`} aria-label="Show this research in the Research nebula">
+              <a class="mini-sky" href="/sky/research/" aria-label="Open Research on the pillars">
                 <svg viewBox={`${galaxy.x - pad} ${galaxy.y - pad} ${pad * 2} ${pad * 2}`} class="mini-sky__svg" aria-hidden="true">
                   <GalaxyArt galaxy={galaxy} uid="dossier" />
                 </svg>

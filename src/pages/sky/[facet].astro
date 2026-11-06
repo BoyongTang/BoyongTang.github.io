@@ -1,5 +1,5 @@
 ---
-// One part of me, on its place in the Pillars of Creation: the explorer opens on it (drag, zoom, choose a
+// One part of me, on its place in the Pillars of Creation: the page opens with its stars unfolded (choose a
 // star for its card), and below it the same stars are a plain list, which is also what keyboard,
 // screen-reader and no-JavaScript visitors get.
 import Explorer from '../../components/Explorer.astro';
@@ -22,7 +22,7 @@ const { f, sky } = Astro.props;
 const n = f.items.length;
 ---
 
-<Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line} On the Pillars of Creation.`} sky={{ mode: 'explore' }} bare>
+<Base title={`${f.name} · ${f.nameZh}`} description={`${f.name} (${f.nameZh}): ${f.line}`} sky={{ mode: 'explore' }} bare>
   <Explorer sky={sky} focus={f.id} />
 
   <section id="list" class="wrap slist" aria-labelledby="slist-heading" style={`--c:${f.color}`}>

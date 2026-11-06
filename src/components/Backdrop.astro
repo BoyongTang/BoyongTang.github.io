@@ -4,7 +4,7 @@
 import { PILLARS } from '../data/pillars';
 
 export interface Sky {
-  mode: 'home' | 'page' | 'map' | 'explore';
+  mode: 'page' | 'explore';
   /** The point of the image to look at (fractions of the full image). */
   at?: [number, number];
   /** How far in, 1 = the image just covers the window. */
@@ -19,7 +19,7 @@ interface Props {
 
 const { sky } = Astro.props;
 const at = sky.at ?? [0.6, 0.35];
-const dim = sky.dim ?? (sky.mode === 'map' ? 0.28 : 0.55);
+const dim = sky.dim ?? 0.55;
 ---
 
 <div
@@ -28,7 +28,7 @@ const dim = sky.dim ?? (sky.mode === 'map' ? 0.28 : 0.55);
   data-pillars
   data-mode={sky.mode}
   data-at={at.join(' ')}
-  data-zoom={sky.zoom ?? (sky.mode === 'map' ? 2.2 : 1.5)}
+  data-zoom={sky.zoom ?? 1.5}
   data-dim={dim}
   style={`--at:${(at[0] * 100).toFixed(1)}% ${(at[1] * 100).toFixed(1)}%;--dim:${dim};--still:url(${PILLARS.variants.tall.src})`}
 >
@@ -65,7 +65,7 @@ const dim = sky.dim ?? (sky.mode === 'map' ? 0.28 : 0.55);
     opacity: 1;
   }
 
-  /* the still image, when there is no living one (the home page has its own, with the parts on it) */
+  /* the still image, when there is no living one (the home page and the parts have their own) */
   .pillars__still {
     position: absolute;
     inset: -20px;
@@ -74,7 +74,6 @@ const dim = sky.dim ?? (sky.mode === 'map' ? 0.28 : 0.55);
   }
 
   .has-gl .pillars__still,
-  .pillars--home .pillars__still,
   .pillars--explore .pillars__still {
     display: none;
   }

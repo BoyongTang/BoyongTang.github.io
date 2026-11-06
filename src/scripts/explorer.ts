@@ -243,7 +243,6 @@ export function initExplorer(root: HTMLElement) {
     select(a.dataset.goto!);
   });
 
-  const moved = 0; // nothing drags any more; kept so a click is always a click
   const ui = (t: EventTarget | null) => (t as Element | null)?.closest?.('.ex__card, .ex__foot, .ex__home, button');
 
   /* ── choosing ── */
@@ -251,20 +250,18 @@ export function initExplorer(root: HTMLElement) {
     a.addEventListener('click', (ev) => {
       if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return; // a new tab gets the part's own page
       ev.preventDefault();
-      if (ev.detail !== 0 && moved > 6) return;
       openPart(id);
     }),
   );
   root.querySelectorAll<SVGAElement>('[data-star]').forEach((a) =>
     a.addEventListener('click', (ev) => {
       ev.preventDefault();
-      if (ev.detail !== 0 && moved > 6) return;
       select(a.dataset.star!);
     }),
   );
   // a click anywhere else steps back: first the card, then the open part
   root.addEventListener('click', (ev) => {
-    if (moved > 6 || ui(ev.target) || (ev.target as Element).closest('[data-star], [data-part]')) return;
+    if (ui(ev.target) || (ev.target as Element).closest('[data-star], [data-part]')) return;
     if (selected) closeCard();
     else if (current) closePart();
   });
