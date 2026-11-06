@@ -61,7 +61,7 @@ export const stars: Record<StarPart, ChainInput[]> = {
         {
           name: 'KolTa',
           kind: 'Research Paper',
-          note: 'Under Submission',
+          note: 'Under Review',
           text: 'A Physics-Informed Active Learning Framework for Formulation Discovery with Limited Data',
           links: [
             { label: 'arXiv', href: 'https://arxiv.org/abs/2611.06394' },
