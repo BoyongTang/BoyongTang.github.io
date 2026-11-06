@@ -82,7 +82,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     alt="The Pillars of Creation: three columns of rust-brown dust rising into a black, starry sky, edged with teal light."
     loading="lazy"
     decoding="async"
-    style={`--pw:${objectPosition(fw, REF.wide.w, REF.wide.h)};--pt:${objectPosition(ft, REF.tall.w, REF.tall.h)}`}
+    style={`--pw:${objectPosition(fw, REF.wide.w, REF.wide.h)};--pt:${objectPosition(ft, REF.tall.w, REF.tall.h)};--sky-bright:${1 - PILLARS.dim}`}
     data-still
   />
   <div class="ex__veil" aria-hidden="true"></div>
@@ -257,6 +257,8 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     object-fit: cover;
     object-position: var(--pw);
     transform-origin: 0 0;
+    /* as dim as the living sky (PILLARS.dim) */
+    filter: brightness(var(--sky-bright, 0.72));
   }
 
   .ex__still.is-placed {

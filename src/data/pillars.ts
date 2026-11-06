@@ -12,6 +12,8 @@ export const PILLARS = {
   /** Shown wherever the image is. */
   credit: 'NASA, ESA, CSA, STScI; J. DePasquale, A. Koekemoer, A. Pagan (STScI), CC BY 4.0',
   url: 'https://esawebb.org/images/weic2216b/',
+  /** How much darker than the photo the home page sky is: 0 = as bright as the photo, 1 = black. */
+  dim: 0.28,
   /** The coordinate frame for positions and layouts: weic2216b, the publication JPEG. */
   size: { w: 2309, h: 4000 },
   /** Web copies: which part of the image each holds, as [x0, y0, x1, y1]. */
