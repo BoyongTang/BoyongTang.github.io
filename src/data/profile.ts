@@ -17,9 +17,9 @@ export const profile = {
 
   // ── optional: fill in only what you want shown ───────────────────────────
   /** Shown beside the school at the top of the card. */
-  location: 'Chengdu',
+  location: '',
   /** A few sentences about you, in the card. */
-  bio: '',
+  bio: 'Undergrad in Applied Math & AI @ Sichuan University. Researching AI for Science (AI4S), Explainable AI (XAI) & Applied Mathematics etc.',
   /** 中文简介（可留空）。 */
   bioZh: '',
   /** A PDF in /public, e.g. '/cv.pdf': the card's "CV" button. Empty: none. */
