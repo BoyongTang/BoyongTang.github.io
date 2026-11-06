@@ -3,9 +3,10 @@ import { fitPillars } from '../lib/pillars-fit';
 import { reducedMotion } from './form';
 
 // The Pillars of Creation as a map to explore (src/components/Explorer.astro). The camera is a point of the
-// image at the centre of the view and a scale (screen px per image px). Everything on top (the five parts,
+// image at the centre of the view and a scale (screen px per image px). Everything on top (the four parts,
 // an open part's stars) is placed from it every frame, and the living sky behind the page reads it too
-// (window.__oqView, see src/scripts/backdrop.ts).
+// (window.__oqView, see src/scripts/backdrop.ts). Visitors cannot zoom or drag: choosing a part flies the
+// camera in to it, and its star chains come out once it arrives; stepping back flies out to the whole view.
 
 type Shape = 'wide' | 'tall';
 interface Lay {
@@ -34,6 +35,11 @@ export type ViewRect = { x: number; y: number; w: number; h: number };
 const W = PILLARS.size.w;
 const H = PILLARS.size.h;
 const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+/** How much closer an open part is than the whole view, and the sharpest the photo is shown. */
+const ZOOM = 2.2;
+const MAX_SCALE = 1.2;
+const FLY_IN = 1100;
+const FLY_OUT = 900;
 
 declare global {
   interface Window {
@@ -81,9 +87,18 @@ export function initExplorer(root: HTMLElement) {
     const s = (x1 - x0) / W;
     return { cx: (w / 2 - x0) / s, cy: (h / 2 - y0) / s, s };
   };
-  // the view is fixed: the framed pillars, nothing to zoom or drag
+  // the whole view: the framed pillars
   let ov = overview();
   let cam: Cam = { ...ov };
+
+  /** Close in on a part: its place on the pillars at the centre, the photo's top and foot kept in view. */
+  const focus = (id: string): Cam => {
+    const [sx, sy] = byId.get(id)!.spot;
+    const s = Math.max(ov.s, Math.min(ov.s * ZOOM, MAX_SCALE));
+    const half = h / 2 / s;
+    const cy = half * 2 >= H ? H / 2 : Math.min(H - half, Math.max(half, sy * H));
+    return { cx: sx * W, cy, s };
+  };
   const toScreen = (x: number, y: number): [number, number] => [w / 2 + (x - cam.cx) * cam.s, h / 2 + (y - cam.cy) * cam.s];
 
   let current: string | null = null;
@@ -119,7 +134,9 @@ export function initExplorer(root: HTMLElement) {
         // squeezed smaller than designed, the type gives a little too (never below 80 %)
         groups.get(current)!.style.setProperty('--xs', Math.max(0.8, Math.min(1, want / 0.62)).toFixed(3));
         const k = want / ((lay.w / lay.vw) * cam.s);
-        let [cx, cy] = toScreen(lay.cx, lay.cy);
+        // centred on the part's place (where the camera flies to), kept on screen
+        const spot = byId.get(current)!.spot;
+        let [cx, cy] = toScreen(spot[0] * W, spot[1] * H);
         const hw = (lay.vw * want) / 2;
         const hh = (lay.vh * want) / 2;
         cx = Math.min(w - 12 - hw, Math.max(12 + hw, cx));
@@ -177,25 +194,73 @@ export function initExplorer(root: HTMLElement) {
   }
 
   /* ── the view ── */
+  let flight = 0;
+  let guard = 0;
+  /** What to do once the camera is where it is going (an open part's stars come out). */
+  let arrive: (() => void) | undefined;
+  const land = () => {
+    const f = arrive;
+    arrive = undefined;
+    f?.();
+  };
+
+  /** Jump the camera to `c`, ending any flight there and then. */
   function set(c: Cam) {
+    cancelAnimationFrame(flight);
+    clearTimeout(guard);
+    root.classList.remove('is-flying');
     cam = c;
     apply();
+    land();
+  }
+
+  /** Fly the camera to `to`, then call `done`. Scale eases in log space, so zooming feels even. */
+  function flyTo(to: Cam, ms: number, done?: () => void) {
+    cancelAnimationFrame(flight);
+    clearTimeout(guard);
+    arrive = done;
+    if (reducedMotion() || ms <= 0) {
+      set(to);
+      return;
+    }
+    const from = { ...cam };
+    const t0 = performance.now();
+    root.classList.add('is-flying');
+    // a tab in the background draws no frames: land on time anyway, so the stars still come out
+    guard = window.setTimeout(() => set(to), ms + 250);
+    const step = (now: number) => {
+      const t = Math.min(1, (now - t0) / ms);
+      const e = inOut(t);
+      const s = from.s * Math.pow(to.s / from.s, e);
+      // the point at the centre moves in step with how far the view has closed in (or opened out), so the
+      // part slides to the middle as the zoom goes, without swinging past it
+      const k = from.s === to.s ? e : (1 / from.s - 1 / s) / (1 / from.s - 1 / to.s);
+      cam = { cx: from.cx + (to.cx - from.cx) * k, cy: from.cy + (to.cy - from.cy) * k, s };
+      apply();
+      if (t < 1) flight = requestAnimationFrame(step);
+      else set(to);
+    };
+    flight = requestAnimationFrame(step);
   }
 
   /* ── opening a part ── */
-  /** Open a part: its stars unfold where it is. */
-  function openPart(id: string) {
+  /** Open a part: fly in to it, then its stars unfold. `now` skips the flight (a page opened on a part). */
+  function openPart(id: string, now = false) {
     if (!byId.has(id)) return;
     const was = current;
     current = id;
     root.classList.add('is-open');
-    groups.forEach((g, gid) => g.classList.toggle('is-open', gid === id));
     markers.forEach((a, mid) => a.classList.toggle('is-current', mid === id));
     opens.forEach((o, oid) => (o.hidden = oid !== id));
     groups.forEach((g, gid) => g.querySelectorAll('[data-star]').forEach((a) => a.setAttribute('tabindex', gid === id ? '0' : '-1')));
     if (was !== id) closeCard();
     if (home) history.replaceState(null, '', `${location.pathname}${location.search}#${id}`);
-    apply();
+    if (was === id && groups.get(id)?.classList.contains('is-open')) return;
+    // the stars come out once the camera is there
+    groups.forEach((g) => g.classList.remove('is-open'));
+    flyTo(focus(id), now ? 0 : FLY_IN, () => {
+      if (current === id) groups.get(id)?.classList.add('is-open');
+    });
   }
 
   function closePart() {
@@ -208,7 +273,7 @@ export function initExplorer(root: HTMLElement) {
     markers.forEach((a) => a.classList.remove('is-current'));
     opens.forEach((o) => (o.hidden = true));
     if (home) history.replaceState(null, '', location.pathname + location.search);
-    apply();
+    flyTo(ov, FLY_OUT);
     markers.get(last)?.focus({ preventScroll: true });
   }
 
@@ -281,18 +346,18 @@ export function initExplorer(root: HTMLElement) {
     w = nw;
     h = nh;
     ov = overview();
-    set(ov);
+    set(current ? focus(current) : ov);
   }).observe(root);
 
   /* ── start: a part's own page, a shared link (#research, #s-python), or the whole pillars ── */
   const hash = decodeURIComponent(location.hash.slice(1));
   const star = hash.replace(/^[si]-/, '');
   if (partOfStar.has(star) && /^[si]-/.test(hash)) {
-    openPart(partOfStar.get(star)!);
+    openPart(partOfStar.get(star)!, true);
     requestAnimationFrame(() => select(star));
     scrollTo(0, 0);
   } else if (root.dataset.focus || byId.has(hash)) {
-    openPart(root.dataset.focus || hash);
+    openPart(root.dataset.focus || hash, true);
   } else apply();
 
   if (html.classList.contains('sky-intro')) {
