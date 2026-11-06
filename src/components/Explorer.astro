@@ -34,7 +34,8 @@ const parts = sky.map((f) => {
     const cy = sy * H;
     const vx = v.x + v.w / 2;
     const vy = v.y + v.h / 2;
-    const pts = f.items.map((s) => {
+    // the stars, then the chains' names (which move with them)
+    const pts = [...f.items, ...f.chains].map((s) => {
       const p = shape === 'wide' ? s : s.tall;
       return { id: s.id, x: +(cx + (p.x - vx) * k).toFixed(1), y: +(cy + (p.y - vy) * k).toFixed(1), side: p.side };
     });
@@ -105,6 +106,16 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
           {f.lines.map(([a, b]) => (
             <line class="xline" data-a={a.id} data-b={b.id} />
           ))}
+          {f.chains.map((c) => (
+            <text class="xchain" data-chain={c.id}>
+              {c.name.toUpperCase()}
+              {c.nameZh && (
+                <tspan class="xchain__zh" lang="zh" dx="0.8em">
+                  {c.nameZh}
+                </tspan>
+              )}
+            </text>
+          ))}
           {f.items.map((s, i) => {
             const w = wide.pts[i];
             const t = tall.pts[i];
@@ -154,6 +165,12 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
             aria-label={`${f.name}, ${f.nameZh}: ${f.line}`}
           >
             <span class="part__halo" aria-hidden="true" />
+            <span class="part__flare" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
             <span class="part__ring" aria-hidden="true" />
             <span class="part__core" aria-hidden="true" />
             <span class="part__label" aria-hidden="true">
@@ -174,7 +191,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
       home && (
         <div class="ex__cap ex__cap--home">
           <h1 class="ex__name">{profile.name}</h1>
-          <p class="ex__tag">{profile.tagline}</p>
+          {profile.tagline && <p class="ex__tag">{profile.tagline}</p>}
         </div>
       )
     }
@@ -307,6 +324,27 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     stroke-width: 1.2;
   }
 
+  /* a chain's name: a quiet heading over its stars */
+  .xchain {
+    font: 600 calc(11px * var(--xs, 1)) var(--font-mono);
+    letter-spacing: 0.3em;
+    fill: color-mix(in srgb, var(--c) 70%, #fff);
+    paint-order: stroke;
+    stroke: #030610;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  .xchain__zh {
+    font: 400 calc(12px * var(--xs, 1)) var(--font-display);
+    letter-spacing: 0.1em;
+    fill-opacity: 0.8;
+  }
+
+  .xpart.is-open .xchain {
+    animation: fade-in 600ms ease-out 150ms both;
+  }
+
   .xstar {
     pointer-events: auto;
     cursor: pointer;
@@ -340,7 +378,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
   }
 
   .xstar__name {
-    font: 500 13px var(--font-display);
+    font: 500 calc(13px * var(--xs, 1)) var(--font-display);
     fill: #f2f5f9;
     paint-order: stroke;
     stroke: #030610;
@@ -349,11 +387,11 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
   }
 
   .xstar--bright .xstar__name {
-    font-size: 14.5px;
+    font-size: calc(14.5px * var(--xs, 1));
   }
 
   .xstar__sub {
-    font: 500 8.5px var(--font-mono);
+    font: 500 calc(8.5px * var(--xs, 1)) var(--font-mono);
     letter-spacing: 0.14em;
     fill: color-mix(in srgb, var(--c) 70%, #b7c6da);
     paint-order: stroke;
@@ -451,17 +489,87 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     transition: opacity 300ms ease, transform 300ms ease;
   }
 
+  /*
+   * Every 2.5 s each part flares like the bright stars in Webb's picture: a white-hot point with its
+   * diffraction spikes (the long vertical one and two at ±60°, and the short horizontal pair), tinted with
+   * the part's colour. The four take turns.
+   */
+  .part__flare {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    opacity: 0;
+    mix-blend-mode: screen;
+  }
+
+  .part__flare i {
+    position: absolute;
+    left: -0.75px;
+    top: -34px;
+    width: 1.5px;
+    height: 68px;
+    background: linear-gradient(transparent, color-mix(in srgb, var(--c) 55%, transparent) 30%, #fff 50%, color-mix(in srgb, var(--c) 55%, transparent) 70%, transparent);
+    filter: blur(0.3px);
+  }
+
+  .part__flare i:nth-child(2) {
+    transform: rotate(60deg);
+  }
+
+  .part__flare i:nth-child(3) {
+    transform: rotate(-60deg);
+  }
+
+  /* the short horizontal pair */
+  .part__flare i:nth-child(4) {
+    top: -13px;
+    height: 26px;
+    transform: rotate(90deg);
+    opacity: 0.7;
+  }
+
+  /* and the soft glow round the point */
+  .part__flare::before {
+    content: '';
+    position: absolute;
+    left: -11px;
+    top: -11px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, #fff, color-mix(in srgb, var(--c) 60%, transparent) 35%, transparent);
+  }
+
   @media (prefers-reduced-motion: no-preference) {
     :global(html:not([data-motion='reduce'])) .part__core {
-      animation: part-twinkle calc(7s + var(--i) * 1.3s) ease-in-out calc(var(--i) * -2.1s) infinite;
+      animation: part-core 2.5s ease-out calc(var(--i) * -0.625s) infinite;
+    }
+
+    :global(html:not([data-motion='reduce'])) .part__flare {
+      animation: part-flare 2.5s ease-out calc(var(--i) * -0.625s) infinite;
     }
   }
 
-  @keyframes part-twinkle {
-    0%, 100% { opacity: 0.4; }
-    45% { opacity: 0.4; }
-    55% { opacity: 0.95; }
-    65% { opacity: 0.45; }
+  @keyframes part-flare {
+    0%, 62% { opacity: 0; transform: scale(0.35) rotate(-4deg); }
+    70% { opacity: 1; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: scale(0.75) rotate(2deg); }
+  }
+
+  @keyframes part-core {
+    0%, 62% { opacity: 0.5; }
+    70% { opacity: 1; }
+    100% { opacity: 0.5; }
+  }
+
+  .part:hover .part__flare,
+  .part:focus-visible .part__flare {
+    animation: none;
+    opacity: 0.85;
+    transform: none;
   }
 
   .part:hover .part__core,

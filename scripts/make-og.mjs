@@ -63,7 +63,7 @@ const overlay = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}
   <rect width="${W}" height="${H}" fill="url(#veil)"/>
   ${parts}
   <text x="${W / 2 + 8}" y="${H - 74}" text-anchor="middle" font-family="${sans}" font-size="22" font-weight="500" letter-spacing="9" fill="#f4f2ee">${name}</text>
-  <text x="${W / 2}" y="${H - 46}" text-anchor="middle" font-family="${mono}" font-size="12" letter-spacing="2" fill="#e6e2dc" fill-opacity="0.7">${profile.tagline}</text>
+  ${profile.tagline ? `<text x="${W / 2}" y="${H - 46}" text-anchor="middle" font-family="${mono}" font-size="12" letter-spacing="2" fill="#e6e2dc" fill-opacity="0.7">${profile.tagline}</text>` : ''}
   <text x="${W / 2}" y="${H - 16}" text-anchor="middle" font-family="${mono}" font-size="9" fill="#b7c6da" fill-opacity="0.75">${creditLine}</text>
 </svg>`);
 
