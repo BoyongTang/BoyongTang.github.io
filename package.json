@@ -2,6 +2,7 @@
   "name": "boyongtang.github.io",
   "private": true,
   "version": "0.1.0",
+  "description": "Boyong Tang's personal website: who I am, what I work on and how to reach me, set on the Pillars of Creation.",
   "type": "module",
   "scripts": {
     "dev": "astro dev",

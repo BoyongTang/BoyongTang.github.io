@@ -1,63 +1,89 @@
-# The Observatory of Questions · B1 Deep Field
+# Boyong Tang
 
-> **A sky chart of questions worth pursuing.**
-> Live site: [https://boyongtang.github.io](https://boyongtang.github.io)
+My personal website: who I am, what I work on, and how to reach me.
 
-Personal academic homepage for **Boyong Tang (けるゔぃん・とう)**, built following the **B1 Deep-Space Observatory** design specification (`The Observatory of Questions`).
+**Live:** [boyongtang.github.io](https://boyongtang.github.io)
 
----
+The home page is a single view of the Pillars of Creation, as seen by the James Webb Space Telescope. Four
+places on the pillars are the four parts of me:
 
-## Architecture & Principles
+| Part | 中文 | What it holds |
+| --- | --- | --- |
+| Research | 研究 | what I study, as star chains by field (e.g. AI4S, XAI) |
+| Intro | 个人介绍 | who I am |
+| Works | 作品 | what I have made |
+| Contact | 联系 | how to reach me |
 
-1. **Truth Before Visuals:** Only results that publicly exist are shown; everything else stays a draft. Publication records are strictly distinguished from work in progress.
-2. **Static-First with Astro:** All content is pre-rendered at build time. Search engines and screen readers can access the full textual hierarchy with JavaScript disabled.
-3. **The Pillars of Creation:** the home page is the Pillars of Creation, full screen, to explore like a map (`src/components/Explorer.astro`): drag, scroll or pinch. The four parts of me (Research, Intro, Works, Contact; `src/data/facets.ts`) sit on places in it (`src/data/pillars.ts`); choosing one, or zooming in close, unfolds its stars on the pillar, a star opens its card, and a click anywhere else steps back. The pillars are alive behind every page (WebGL 2, `src/scripts/pillars-gl.ts`): a depth mask gives the near pillars and the far stars parallax, gas drifts and stars twinkle; without WebGL a still copy stands in. Each part also has its own page (`/sky/<part>/`). Every star is real content (`src/lib/sky.ts`); lines join only declared relations. Each map is also a plain list below it, which is what keyboard, screen-reader and no-JavaScript visitors get.
-4. **Editorial Reading Surface:** Research dossiers and field notes feature a high-contrast reading surface (`--reading-paper`), full KaTeX mathematical typesetting, and structured sections (*Question → Motivation → Approach → Evidence → Limitations → Next*).
+Choosing a part unfolds its stars on the pillar; choosing a star opens its card; a click anywhere else steps
+back. Each part also has its own page (`/sky/<part>/`), and every star is in a plain list below, which is also
+what keyboard, screen-reader and no-JavaScript visitors get.
 
----
+## Editing the content
 
-## Local Development
+Everything personal lives in two files:
+
+- **[`src/data/profile.ts`](src/data/profile.ts):** name, one-line role, school, email, GitHub, and optional
+  bio, interests, education, CV and links. Anything left empty does not show.
+- **[`src/data/stars.ts`](src/data/stars.ts):** the stars of the four parts. Each part is a list of chains:
+
+  ```ts
+  research: [
+    {
+      chain: 'AI4S',
+      zh: '科学智能',
+      stars: [
+        { name: 'Active learning', bright: true, text: 'A paragraph for its card.' },
+        { name: 'Bayesian optimization' },
+        { name: 'Surrogate models', from: 'Active learning' }, // a branch
+      ],
+    },
+    { chain: 'XAI', stars: [{ name: 'Feature attribution' }] },
+  ],
+  ```
+
+  Stars in a chain are joined in the order listed; `from` joins a star to an earlier one instead. Each chain is
+  drawn as its own constellation, with its name above it. The comments at the top of the file list every
+  field.
+
+Other places to edit:
+
+- **Research write-ups and notes:** Markdown files in [`src/content/research/`](src/content/research/) and
+  [`src/content/notes/`](src/content/notes/) (with KaTeX for maths). `draft: true` keeps one off the site.
+- **Projects and publications:** `projects` and `publications` in [`src/data/profile.ts`](src/data/profile.ts).
+- **The parts' names and colours:** [`src/data/facets.ts`](src/data/facets.ts).
+- **Where each part sits on the picture, and how dark the sky is:** [`src/data/pillars.ts`](src/data/pillars.ts).
+
+## Running it
 
 ```bash
-# Install dependencies
 npm install
-
-# Start local development server
-npm run dev
-
-# Build, then check every internal link and #anchor (CI runs the same)
-npm test
-
-# Regenerate public/og.png from the pillars data (Node ≥ 23.6)
-npm run og
-
-# Rebuild public/sky/ (copies and masks) from assets-src/pillars-of-creation.webp, with a 4x AI upscale
-# (Real-ESRGAN realesr-general-x4v3.pth, 4.7 MB, from github.com/xinntao/Real-ESRGAN releases v0.2.5.0)
-python3 scripts/make-pillars.py --weights path/to/realesr-general-x4v3.pth
-
-# Preview production build locally
-npm run preview
+npm run dev      # http://localhost:4321, updates as you save
+npm test         # build, then check every internal link and #anchor (CI runs the same)
+npm run og       # redraw the link-preview image, public/og.png
 ```
 
----
+Pushing to `main` deploys to GitHub Pages (`.github/workflows/deploy.yml`).
 
-## Updating Content
+## How it is built
 
-- **Personal Profile & Links:** Edit [`src/data/profile.ts`](src/data/profile.ts).
-- **Research Dossiers:** Add or edit Markdown files under [`src/content/research/`](src/content/research/).
-- **Field Notes & Proofs:** Add or edit Markdown files under [`src/content/notes/`](src/content/notes/).
-- **Fields:** edit [`src/data/galaxies.ts`](src/data/galaxies.ts). Research and notes name one through `topic`.
-- **The four parts and their stars:** [`src/data/facets.ts`](src/data/facets.ts) (names, colours, constellation lines) and
-  [`src/lib/sky.ts`](src/lib/sky.ts) (which content becomes which star). Where each part sits in the photo: [`src/data/pillars.ts`](src/data/pillars.ts).
-- **Drafts:** `draft: true` in a Markdown file or a project entry keeps an entry in the repo but off the site.
-- **Projects:** `projects` in [`src/data/profile.ts`](src/data/profile.ts). Leave `repo` empty until a repository is public.
-- **CV:** put the PDF in `public/` and set `profile.cv`; until then every CV link goes to `/about/#cv`.
+- [Astro](https://astro.build), all static: every page is plain HTML at build time.
+- The living sky behind every page is WebGL 2 ([`src/scripts/pillars-gl.ts`](src/scripts/pillars-gl.ts)).
+  A depth mask separates the pillars from the sky, giving parallax with the mouse, drifting gas, twinkling
+  stars, and a darker sky round full-colour pillars. Without WebGL a still copy of the picture stands in.
+- The home page and the parts: [`src/components/Explorer.astro`](src/components/Explorer.astro) and
+  [`src/scripts/explorer.ts`](src/scripts/explorer.ts). Star layout: [`src/lib/sky.ts`](src/lib/sky.ts).
+- Motion respects the system's reduced-motion setting, and there is a switch for it in the footer.
 
----
+## The picture
 
-## Image Credit
+*Pillars of Creation (NIRCam)*, by NASA, ESA, CSA, STScI; J. DePasquale, A. Koekemoer, A. Pagan (STScI).
+Licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Source:
+[esawebb.org/images/weic2216b](https://esawebb.org/images/weic2216b/). The credit is shown on every page
+that shows the picture.
 
-The sky is a picture of the Pillars of Creation (`assets-src/pillars-of-creation.webp`), found on Pinterest; its
-maker is not named there. The web copies in `public/sky/` are cut above its baked-in title and upscaled 4x with Real-ESRGAN, and the
-depth and glow masks are derived from it (`scripts/make-pillars.py`). Once the maker is known, name them in
-`PILLARS.credit` in `src/data/pillars.ts`: the credit is shown on every page that shows the picture.
+To rebuild the web copies and masks in `public/sky/`, download the publication JPEG (2309 × 4000) from that
+page to `assets-src/pillars-webb.jpg` (kept out of git), then run:
+
+```bash
+python3 scripts/make-pillars.py   # needs numpy and Pillow
+```

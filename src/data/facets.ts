@@ -1,7 +1,5 @@
-// Four parts of Boyong, each sitting on a place in the Pillars of Creation where stars are born
-// (src/data/pillars.ts). Entering one opens its star map: every star there is something real from
-// src/data/profile.ts or the content collections.
-// A part with little in it simply has few stars; nothing is invented to fill the sky.
+// The four parts of me, each on a place in the Pillars of Creation where stars are born
+// (src/data/pillars.ts). Opening one unfolds its stars, which are written in src/data/stars.ts.
 //
 // No Astro imports here, so scripts/make-og.mjs can use it directly.
 
@@ -14,7 +12,7 @@ export interface Facet {
   nameZh: string;
   /** One line of UI copy under the name. */
   line: string;
-  /** The nebula's light: main glow and a second, deeper tone. */
+  /** The part's light: main glow and a second, deeper tone. */
   color: string;
   deep: string;
   seed: number;
@@ -27,7 +25,7 @@ export const facets: Facet[] = [
   { id: 'contact', code: 'N-04', name: 'Contact', nameZh: '联系', line: 'How to reach me.', color: '#cdbcff', deep: '#5a4699', seed: 89 },
 ];
 
-/** A nebula's star map world, in its own units. */
+/** The units a part's stars are laid out in. */
 export const WORLD = { w: 2400, h: 1600 };
 
 export const facetById = new Map(facets.map((f) => [f.id, f]));

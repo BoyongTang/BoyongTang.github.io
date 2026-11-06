@@ -4,18 +4,15 @@ import { reducedMotion } from './form';
 import { LivingPillars, type Rect, type View } from './pillars-gl';
 
 // The one sky behind every page: the living Pillars of Creation, fixed to the window.
-//   home  the whole column; the near pillars scroll with the page (so the parts stay on their spots),
-//         the far stars and haze lag behind
-//   page  a dimmed, softened stretch of the pillars behind a page of text
-//   map   a star map's place in the pillars; dragging and zooming the map steers it
-//   explore  the pillars as a map to explore (src/scripts/explorer.ts): it follows the explorer's camera
+//   explore  the home page and the four parts: the whole pillars, placed by src/scripts/explorer.ts;
+//            the sky round them sits darker (PILLARS.dim) and the view moves gently with the mouse
+//   page     a dimmed, softened stretch of the pillars behind a page of text
 // Without WebGL 2 the page keeps a still copy of the image (html:not(.has-gl)).
 
-type Mode = 'home' | 'page' | 'map' | 'explore';
+type Mode = 'page' | 'explore';
 
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const ease = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);
-const easeIn = (t: number) => Math.pow(clamp01(t), 3);
 
 export function initBackdrop(el: HTMLElement) {
   const html = document.documentElement;
@@ -47,43 +44,12 @@ export function initBackdrop(el: HTMLElement) {
     { passive: true },
   );
 
-  // a star map steers the sky behind it
-  const cam = { x: 0, y: 0, z: 1, tx: 0, ty: 0, tz: 1 };
-  addEventListener('pillars:camera', (ev) => {
-    const d = (ev as CustomEvent<{ x: number; y: number; z: number }>).detail;
-    cam.tx = d.x;
-    cam.ty = d.y;
-    cam.tz = d.z;
-    dirty = true;
-  });
-
-  // leaving for a star map: fall into the chosen place
-  let dive: { x: number; y: number; t0: number } | null = null;
-  addEventListener('pillars:dive', (ev) => {
-    const d = (ev as CustomEvent<{ x: number; y: number }>).detail;
-    dive = { x: d.x, y: d.y, t0: performance.now() };
-  });
-  addEventListener('pageshow', (ev) => {
-    if (ev.persisted) dive = null;
-  });
-
-  // arriving: from a dive (or the home opening), the sky settles in
-  let arrive = 0;
-  try {
-    if (sessionStorage.getItem('oq.dive')) {
-      arrive = performance.now();
-      sessionStorage.removeItem('oq.dive');
-    }
-  } catch {
-    /* no arrival */
-  }
-  const intro = (mode === 'home' || mode === 'explore') && html.classList.contains('sky-intro') ? performance.now() : 0;
+  const intro = mode === 'explore' && html.classList.contains('sky-intro') ? performance.now() : 0;
 
   let dirty = true;
   addEventListener('scroll', () => (dirty = true), { passive: true });
   addEventListener('resize', () => (dirty = true));
 
-  const hero = mode === 'home' ? document.querySelector<HTMLElement>('[data-sky]') : null;
   const IMG = PILLARS.size;
 
   let edge = 0.02;
@@ -97,14 +63,6 @@ export function initBackdrop(el: HTMLElement) {
       // fade in from the dark where the image's left edge shows
       edge = view.x > 4 ? 0.22 : 0.02;
       return { ...view };
-    }
-    if (hero) {
-      const b = hero.getBoundingClientRect();
-      const fit = fitPillars(b.width, b.height);
-      edge = 0.02;
-      const [x0, y0] = fit.at(0, 0);
-      const [x1, y1] = fit.at(1, 1);
-      return { x: b.left + x0, y: b.top + y0, w: x1 - x0, h: y1 - y0 };
     }
     const s = Math.max(vw / IMG.w, vh / IMG.h) * zoom;
     const w = IMG.w * s;
@@ -123,9 +81,9 @@ export function initBackdrop(el: HTMLElement) {
     const vh = innerHeight;
     let rect = baseRect();
     let par: [number, number] = [0, 0];
-    let dim = mode === 'home' || mode === 'explore' ? Math.min(0.5, (scrollY / vh) * 0.5) : mode === 'map' ? 0.28 : dimBase;
+    let dim = mode === 'explore' ? Math.min(0.5, (scrollY / vh) * 0.5) : dimBase;
     // on the home page the sky round the pillars sits darker than the photo (the pillars keep their light)
-    const v: Partial<View> = { skyDim: mode === 'home' || mode === 'explore' ? PILLARS.dim : 0, blur: mode === 'page' ? 1.1 : mode === 'map' ? 0.25 : 0, life: still ? 0 : mode === 'page' ? 0.7 : 1 };
+    const v: Partial<View> = { skyDim: mode === 'explore' ? PILLARS.dim : 0, blur: mode === 'page' ? 1.1 : 0, life: still ? 0 : mode === 'page' ? 0.7 : 1 };
 
     let near: [number, number] = [0, 0];
     if (!still) {
@@ -136,20 +94,8 @@ export function initBackdrop(el: HTMLElement) {
       // and the near layer (the pillars, and the parts on them) a little the other way, so the whole
       // scene moves in depth with the mouse
       near = [-ptr.x * 12, -ptr.y * 8];
-      if (mode === 'home' || mode === 'explore') par[1] += Math.min(vh, scrollY) * 0.06;
+      if (mode === 'explore') par[1] += Math.min(vh, scrollY) * 0.06;
       if (mode === 'page') par[1] += Math.min(vh, scrollY) * 0.03;
-    }
-
-    if (mode === 'map') {
-      const k = still ? 1 : 0.12;
-      cam.x += (cam.tx - cam.x) * k;
-      cam.y += (cam.ty - cam.y) * k;
-      cam.z += (cam.tz - cam.z) * k;
-      rect = about(rect, vw / 2, vh / 2, cam.z);
-      rect.x += cam.x;
-      rect.y += cam.y;
-      par[0] -= cam.x * 0.15;
-      par[1] -= cam.y * 0.15;
     }
 
     if (intro) {
@@ -157,17 +103,6 @@ export function initBackdrop(el: HTMLElement) {
       rect = about(rect, vw * 0.65, vh * 0.45, 1 + 0.1 * (1 - p));
       dim = Math.max(dim, 1 - p);
     }
-    if (arrive) {
-      const p = ease((now - arrive) / 1500);
-      rect = about(rect, vw / 2, vh / 2, 1 + 0.6 * (1 - p));
-      dim = Math.max(dim, 0.85 * (1 - p));
-    }
-    if (dive) {
-      const p = easeIn((now - dive.t0) / 700);
-      rect = about(rect, dive.x, dive.y, 1 + 4 * p);
-      dim = Math.max(dim, p * 0.9);
-    }
-
     rect.x += near[0];
     rect.y += near[1];
     if (mode === 'explore') {
@@ -192,7 +127,7 @@ export function initBackdrop(el: HTMLElement) {
     // one clock for everything (frame timestamps can trail performance.now() a little)
     const now = performance.now();
     if (document.hidden) return;
-    const animating = !still || dive || (intro && now - intro < 3100) || (arrive && now - arrive < 1600) || mode === 'map';
+    const animating = !still || (intro && now - intro < 3100);
     // the explorer moved the camera
     if (mode === 'explore' && window.__oqView) {
       const v = window.__oqView;
@@ -217,7 +152,7 @@ export function initBackdrop(el: HTMLElement) {
       return;
     }
     lp = p;
-    // closer in, the explorer asks for the full-resolution photo
+    // on a large, sharp screen the explorer asks for the full-size photo
     addEventListener(
       'pillars:sharpen',
       () => {
@@ -231,7 +166,7 @@ export function initBackdrop(el: HTMLElement) {
       },
       { once: true },
     );
-    lp.setScale(mode === 'page' ? 0.6 : mode === 'map' ? 0.85 : 1);
+    lp.setScale(mode === 'page' ? 0.6 : 1);
     frame(performance.now());
     el.classList.add('is-live');
     // the parts on the home page come out with the sky

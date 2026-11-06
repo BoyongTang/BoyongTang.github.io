@@ -4,7 +4,7 @@
 // tip and the tip of the small pillar.
 //
 // Positions are fractions of the image (0–1 across, 0–1 down). Web copies and masks are made by
-// scripts/make-pillars-webb.py. No Astro imports here, so scripts can use it directly.
+// scripts/make-pillars.py. No Astro imports here, so scripts can use it directly.
 import type { FacetId } from './facets';
 
 export const PILLARS = {

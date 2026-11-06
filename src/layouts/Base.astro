@@ -22,7 +22,12 @@ interface Props {
 }
 
 const { title, description = [`${profile.name} — ${profile.role}.`, profile.subline].filter(Boolean).join(' ') } = Astro.props;
-const fullTitle = title ? `${title} · ${profile.name}` : `${profile.name} · The Observatory of Questions`;
+const fullTitle = title ? `${title} · ${profile.name}` : profile.name;
+const initials = profile.name
+  .split(/\s+/)
+  .map((w) => w[0])
+  .join('')
+  .toUpperCase();
 const path = Astro.url.pathname;
 const canonical = new URL(path, Astro.site);
 // each section of the site floats over the part of the pillars it belongs to
@@ -32,7 +37,7 @@ const placeFor = (p: string): [number, number] =>
     : p.startsWith('/projects') || p.startsWith('/notes')
       ? spots.works
       : p.startsWith('/about')
-        ? spots.path
+        ? spots.intro
         : spots.contact;
 const sky: Sky = Astro.props.sky ?? { mode: 'page', at: placeFor(path) };
 
@@ -44,7 +49,7 @@ const nav = [
   { href: '/about/', label: 'About' },
 ];
 const current = (href: string) => (path.startsWith(href) ? 'page' : undefined);
-// CV is always one click away (B1 §5.2): the PDF when it exists, otherwise the CV section of About.
+// CV is always one click away: the PDF when it exists, otherwise the CV section of About.
 const year = new Date().getFullYear();
 ---
 
@@ -65,7 +70,7 @@ const year = new Date().getFullYear();
     <meta property="og:image" content={new URL('/og.png', Astro.site)} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={`${profile.name} — Observatory of Questions`} />
+    <meta property="og:image:alt" content={`${profile.name}, over the Pillars of Creation`} />
     <meta name="twitter:card" content="summary_large_image" />
     <script is:inline>
       try {
@@ -88,8 +93,8 @@ const year = new Date().getFullYear();
     <header class="site-header">
       <div class="site-header__inner">
         <a class="brand" href="/" aria-label={`${profile.name} — home`}>
-          <span class="brand__mark">O<i>/</i>Q</span>
-          <span class="brand__name">{profile.name} · Observatory of Questions</span>
+          <span class="brand__mark">{initials}</span>
+          <span class="brand__name">{profile.name}</span>
         </a>
         <button class="icon-btn menu-btn" type="button" aria-expanded="false" aria-controls="site-nav" data-menu>
           <span aria-hidden="true">≡</span><span class="visually-hidden">Menu</span>
@@ -111,8 +116,8 @@ const year = new Date().getFullYear();
     {!Astro.props.bare && (
     <footer class="site-footer">
       <div class="site-footer__inner">
-        <span>© {year} {profile.name} · O/Q Observatory of Questions</span>
-        <span>Sky: {creditLine}. Every star on it is real content.</span>
+        <span>© {year} {profile.name}</span>
+        <span>Sky: {creditLine}.</span>
         <span>
           <a href={`mailto:${profile.email}`}>{profile.email}</a>
           &nbsp;·&nbsp;
