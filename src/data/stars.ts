@@ -103,7 +103,7 @@ export const stars: Record<StarPart, ChainInput[]> = {
      {
        stars: [
          { name: 'Scholar Email', link: 'mailto:boyong.tang.math.ai@gmail.com', bright: true },
-         { name: 'General Email', link: 'tang.boyong@outlook.com', bright: true}
+         { name: 'General Email', link: 'mailto:tang.boyong@outlook.com', bright: true },
          //{ name: 'GitHub', link: 'https://github.com/BoyongTang' },
        ],
      },
