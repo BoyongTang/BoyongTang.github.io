@@ -5,30 +5,19 @@
 
 :root {
   --space-950: #071320;
-  --space-900: #0b1d30;
-  --space-800: #102538;
-  --space-700: #163044;
   --hairline: #385467;
   --hairline-soft: rgb(56 84 103 / 0.55);
   --starlight: #ecf3f0;
   --muted: #b9cfd6;
   --dim: #8fa9b3; /* 6.4:1 on --space-950; small labels only */
   --signal-cyan: #82d0dc;
-  --orbit-green: #8fc3b4;
   --selection-gold: #e9c18f;
-  --reading-bg: #eef2f3;
-  --reading-paper: #f7f9f9;
-  --reading-ink: #203341;
-  --reading-muted: #4a5f6c;
-  --reading-rule: #c9d5da;
-  --reading-accent: #1f6f7d;
 
   --font-display: 'IBM Plex Sans', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   --font-body: 'IBM Plex Sans', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --content-max: 1320px;
-  --reading-max: 760px;
   --radius-sm: 4px;
   --radius-md: 6px;
   --nav-h: 68px;
@@ -36,8 +25,6 @@
 
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --t-identify: 150ms;
-  --t-focus: 220ms;
-  --t-open: 280ms;
 
   color-scheme: dark;
 }
@@ -133,15 +120,10 @@ p {
 
 /* ── small system labels ─────────────────────────────────── */
 
-.eyebrow,
 .kicker {
   font: 500 12px/1.4 var(--font-mono);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--dim);
-}
-
-.kicker {
   color: var(--signal-cyan);
 }
 
@@ -289,14 +271,6 @@ main {
   color: var(--starlight);
 }
 
-/* shared by the galaxy "forming" and "arriving" animations */
-@keyframes star-burst {
-  from {
-    transform: translate(var(--dx, 0), var(--dy, 0));
-    opacity: 0;
-  }
-}
-
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -324,20 +298,14 @@ html[data-motion='reduce'] *::after {
   transition-duration: 0.01ms !important;
 }
 
-/* ── bare pages (home, the four parts): only the pillars ── */
+/* ── bare pages (home, the four parts): only the pillars, one screen, nothing to scroll ── */
 html.bare {
   --nav-h: 0px;
 }
 
-/* on a computer the pillars are the whole page: nothing to scroll down to */
-@media (hover: hover) and (pointer: fine) {
-  html.bare,
-  html.bare body {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  html.bare main > :not([data-ex]) {
-    display: none;
-  }
+/* without JavaScript the page scrolls, to the plain list below the pillars */
+html.js.bare,
+html.js.bare body {
+  height: 100%;
+  overflow: hidden;
 }

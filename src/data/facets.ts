@@ -25,6 +25,9 @@ export const facets: Facet[] = [
   { id: 'contact', code: 'N-04', name: 'Contact', nameZh: '联系', line: 'How to reach me.', color: '#cdbcff', deep: '#5a4699', seed: 89 },
 ];
 
+/** The part that opens your profile (src/data/profile.ts) as one card, instead of stars. */
+export const PROFILE_PART = 'intro' satisfies FacetId;
+
 /** The units a part's stars are laid out in. */
 export const WORLD = { w: 2400, h: 1600 };
 

@@ -1,6 +1,6 @@
 ---
-// One part's stars as plain list entries: what keyboard, screen-reader and no-JavaScript visitors read,
-// and what the explorer's star cards are copied from (src/scripts/explorer.ts).
+// One part's stars as entries: what the explorer's star cards are copied from (src/scripts/explorer.ts), and
+// the plain list visitors without JavaScript read (src/components/Explorer.astro).
 import type { SkyFacet } from '../lib/sky';
 
 interface Props {
@@ -18,35 +18,11 @@ const { f } = Astro.props;
             <li id={`i-${s.id}`} class="sitem">
               <article class="sitem__body" data-entry={s.id}>
                 {(s.chain || s.kind || s.sub) && <p class="sitem__kind">{[s.chain, s.kind, s.sub].filter(Boolean).join(' · ')}</p>}
-                <h3 class="sitem__name" lang={s.lang}>
+                <h3 class="sitem__name">
                   {s.name}
                   {s.nameZh && <span lang="zh"> {s.nameZh}</span>}
                 </h3>
                 {s.text && <p class="sitem__text">{s.text}</p>}
-                {s.facts && (
-                  <dl class="sitem__facts">
-                    {s.facts.map((x) => (
-                      <>
-                        <dt>{x.label}</dt>
-                        <dd>{x.value}</dd>
-                      </>
-                    ))}
-                  </dl>
-                )}
-                {s.list && (
-                  <ul class="sitem__list">
-                    {s.list.map((x) => (
-                      <li>{x}</li>
-                    ))}
-                  </ul>
-                )}
-                {s.tags && (
-                  <ul class="sitem__tags" aria-label="Tools">
-                    {s.tags.map((x) => (
-                      <li>{x}</li>
-                    ))}
-                  </ul>
-                )}
                 {related.length > 0 && (
                   <p class="sitem__rel">
                     Linked to{' '}
@@ -125,50 +101,6 @@ const { f } = Astro.props;
     color: var(--muted);
     font-size: 15px;
     line-height: 1.6;
-  }
-
-  .sitem__facts {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 4px 14px;
-    margin: 0;
-    font-size: 14px;
-  }
-
-  .sitem__facts dt {
-    font: 500 11px/1.9 var(--font-mono);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--dim);
-  }
-
-  .sitem__facts dd {
-    margin: 0;
-    color: var(--muted);
-  }
-
-  .sitem__list {
-    margin: 0;
-    padding-left: 18px;
-    color: var(--muted);
-    font-size: 14px;
-  }
-
-  .sitem__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .sitem__tags li {
-    padding: 3px 8px;
-    border: 1px solid var(--hairline-soft);
-    border-radius: var(--radius-sm);
-    font: 500 11.5px/1.4 var(--font-mono);
-    color: var(--muted);
   }
 
   .sitem__rel {

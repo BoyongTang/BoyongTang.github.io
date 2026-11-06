@@ -1,10 +1,11 @@
 ---
-// The Pillars of Creation as the interface: one still view of the whole pillars, with no zooming or
-// dragging. The four parts of me sit on places where stars are born; choosing one unfolds its stars right
-// there, a star opens its card, and a click anywhere else steps back. The living sky behind it is drawn by
-// Backdrop.astro; this component holds everything you can touch.
-// Without JavaScript the parts are plain links to their pages and every star is in the lists below.
-import { facets, type FacetId } from '../data/facets';
+// The Pillars of Creation as the interface, and the whole site: one screen, nothing to scroll. The four
+// parts of me sit on places where stars are born; choosing one flies in to it and unfolds its stars (Intro
+// opens the profile card instead), a star opens its card, and a click anywhere else steps back. The living
+// sky behind it is drawn by Backdrop.astro; this component holds everything you can touch.
+// Without JavaScript the parts are plain links to their pages, and each page lists its part's content.
+import PartItems from './PartItems.astro';
+import { facets, PROFILE_PART, type FacetId } from '../data/facets';
 import { creditLine, labelLeft, PILLARS, spots } from '../data/pillars';
 import { profile } from '../data/profile';
 import { fitPillars, objectPosition } from '../lib/pillars-fit';
@@ -73,6 +74,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
   data-ex
   data-home={home ? '1' : '0'}
   data-focus={focus ?? ''}
+  data-profile-part={PROFILE_PART}
   data-parts={JSON.stringify(parts.map((p) => ({ id: p.f.id, spot: spots[p.f.id], wide: p.wide, tall: p.tall })))}
 >
   <!-- the still image: what shows without WebGL (the living sky is drawn behind the page instead) -->
@@ -87,7 +89,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
   />
   <div class="ex__veil" aria-hidden="true"></div>
 
-  <svg class="ex__stars" aria-hidden="false" role="group" aria-label="Stars of the open part" data-layer>
+  <svg class="ex__stars" aria-hidden="false" role="group" aria-label="Stars of the open part">
     <defs>
       {
         facets.map((f) => (
@@ -101,7 +103,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
       }
     </defs>
     {
-      parts.map(({ f, wide, tall }) => (
+      parts.map(({ f }) => (
         <g class="xpart" data-xpart={f.id} style={`--c:${f.color}`}>
           {f.lines.map(([a, b]) => (
             <line class="xline" data-a={a.id} data-b={b.id} />
@@ -117,16 +119,12 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
             </text>
           ))}
           {f.items.map((s, i) => {
-            const w = wide.pts[i];
-            const t = tall.pts[i];
             const big = s.mag === 1;
             return (
               <a
                 class:list={['xstar', big && 'xstar--bright']}
                 href={`#i-${s.id}`}
                 data-star={s.id}
-                data-w={`${w.x} ${w.y} ${w.side}`}
-                data-t={`${t.x} ${t.y} ${t.side}`}
                 tabindex="-1"
                 aria-label={[s.kind, s.name, s.sub].filter(Boolean).join(': ')}
                 style={`--i:${i}`}
@@ -135,7 +133,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
                 <circle class="xstar__glow" r={big ? 26 : 19} fill={`url(#xg-${f.id})`} />
                 <circle class="xstar__ring" r={big ? 9 : 7} />
                 <circle class="xstar__core" r={big ? 2.8 : 2.2} />
-                <text class="xstar__name" dy="-0.15em" lang={s.lang}>
+                <text class="xstar__name" dy="-0.15em">
                   {s.name}
                 </text>
                 <text class="xstar__sub" dy="1.5em">
@@ -219,10 +217,51 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     <p class="ex__credit">
       {creditLine}
     </p>
-    <a class="ex__down" href={home ? '#me' : '#list'}>{home ? 'About me ↓' : 'As a list ↓'}</a>
+  </div>
 
+  <!-- what the cards are copied from (src/scripts/explorer.ts): every star's entry, and the profile -->
+  <div hidden>
+    {sky.map((f) => <PartItems f={f} />)}
+    <article class="sitem__body profile" data-entry="profile">
+      {(profile.affiliation || profile.location) && <p class="sitem__kind">{[profile.affiliation, profile.location].filter(Boolean).join(' · ')}</p>}
+      <h3 class="sitem__name">{profile.name}</h3>
+      {profile.role && <p class="sitem__text">{profile.role}</p>}
+      {profile.bio && <p class="sitem__text">{profile.bio}</p>}
+      {profile.bioZh && <p class="sitem__text" lang="zh">{profile.bioZh}</p>}
+      <p class="sitem__links">
+        {profile.email && <a class="btn" href={`mailto:${profile.email}`}>Scholar email →</a>}
+        {profile.generalEmail && <a class="btn" href={`mailto:${profile.generalEmail}`}>General email →</a>}
+        {profile.github && <a class="btn" href={profile.github} rel="noopener">GitHub ↗</a>}
+        {profile.cv && <a class="btn" href={profile.cv}>CV ↓</a>}
+      </p>
+    </article>
   </div>
 </section>
+
+<!-- without JavaScript: the open part's content (or the profile and every part, on the home page) as a page -->
+<noscript>
+  <div class="wrap ex-noscript">
+    {
+      sky
+        .filter((f) => !focus || f.id === focus)
+        .map((f) => (
+          <section style={`--c:${f.color}`}>
+            <h2>
+              {f.name} <span lang="zh">{f.nameZh}</span>
+            </h2>
+            {f.id === PROFILE_PART ? (
+              <p>
+                {profile.name}: {[profile.role, profile.affiliation, profile.location].filter(Boolean).join(', ')}. {profile.bio}{' '}
+                <a href={`mailto:${profile.email}`}>{profile.email}</a>
+              </p>
+            ) : (
+              <PartItems f={f} />
+            )}
+          </section>
+        ))
+    }
+  </div>
+</noscript>
 
 <script>
   import { initExplorer } from '../scripts/explorer';
@@ -235,7 +274,6 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
   .ex {
     position: relative;
     height: calc(100svh - var(--nav-h));
-    min-height: 520px;
     overflow: hidden;
     isolation: isolate;
     background: #050a1a;
@@ -693,7 +731,12 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     text-shadow: 0 1px 10px rgb(0 0 0 / 0.95);
   }
 
-  /* ── a star's card ── */
+  .ex-noscript {
+    padding-top: 32px;
+    padding-bottom: 48px;
+  }
+
+  /* ── a star's card (or the profile) ── */
   .ex__card {
     position: absolute;
     top: 22px;
@@ -757,17 +800,6 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     color: inherit;
   }
 
-  .ex__down {
-    flex: none;
-    font: 500 11.5px/1.4 var(--font-mono);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #d5e0ec;
-    text-decoration: none;
-    text-shadow: 0 1px 6px rgb(0 0 0 / 0.95);
-  }
-
-  .ex__down:hover,
   .ex__home:hover {
     color: #fff;
   }
@@ -785,13 +817,6 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     text-shadow: 0 1px 6px rgb(0 0 0 / 0.95);
   }
 
-  /* on a computer there is nothing below: no down link */
-  @media (hover: hover) and (pointer: fine) {
-    .ex__down {
-      display: none;
-    }
-  }
-
   @media (max-aspect-ratio: 9 / 10) {
     .ex__caption {
       bottom: 78px;
@@ -801,12 +826,6 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
       flex-direction: column-reverse;
       align-items: flex-start;
       gap: 6px;
-    }
-
-    .ex__down {
-      position: absolute;
-      right: 0;
-      bottom: 0;
     }
 
     .ex__credit {

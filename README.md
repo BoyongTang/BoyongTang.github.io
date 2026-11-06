@@ -10,22 +10,23 @@ places on the pillars are the four parts of me:
 | Part | 中文 | What it holds |
 | --- | --- | --- |
 | Research | 研究 | what I study, as star chains by field (e.g. AI4S, XAI) |
-| Intro | 个人介绍 | who I am |
+| Intro | 个人介绍 | who I am: one profile card |
 | Works | 作品 | what I have made |
 | Contact | 联系 | how to reach me |
 
-Choosing a part unfolds its stars on the pillar; choosing a star opens its card; a click anywhere else steps
-back. Each part also has its own page (`/sky/<part>/`), and every star is in a plain list below, which is also
-what keyboard, screen-reader and no-JavaScript visitors get. That is the whole site: the home page and the
-four parts.
+The whole site is that one screen, with nothing to scroll. Choosing a part flies in to it and unfolds its
+stars (Intro opens the profile card instead); choosing a star opens its card; a click anywhere else, or
+Escape, steps back. Each part also has its own address (`/sky/<part>/`), which opens on it; without
+JavaScript that page lists the part's content.
 
 ## Editing the content
 
 Everything personal lives in two files:
 
-- **[`src/data/profile.ts`](src/data/profile.ts):** name, one-line role, school, email, GitHub, and an
-  optional bio, place and CV. Anything left empty does not show.
-- **[`src/data/stars.ts`](src/data/stars.ts):** the stars of the four parts. Each part is a list of chains:
+- **[`src/data/profile.ts`](src/data/profile.ts):** the Intro card: name, one-line role, school, place,
+  emails, GitHub, and an optional bio and CV. Anything left empty does not show.
+- **[`src/data/stars.ts`](src/data/stars.ts):** the stars of Research, Works and Contact. Each part is a
+  list of chains, usually one per subfield, with one star per paper or project:
 
   ```ts
   research: [
@@ -33,12 +34,12 @@ Everything personal lives in two files:
       chain: 'AI4S',
       zh: '科学智能',
       stars: [
-        { name: 'Active learning', bright: true, text: 'A paragraph for its card.' },
-        { name: 'Bayesian optimization' },
-        { name: 'Surrogate models', from: 'Active learning' }, // a branch
+        { name: 'Paper A', kind: 'Paper', note: '2025 · NeurIPS', bright: true, link: 'https://arxiv.org/abs/…' },
+        { name: 'Paper B', kind: 'Paper', note: '2026 · preprint' },
+        { name: 'Paper C', kind: 'Paper', from: 'Paper A' }, // builds on Paper A: a branch
       ],
     },
-    { chain: 'XAI', stars: [{ name: 'Feature attribution' }] },
+    { chain: 'XAI', stars: [{ name: 'Paper D', kind: 'Paper' }] },
   ],
   ```
 
@@ -68,9 +69,13 @@ Pushing to `main` deploys to GitHub Pages (`.github/workflows/deploy.yml`).
 - The living sky behind every page is WebGL 2 ([`src/scripts/pillars-gl.ts`](src/scripts/pillars-gl.ts)).
   A depth mask separates the pillars from the sky, giving parallax with the mouse, drifting gas, twinkling
   stars, and a darker sky round full-colour pillars. Without WebGL a still copy of the picture stands in.
-- The home page and the parts: [`src/components/Explorer.astro`](src/components/Explorer.astro) and
-  [`src/scripts/explorer.ts`](src/scripts/explorer.ts). Star layout: [`src/lib/sky.ts`](src/lib/sky.ts).
-- Motion respects the system's reduced-motion setting.
+- The one screen: [`src/components/Explorer.astro`](src/components/Explorer.astro) (markup and styles) and
+  [`src/scripts/explorer.ts`](src/scripts/explorer.ts) (the camera, flying in to a part, the cards).
+  Which part is the profile card: `PROFILE_PART` in [`src/data/facets.ts`](src/data/facets.ts).
+- Star layout, at build time: [`src/lib/sky.ts`](src/lib/sky.ts). Where the picture sits on a screen:
+  [`src/lib/pillars-fit.ts`](src/lib/pillars-fit.ts). The sky's mouse parallax and dimming:
+  [`src/scripts/backdrop.ts`](src/scripts/backdrop.ts).
+- Motion respects the system's reduced-motion setting ([`src/scripts/motion.ts`](src/scripts/motion.ts)).
 
 ## The picture
 

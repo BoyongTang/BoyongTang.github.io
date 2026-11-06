@@ -1,4 +1,4 @@
-// Post-build check (B1 §12.6): every internal link and #anchor in dist/ must resolve.
+// Post-build check (npm test, and CI): every internal link and #anchor in dist/ must resolve.
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
