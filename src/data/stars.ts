@@ -85,13 +85,13 @@ export const stars: Record<StarPart, ChainInput[]> = {
 
   // 作品 Works — on the tip of the small pillar
   works: [
-     {
-       chain: 'AI4S',
-       stars: [
+     //{
+       //chain: 'AI4S',
+       //stars: [
          // add link: 'https://github.com/…' once the code is public
-         { name: 'KolTa', kind: 'Research Repo', note: 'Code coming soon', text: "The open code of KolTa's AL framework." },
-       ],
-     },
+         //{ name: 'KolTa', kind: 'Research Repo', note: 'Code coming soon', text: "The open code of KolTa's AL framework." },
+       //],
+     //},
     // {
     //   chain: 'XAI',
     //   stars: [{ name: 'Another project', kind: 'Project' }],

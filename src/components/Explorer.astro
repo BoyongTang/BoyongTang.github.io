@@ -101,6 +101,18 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
           </radialGradient>
         ))
       }
+      {
+        // a star's diffraction spike: white-hot in the middle, the part's colour towards the ends
+        facets.map((f) => (
+          <linearGradient id={`xs-${f.id}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color={f.color} stop-opacity="0" />
+            <stop offset="0.3" stop-color={f.color} stop-opacity="0.7" />
+            <stop offset="0.5" stop-color="#ffffff" />
+            <stop offset="0.7" stop-color={f.color} stop-opacity="0.7" />
+            <stop offset="1" stop-color={f.color} stop-opacity="0" />
+          </linearGradient>
+        ))
+      }
     </defs>
     {
       parts.map(({ f }) => (
@@ -120,6 +132,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
           ))}
           {f.items.map((s, i) => {
             const big = s.mag === 1;
+            const spike = big ? 52 : 40; // half the length of the long spikes
             return (
               <a
                 class:list={['xstar', big && 'xstar--bright']}
@@ -131,6 +144,12 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
               >
                 <circle class="xstar__hit" r="22" />
                 <circle class="xstar__glow" r={big ? 26 : 19} fill={`url(#xg-${f.id})`} />
+                <g class="xstar__flare" fill={`url(#xs-${f.id})`}>
+                  <rect x="-0.9" y={-spike} width="1.8" height={spike * 2} />
+                  <rect x="-0.9" y={-spike} width="1.8" height={spike * 2} transform="rotate(60)" />
+                  <rect x="-0.9" y={-spike} width="1.8" height={spike * 2} transform="rotate(-60)" />
+                  <rect x="-0.7" y={-spike * 0.4} width="1.4" height={spike * 0.8} transform="rotate(90)" opacity="0.7" />
+                </g>
                 <circle class="xstar__ring" r={big ? 9 : 7} />
                 <circle class="xstar__core" r={big ? 2.8 : 2.2} />
                 <text class="xstar__name" dy="-0.15em">
@@ -396,6 +415,62 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
 
   .xstar__core {
     fill: #fff;
+  }
+
+  /*
+   * Each star shines like the four parts: faint spikes at rest, and now and then (the stars taking turns)
+   * a full flare, its halo brightening with it. Hovered or open, it stays lit.
+   */
+  .xstar__flare {
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0.45;
+    transform: scale(0.7);
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: opacity var(--t-identify) var(--ease), transform var(--t-identify) var(--ease);
+  }
+
+  .xstar__glow {
+    opacity: 0.75;
+    transition: opacity var(--t-identify) var(--ease);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .xpart.is-open .xstar__flare {
+      animation: xstar-flare 3.2s ease-out calc(900ms + var(--i) * 550ms) infinite;
+    }
+
+    :global(html:not([data-motion='reduce'])) .xpart.is-open .xstar__glow {
+      animation: xstar-glow 3.2s ease-out calc(900ms + var(--i) * 550ms) infinite;
+    }
+  }
+
+  @keyframes xstar-flare {
+    0%, 60% { opacity: 0.45; transform: scale(0.7) rotate(-3deg); }
+    70% { opacity: 1; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0.45; transform: scale(0.7) rotate(2deg); }
+  }
+
+  @keyframes xstar-glow {
+    0%, 60% { opacity: 0.75; }
+    70% { opacity: 1; }
+    100% { opacity: 0.75; }
+  }
+
+  .xpart.is-open .xstar:hover .xstar__flare,
+  .xpart.is-open .xstar.is-selected .xstar__flare,
+  .xpart.is-open .xstar:focus-visible .xstar__flare {
+    animation: none;
+    opacity: 0.95;
+    transform: none;
+  }
+
+  .xpart.is-open .xstar:hover .xstar__glow,
+  .xpart.is-open .xstar.is-selected .xstar__glow,
+  .xpart.is-open .xstar:focus-visible .xstar__glow {
+    animation: none;
+    opacity: 1;
   }
 
   .xstar__ring {
