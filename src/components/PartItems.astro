@@ -39,7 +39,9 @@ const authorParts = (authors: string) => authors.split(profile.name).flatMap((pa
                 )}
                 {s.image && (
                   <figure class="sitem__fig">
-                    <img src={s.image.src} alt={s.image.alt} decoding="async" />
+                    <a href={s.image.src} target="_blank" rel="noopener" title="Open the full-size figure">
+                      <img src={s.image.src} alt={s.image.alt} decoding="async" />
+                    </a>
                   </figure>
                 )}
                 {s.text && <p class="sitem__text">{s.text}</p>}
@@ -142,6 +144,12 @@ const authorParts = (authors: string) => authors.split(profile.name).flatMap((pa
     display: block;
     width: 100%;
     height: auto;
+  }
+
+  /* the figure opens full size in a new tab */
+  .sitem__fig a {
+    display: block;
+    cursor: zoom-in;
   }
 
   /* the status, e.g. Under Review: a small pill after the kind */
