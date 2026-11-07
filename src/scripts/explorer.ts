@@ -174,7 +174,15 @@ export function initExplorer(root: HTMLElement) {
         l.setAttribute('x2', b[0].toFixed(1));
         l.setAttribute('y2', b[1].toFixed(1));
       });
+      // a part with no stars yet shows its "uncharted" mark on its place
+      const empty = groups.get(current)!.querySelector('[data-empty]');
+      if (empty) {
+        const spot = byId.get(current)!.spot;
+        const [x, y] = toScreen(spot[0] * W, spot[1] * H);
+        empty.setAttribute('transform', `translate(${x.toFixed(1)} ${Math.min(h - 170, y).toFixed(1)})`);
+      }
     }
+    placeCard();
 
     // the still image (no WebGL) moves with the camera
     if (!html.classList.contains('has-gl')) {
@@ -282,6 +290,32 @@ export function initExplorer(root: HTMLElement) {
 
   /* ── a star's card ── */
   let selected: string | null = null;
+  /**
+   * On wide screens a star's card opens beside its star (and its label): to the right if there is room,
+   * else to the left, level with the star and kept on screen. Where neither side has room, and for the
+   * profile card, it keeps its corner; on tall screens it is a sheet at the foot.
+   */
+  function placeCard() {
+    const star = selected && selected !== 'profile' ? root.querySelector<SVGAElement>(`[data-star="${CSS.escape(selected)}"]`) : null;
+    card.classList.remove('is-beside');
+    card.style.removeProperty('left');
+    card.style.removeProperty('top');
+    if (!star || card.hidden || shape() === 'tall') return;
+    const rr = root.getBoundingClientRect();
+    const sr = star.getBoundingClientRect();
+    const cw = card.offsetWidth;
+    const ch = card.offsetHeight;
+    const gap = 18;
+    const right = sr.right - rr.left + gap;
+    const left = sr.left - rr.left - gap - cw;
+    const x = right + cw <= w - 12 ? right : left >= 12 ? left : null;
+    if (x === null) return;
+    const mid = sr.top - rr.top + sr.height / 2;
+    const y = Math.max(12, Math.min(h - ch - 12, mid - ch / 2));
+    card.classList.add('is-beside');
+    card.style.left = `${x.toFixed(0)}px`;
+    card.style.top = `${y.toFixed(0)}px`;
+  }
   function select(id: string) {
     const part = partOfStar.get(id);
     const entry = document.querySelector<HTMLElement>(`[data-entry="${CSS.escape(id)}"]`);
@@ -292,6 +326,9 @@ export function initExplorer(root: HTMLElement) {
     cardBody.replaceChildren(entry.cloneNode(true));
     card.style.setProperty('--c', getComputedStyle(groups.get(part)!).getPropertyValue('--c'));
     card.hidden = false;
+    placeCard();
+    // the figure may still be loading: place it again once the card has its full height
+    cardBody.querySelectorAll('img').forEach((img) => img.complete || img.addEventListener('load', placeCard, { once: true }));
     history.replaceState(null, '', `${location.pathname}${location.search}#s-${id}`);
   }
   /** The profile part's one card: who I am, from src/data/profile.ts. */
@@ -302,6 +339,7 @@ export function initExplorer(root: HTMLElement) {
     cardBody.replaceChildren(entry.cloneNode(true));
     card.style.setProperty('--c', getComputedStyle(groups.get(current)!).getPropertyValue('--c'));
     card.hidden = false;
+    placeCard();
   }
   /** One step back: a star's card, then the open part (the profile card is the whole part, so both). */
   function back() {

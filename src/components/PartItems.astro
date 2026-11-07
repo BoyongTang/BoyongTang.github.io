@@ -1,6 +1,7 @@
 ---
 // One part's stars as entries: what the explorer's star cards are copied from (src/scripts/explorer.ts), and
 // the plain list visitors without JavaScript read (src/components/Explorer.astro).
+import { PROFILE_PART } from '../data/facets';
 import { profile } from '../data/profile';
 import type { SkyFacet } from '../lib/sky';
 
@@ -14,6 +15,7 @@ const { f } = Astro.props;
 const authorParts = (authors: string) => authors.split(profile.name).flatMap((part, i) => (i ? [null, part] : [part]));
 ---
 
+{f.items.length === 0 && f.id !== PROFILE_PART && <p class="slist__empty">Uncharted · <span lang="zh">待探索</span> · Coming soon.</p>}
 <ol class="slist__items" style={`--c:${f.color}`}>
   {
         f.items.map((s) => {
@@ -79,6 +81,13 @@ const authorParts = (authors: string) => authors.split(profile.name).flatMap((pa
     margin: 18px 0 0;
     padding: 0;
     list-style: none;
+  }
+
+  .slist__empty {
+    margin: 18px 0 0;
+    font: 500 12px/1.5 var(--font-mono);
+    letter-spacing: 0.16em;
+    color: var(--dim);
   }
 
   .sitem {
