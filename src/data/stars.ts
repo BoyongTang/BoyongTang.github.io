@@ -72,8 +72,8 @@ export const stars: Record<StarPart, ChainInput[]> = {
           title: 'KolTa: A Physics-Informed Active Learning Framework for Formulation Discovery with Limited Data',
           authors: 'Boyong Tang, Tao Wang, Lei Yang',
           image: {
-            src: '/research/kolta-fig1.svg',
-            alt: 'Closed-loop active learning with KolTa: each round it trains on the labeled pool, scores the unlabeled formulations, and queries the top ones.',
+            src: '/research/KolTa-predictor.svg',
+            alt: "KolTa's three-stage predictor: a shared graph encoder for each component, then component contributions, role-conditioned interactions, and the anchored temperature response.",
           },
           text: 'Finds the top 5% of formulations under a fixed experiment budget, pairing a physics-constrained predictor with a physics-residual-calibrated acquisition rule (PRC-UCB). Ranks first or second on all four tasks and wins 75 of 78 paired comparisons.',
           links: [
