@@ -15,8 +15,12 @@
 //    name   the label on the star (required)
 //    zh     a Chinese name, shown beside it in the card               (optional)
 //    kind   a small word under the label, e.g. 'Paper', '项目'        (optional)
-//    note   a short line under the label, e.g. '2026 · ongoing'       (optional)
-//    text   a paragraph in the card                                   (optional)
+//    note   a short line under the label, e.g. '2026 · ongoing'; in the card it shows as a badge (optional)
+//    title  the full title, at the top of the card                    (optional)
+//    authors  'Boyong Tang, Tao Wang, Lei Yang': your name (profile.ts) is shown in bold (optional)
+//    image  a figure at the top of the card: { src: '/research/….svg', alt: 'what it shows' }; put
+//           the file in public/research/                              (optional)
+//    text   a paragraph in the card: for a paper, one or two sentences on what it solves and how well (optional)
 //    link   one link: a web address, or 'mailto:you@example.com'      (optional)
 //    links  several links: [{ label: 'Paper', href: 'https://…' }, …] (optional)
 //    bright true for a bigger, brighter star                          (optional)
@@ -33,6 +37,9 @@ export interface StarInput {
   zh?: string;
   kind?: string;
   note?: string;
+  title?: string;
+  authors?: string;
+  image?: { src: string; alt: string };
   text?: string;
   link?: string;
   links?: { label: string; href: string }[];
@@ -62,7 +69,13 @@ export const stars: Record<StarPart, ChainInput[]> = {
           name: 'KolTa',
           kind: 'Research Paper',
           note: 'Under Review',
-          text: 'A Physics-Informed Active Learning Framework for Formulation Discovery with Limited Data',
+          title: 'KolTa: A Physics-Informed Active Learning Framework for Formulation Discovery with Limited Data',
+          authors: 'Boyong Tang, Tao Wang, Lei Yang',
+          image: {
+            src: '/research/kolta-fig1.svg',
+            alt: 'Closed-loop active learning with KolTa: each round it trains on the labeled pool, scores the unlabeled formulations, and queries the top ones.',
+          },
+          text: 'Finds the top 5% of formulations under a fixed experiment budget, pairing a physics-constrained predictor with a physics-residual-calibrated acquisition rule (PRC-UCB). Ranks first or second on all four tasks and wins 75 of 78 paired comparisons.',
           links: [
             { label: 'arXiv', href: 'https://arxiv.org/abs/2611.06394' },
             // { label: 'Code', href: 'https://github.com/…' }, // add once the code is public

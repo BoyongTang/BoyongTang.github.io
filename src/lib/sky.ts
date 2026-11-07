@@ -22,6 +22,12 @@ export interface SkyItem {
   chain?: string;
   /** Short line under the name on the map. */
   sub?: string;
+  /** The full title, at the top of the card. */
+  title?: string;
+  /** The author list; the profile's name is shown in bold. */
+  authors?: string;
+  /** A figure at the top of the card. */
+  image?: { src: string; alt: string };
   /** A paragraph in the star's card. */
   text?: string;
   links?: SkyLink[];
@@ -104,6 +110,9 @@ function build(id: FacetId) {
         kind: st.kind ?? '',
         chain: c.chain,
         sub: st.note,
+        title: st.title,
+        authors: st.authors,
+        image: st.image,
         text: st.text,
         links: links.length ? links : undefined,
         mag: st.bright ? 1 : undefined,
