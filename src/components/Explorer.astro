@@ -161,6 +161,19 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
               </a>
             );
           })}
+          {f.items.length === 0 && f.id !== PROFILE_PART && (
+            // a part with no stars yet: a faint, uncharted point where its stars will be
+            <g class="xempty" data-empty>
+              <circle class="xempty__ring" r="30" />
+              <circle class="xempty__core" r="2.4" />
+              <text class="xempty__name" y="58" text-anchor="middle">
+                UNCHARTED
+              </text>
+              <text class="xempty__zh" lang="zh" y="58" dy="1.7em" text-anchor="middle">
+                待探索 · Coming soon
+              </text>
+            </g>
+          )}
         </g>
       ))
     }
@@ -524,6 +537,57 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     animation-delay: calc(200ms + var(--i) * 90ms);
   }
 
+  /* a part with no stars yet: a dashed ring that slowly turns, and the word under it */
+  .xempty__ring {
+    fill: none;
+    stroke: color-mix(in srgb, var(--c) 60%, #fff);
+    stroke-opacity: 0.9;
+    stroke-width: 1.6;
+    stroke-dasharray: 4 6;
+    filter: drop-shadow(0 0 3px #030610);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .xempty__core {
+    fill: #fff;
+    opacity: 0.6;
+  }
+
+  .xempty__name {
+    font: 600 12px var(--font-mono);
+    letter-spacing: 0.4em;
+    fill: color-mix(in srgb, var(--c) 70%, #fff);
+    paint-order: stroke;
+    stroke: #030610;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  .xempty__zh {
+    font: 400 12px var(--font-mono);
+    letter-spacing: 0.12em;
+    fill: #b7c6da;
+    paint-order: stroke;
+    stroke: #030610;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  .xpart.is-open .xempty {
+    animation: fade-in 800ms ease-out 200ms both;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .xpart.is-open .xempty__ring {
+      animation: xempty-turn 24s linear infinite;
+    }
+  }
+
+  @keyframes xempty-turn {
+    to { transform: rotate(360deg); }
+  }
+
   /* ── the four parts ── */
   .part {
     position: absolute;
@@ -829,6 +893,11 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     cursor: auto;
     user-select: text;
     -webkit-user-select: text;
+  }
+
+  /* beside its star (src/scripts/explorer.ts sets left and top) */
+  .ex__card.is-beside {
+    right: auto;
   }
 
   .ex__close {
