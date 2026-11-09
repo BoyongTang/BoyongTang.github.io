@@ -306,12 +306,19 @@ export function initExplorer(root: HTMLElement) {
     const cw = card.offsetWidth;
     const ch = card.offsetHeight;
     const gap = 18;
-    const right = sr.right - rr.left + gap;
-    const left = sr.left - rr.left - gap - cw;
-    const x = right + cw <= w - 12 ? right : left >= 12 ? left : null;
-    if (x === null) return;
     const mid = sr.top - rr.top + sr.height / 2;
     const y = Math.max(12, Math.min(h - ch - 12, mid - ch / 2));
+    // of the sides that fit, the one that hides fewer of the part's other stars (the right on a tie)
+    const others = starsOf(current ?? '')
+      .filter((a) => a !== star)
+      .map((a) => {
+        const r = a.querySelector('.xstar__core')!.getBoundingClientRect();
+        return [r.left + r.width / 2 - rr.left, r.top + r.height / 2 - rr.top];
+      });
+    const hidden = (x: number) => others.filter(([px, py]) => px > x - 8 && px < x + cw + 8 && py > y - 8 && py < y + ch + 8).length;
+    const sides = [sr.right - rr.left + gap, sr.left - rr.left - gap - cw].filter((x) => x >= 12 && x + cw <= w - 12);
+    if (!sides.length) return;
+    const x = sides.reduce((best, s) => (hidden(s) < hidden(best) ? s : best));
     card.classList.add('is-beside');
     card.style.left = `${x.toFixed(0)}px`;
     card.style.top = `${y.toFixed(0)}px`;
