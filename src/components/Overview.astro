@@ -1,0 +1,530 @@
+---
+// The home page's second screen, below the pillars: the same content as the stars, laid out as a plain
+// academic page. On the left your card (src/data/profile.ts) stays in view; on the right, one section per
+// part, newest first, from src/data/stars.ts. Nothing here needs editing: change the data and both screens
+// follow.
+import { facetById, type FacetId } from '../data/facets';
+import { profile } from '../data/profile';
+import type { SkyFacet, SkyItem } from '../lib/sky';
+
+interface Props {
+  sky: SkyFacet[];
+}
+
+const { sky } = Astro.props;
+const part = (id: FacetId) => sky.find((f) => f.id === id);
+/** A part's stars, newest first (they are written oldest first). */
+const newest = (id: FacetId) => [...(part(id)?.items ?? [])].reverse();
+/** Honors: latest year first; within a year, in the order they are written. */
+const year = (s: SkyItem) => Number(/\d{4}/.exec(s.sub ?? '')?.[0] ?? 0);
+const byYear = (id: FacetId) => [...(part(id)?.items ?? [])].sort((a, b) => year(b) - year(a));
+const color = (id: FacetId) => facetById.get(id)?.color ?? '#82d0dc';
+
+// an author list split round your own name, so it can be shown in bold
+const authorParts = (authors: string) => authors.split(profile.name).flatMap((p, i) => (i ? [null, p] : [p]));
+const initials = profile.name
+  .split(/\s+/)
+  .map((w) => w[0])
+  .join('')
+  .toUpperCase();
+const linkMark = (href: string) => (href.startsWith('mailto:') ? ' →' : /^https?:/.test(href) ? ' ↗' : ' →');
+
+const sections: { id: FacetId; title: string; zh: string; items: SkyItem[] }[] = [
+  { id: 'news', title: 'News', zh: '动态', items: newest('news') },
+  { id: 'research', title: 'Research', zh: '研究', items: newest('research') },
+  { id: 'honors', title: 'Honors & Awards', zh: '荣誉', items: byYear('honors') },
+  { id: 'works', title: 'Works', zh: '作品', items: newest('works') },
+  { id: 'contact', title: 'Contact', zh: '联系', items: part('contact')?.items ?? [] },
+];
+---
+
+<section class="ov" id="about" aria-label={`${profile.name}: everything on one page`}>
+  <div class="ov__wrap">
+    <aside class="ov__side">
+      <div class="ov__card">
+        <div class="ov__mark" aria-hidden="true">{initials}</div>
+        <h2 class="ov__name">{profile.name}</h2>
+        {profile.role && <p class="ov__role">{profile.role}</p>}
+        {(profile.affiliation || profile.location) && <p class="ov__aff">{[profile.affiliation, profile.location].filter(Boolean).join(' · ')}</p>}
+        {
+          profile.interests.length > 0 && (
+            <ul class="ov__tags" aria-label="Research interests">
+              {profile.interests.map((t) => (
+                <li>{t}</li>
+              ))}
+            </ul>
+          )
+        }
+        <p class="ov__btns">
+          {profile.email && <a class="btn" href={`mailto:${profile.email}`}>Scholar email →</a>}
+          {profile.generalEmail && <a class="btn" href={`mailto:${profile.generalEmail}`}>General email →</a>}
+          {profile.github && <a class="btn" href={profile.github} rel="noopener">GitHub ↗</a>}
+          {profile.cv && <a class="btn" href={profile.cv}>CV ↓</a>}
+        </p>
+      </div>
+    </aside>
+
+    <div class="ov__main">
+      {
+        (profile.bio || profile.bioZh) && (
+          <section class="ov__sec" style={`--c:${color('intro')}`} aria-labelledby="ov-about">
+            <h3 class="ov__head" id="ov-about">
+              About <span lang="zh">个人介绍</span>
+            </h3>
+            {profile.bio && <p class="ov__text">{profile.bio}</p>}
+            {profile.bioZh && (
+              <p class="ov__text" lang="zh">
+                {profile.bioZh}
+              </p>
+            )}
+          </section>
+        )
+      }
+
+      {
+        sections.map((sec) => (
+          <section class="ov__sec" style={`--c:${color(sec.id)}`} aria-labelledby={`ov-${sec.id}`}>
+            <h3 class="ov__head" id={`ov-${sec.id}`}>
+              {sec.title} <span lang="zh">{sec.zh}</span>
+            </h3>
+
+            {sec.items.length === 0 && (
+              <p class="ov__empty">
+                Uncharted · <span lang="zh">待探索</span> · Coming soon.
+              </p>
+            )}
+
+            {/* News: a date, then what happened */}
+            {sec.id === 'news' && sec.items.length > 0 && (
+              <ol class="ov__rows">
+                {sec.items.map((s) => (
+                  <li>
+                    <span class="ov__when">{s.sub}</span>
+                    <span>
+                      <strong class="ov__strong">{s.title ?? s.name}</strong>
+                      {s.text && <> — {s.text}</>}
+                      {s.links?.map((l) => (
+                        <>
+                          {' '}
+                          <a class="ov__inline" href={l.href} rel={l.external ? 'noopener' : undefined}>
+                            {l.label}
+                            {linkMark(l.href)}
+                          </a>
+                        </>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            {/* Research and Works: a card per paper or project, its figure on the left */}
+            {(sec.id === 'research' || sec.id === 'works') && sec.items.length > 0 && (
+              <div class="ov__papers">
+                {sec.items.map((s) => (
+                  <article class:list={['ov__paper', !s.image && 'ov__paper--plain']}>
+                    {s.image && (
+                      <a class="ov__fig" href={s.image.src} target="_blank" rel="noopener" title="Open the full-size figure">
+                        <img src={s.image.src} alt={s.image.alt} loading="lazy" decoding="async" />
+                      </a>
+                    )}
+                    <div class="ov__body">
+                      <p class="ov__kind">
+                        {[s.chain, s.kind].filter(Boolean).join(' · ')}
+                        {s.sub && <span class="ov__badge">{s.sub}</span>}
+                      </p>
+                      <h4 class="ov__title">{s.title ?? s.name}</h4>
+                      {s.authors && (
+                        <p class="ov__authors">{authorParts(s.authors).map((p) => (p === null ? <strong>{profile.name}</strong> : p))}</p>
+                      )}
+                      {s.text && <p class="ov__text">{s.text}</p>}
+                      {s.links && s.links.length > 0 && (
+                        <p class="ov__chips">
+                          {s.links.map((l) => (
+                            <a href={l.href} rel={l.external ? 'noopener' : undefined}>
+                              {l.label}
+                              {linkMark(l.href)}
+                            </a>
+                          ))}
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {/* Honors: a year, then the award (its level after it, unless the name already says it) */}
+            {sec.id === 'honors' && sec.items.length > 0 && (
+              <ul class="ov__rows">
+                {sec.items.map((s) => {
+                  const what = s.title ?? s.name;
+                  return (
+                    <li>
+                      <span class="ov__when">{s.sub}</span>
+                      <span>
+                        <strong class="ov__strong">{what}</strong>
+                        {s.kind && !what.includes(s.kind) && <span class="ov__dim"> · {s.kind}</span>}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {/* Contact: the links */}
+            {sec.id === 'contact' && sec.items.length > 0 && (
+              <p class="ov__btns ov__btns--left">
+                {sec.items.flatMap((s) =>
+                  (s.links ?? []).map((l) => (
+                    <a class="btn" href={l.href} rel={l.external ? 'noopener' : undefined}>
+                      {s.name}
+                      {linkMark(l.href)}
+                    </a>
+                  )),
+                )}
+              </p>
+            )}
+          </section>
+        ))
+      }
+
+      <p class="ov__top"><a href="#">↑ Back to the pillars</a></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ov {
+    position: relative;
+    padding: 96px var(--gutter) 72px;
+    /* the sky shows through, darker: it fades in from the pillars above */
+    background: linear-gradient(180deg, rgb(3 5 12 / 0), rgb(3 5 12 / 0.86) 120px, rgb(3 5 12 / 0.9));
+    color: var(--muted);
+  }
+
+  .ov__wrap {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 48px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  /* ── your card, staying in view ── */
+  .ov__side {
+    position: relative;
+  }
+
+  .ov__card {
+    position: sticky;
+    top: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 22px 22px;
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+    background: rgb(5 9 18 / 0.7);
+    backdrop-filter: blur(6px);
+    text-align: center;
+  }
+
+  .ov__mark {
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 84px;
+    margin-bottom: 6px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, #ff8f7d 55%, transparent);
+    background: radial-gradient(circle at 35% 30%, rgb(255 143 125 / 0.35), rgb(5 9 18 / 0.9) 70%);
+    font: 500 26px/1 var(--font-display);
+    letter-spacing: 0.08em;
+    color: var(--starlight);
+  }
+
+  .ov__name {
+    margin: 0;
+    font: 500 22px/1.25 var(--font-display);
+    color: var(--starlight);
+  }
+
+  .ov__role,
+  .ov__aff {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .ov__aff {
+    color: var(--dim);
+  }
+
+  .ov__tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 8px 0 4px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ov__tags li {
+    padding: 3px 9px;
+    border: 1px solid var(--hairline-soft);
+    border-radius: 999px;
+    font: 500 11.5px/1.4 var(--font-mono);
+    color: var(--muted);
+  }
+
+  .ov__btns {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0 0;
+  }
+
+  .ov__btns--left {
+    justify-content: flex-start;
+    margin: 0;
+  }
+
+  /* ── the sections ── */
+  .ov__main {
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+    min-width: 0;
+  }
+
+  .ov__sec {
+    scroll-margin-top: 24px;
+  }
+
+  .ov__head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 0 0 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--hairline-soft);
+    font: 500 21px/1.3 var(--font-display);
+    color: var(--starlight);
+  }
+
+  /* the part's star, in its colour */
+  .ov__head::before {
+    content: '';
+    flex: none;
+    align-self: center;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent), 0 0 12px 2px var(--c);
+  }
+
+  .ov__head span {
+    font: 400 14px/1 var(--font-mono);
+    letter-spacing: 0.12em;
+    color: color-mix(in srgb, var(--c) 65%, #b9cfd6);
+  }
+
+  .ov__text {
+    margin: 0;
+    font-size: 15.5px;
+    line-height: 1.65;
+  }
+
+  .ov__empty {
+    margin: 0;
+    font: 500 12px/1.5 var(--font-mono);
+    letter-spacing: 0.16em;
+    color: var(--dim);
+  }
+
+  /* News and Honors: a date column, then the line */
+  .ov__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .ov__rows li {
+    display: grid;
+    grid-template-columns: 7.5em minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .ov__when {
+    font: 400 13px/1.85 var(--font-mono);
+    color: color-mix(in srgb, var(--c) 55%, #8fa9b3);
+  }
+
+  .ov__strong {
+    font-weight: 500;
+    color: var(--starlight);
+  }
+
+  .ov__dim {
+    color: var(--dim);
+  }
+
+  .ov__inline {
+    color: color-mix(in srgb, var(--c) 55%, #ecf3f0);
+    white-space: nowrap;
+  }
+
+  /* Research and Works: a card each, the figure on the left */
+  .ov__papers {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ov__paper {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 20px;
+    padding: 18px;
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+    background: rgb(5 9 18 / 0.55);
+  }
+
+  .ov__paper--plain {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ov__fig {
+    display: grid;
+    place-items: center;
+    align-self: start;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    background: #f6f7f9;
+    cursor: zoom-in;
+  }
+
+  .ov__fig img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .ov__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .ov__kind {
+    margin: 0;
+    font: 500 11px/1.4 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--c) 70%, #8fa9b3);
+  }
+
+  .ov__badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+    border-radius: 999px;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    color: color-mix(in srgb, var(--c) 45%, #fff);
+    background: color-mix(in srgb, var(--c) 14%, transparent);
+    vertical-align: 1px;
+  }
+
+  .ov__title {
+    margin: 0;
+    font: 500 17px/1.4 var(--font-display);
+    color: var(--starlight);
+  }
+
+  .ov__authors {
+    margin: 0;
+    font-size: 14px;
+    color: var(--dim);
+  }
+
+  .ov__authors strong {
+    font-weight: 600;
+    color: var(--starlight);
+  }
+
+  .ov__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 2px 0 0;
+  }
+
+  .ov__chips a {
+    padding: 3px 10px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    font: 500 12px/1.5 var(--font-mono);
+    letter-spacing: 0.08em;
+    color: var(--starlight);
+    text-decoration: none;
+  }
+
+  .ov__chips a:hover {
+    border-color: var(--c);
+  }
+
+  .ov__top {
+    margin: 0;
+    font: 500 12px/1.5 var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .ov__top a {
+    color: var(--dim);
+    text-decoration: none;
+  }
+
+  .ov__top a:hover {
+    color: var(--starlight);
+  }
+
+  /* phones and narrow windows: one column, the card on top */
+  @media (max-width: 860px) {
+    .ov {
+      padding-top: 64px;
+    }
+
+    .ov__wrap {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 32px;
+    }
+
+    .ov__card {
+      position: static;
+    }
+
+    .ov__paper {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ov__rows li {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
+    }
+  }
+</style>

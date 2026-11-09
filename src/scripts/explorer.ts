@@ -370,7 +370,7 @@ export function initExplorer(root: HTMLElement) {
     select(a.dataset.goto!);
   });
 
-  const ui = (t: EventTarget | null) => (t as Element | null)?.closest?.('.ex__card, .ex__foot, .ex__home, button');
+  const ui = (t: EventTarget | null) => (t as Element | null)?.closest?.('.ex__card, .ex__foot, .ex__home, .ex__more, button');
 
   /* ── choosing ── */
   markers.forEach((a, id) =>
@@ -397,6 +397,21 @@ export function initExplorer(root: HTMLElement) {
   });
 
   /* ── the window ── */
+  // the home page scrolls on to its second screen: the sky's pillars (placed from __oqView) move up with it
+  let scrollQueued = false;
+  addEventListener(
+    'scroll',
+    () => {
+      if (scrollQueued) return;
+      scrollQueued = true;
+      requestAnimationFrame(() => {
+        scrollQueued = false;
+        apply();
+      });
+    },
+    { passive: true },
+  );
+
   new ResizeObserver(() => {
     const nw = root.clientWidth;
     const nh = root.clientHeight;

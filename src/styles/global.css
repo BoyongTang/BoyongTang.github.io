@@ -298,14 +298,19 @@ html[data-motion='reduce'] *::after {
   transition-duration: 0.01ms !important;
 }
 
-/* ── bare pages (home, the four parts): only the pillars, one screen, nothing to scroll ── */
+/* ── bare pages (home, the parts): only the pillars, no site header or footer ── */
 html.bare {
   --nav-h: 0px;
 }
 
-/* without JavaScript the page scrolls, to the plain list below the pillars */
-html.js.bare,
-html.js.bare body {
+/* a part's own page is one screen, nothing to scroll (without JavaScript it scrolls, to the plain list below
+   the pillars); the home page scrolls on to its second screen (src/components/Overview.astro) */
+html.js.bare:not(.scrolls),
+html.js.bare:not(.scrolls) body {
   height: 100%;
   overflow: hidden;
+}
+
+html.scrolls {
+  scroll-behavior: smooth;
 }

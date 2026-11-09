@@ -1,12 +1,15 @@
 ---
-// The home page: the whole site on one screen (src/components/Explorer.astro).
+// The home page: the pillars on the first screen (src/components/Explorer.astro), and, scrolling down, the
+// same content as a plain academic page (src/components/Overview.astro).
 import Explorer from '../components/Explorer.astro';
+import Overview from '../components/Overview.astro';
 import Base from '../layouts/Base.astro';
 import { loadSky } from '../lib/sky';
 
 const sky = await loadSky();
 ---
 
-<Base sky={{ mode: 'explore' }} bare>
+<Base sky={{ mode: 'explore' }} bare scrolls>
   <Explorer sky={sky} />
+  <Overview sky={sky} />
 </Base>

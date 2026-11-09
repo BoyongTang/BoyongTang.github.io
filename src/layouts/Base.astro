@@ -17,6 +17,8 @@ interface Props {
   sky?: Sky;
   /** Only the pillars: no site header or footer (the home page and the four parts; only 404 has them). */
   bare?: boolean;
+  /** A bare page that scrolls on past the pillars (the home page, to its second screen). */
+  scrolls?: boolean;
 }
 
 const { title, description = [`${profile.name} — ${profile.role}.`, profile.subline].filter(Boolean).join(' ') } = Astro.props;
@@ -33,7 +35,7 @@ const year = new Date().getFullYear();
 ---
 
 <!doctype html>
-<html lang="en" class:list={[Astro.props.bare && 'bare']}>
+<html lang="en" class:list={[Astro.props.bare && 'bare', Astro.props.scrolls && 'scrolls']}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -26,4 +26,6 @@ export const profile = {
   cv: '',
   /** One more sentence for search engines and link previews (optional). */
   subline: '',
+  /** Research interests: small tags under your name on the second screen (scroll down on the home page). */
+  interests: ['AI for Science (AI4S)', 'Explainable AI (XAI)', 'Applied Mathematics'],
 };
