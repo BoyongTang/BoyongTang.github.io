@@ -245,6 +245,15 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
 
   {!home && <a class="ex__home" href="/">← The pillars</a>}
 
+  {
+    // the home page goes on below: everything as a plain page (src/components/Overview.astro)
+    home && (
+      <a class="ex__more" href="#about">
+        Scroll to explore <span aria-hidden="true">↓</span>
+      </a>
+    )
+  }
+
   <div class="ex__foot">
     <p class="ex__credit">
       {creditLine}
@@ -270,7 +279,8 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
   </div>
 </section>
 
-<!-- without JavaScript: the open part's content (or the profile and every part, on the home page) as a page -->
+<!-- without JavaScript: the open part's content as a page (the home page has its second screen instead) -->
+{!home && (
 <noscript>
   <div class="wrap ex-noscript">
     {
@@ -294,6 +304,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     }
   </div>
 </noscript>
+)}
 
 <script>
   import { initExplorer } from '../scripts/explorer';
@@ -837,6 +848,55 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     z-index: 2;
   }
 
+  /* home: a little higher, to leave room for the scroll hint under the name */
+  .ex--home .ex__caption {
+    bottom: 84px;
+  }
+
+  .ex__more {
+    position: absolute;
+    left: 50%;
+    bottom: 44px;
+    z-index: 2;
+    transform: translateX(-50%);
+    padding: 6px 10px;
+    font: 500 11px/1.4 var(--font-mono);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: rgb(230 226 220 / 0.72);
+    text-decoration: none;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.95);
+    transition: opacity 400ms ease, color var(--t-identify) var(--ease);
+  }
+
+  .ex__more:hover,
+  .ex__more:focus-visible {
+    color: #fff;
+  }
+
+  .ex__more span {
+    display: inline-block;
+    margin-left: 4px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .ex__more span {
+      animation: ex-bob 2.2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes ex-bob {
+    0%, 100% { transform: translateY(-1px); }
+    50% { transform: translateY(3px); }
+  }
+
+  /* with a part open, the hint steps aside */
+  .ex.is-open .ex__more {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .ex__cap {
     display: flex;
     flex-direction: column;
@@ -966,6 +1026,14 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
       bottom: 78px;
     }
 
+    .ex--home .ex__caption {
+      bottom: 132px;
+    }
+
+    .ex__more {
+      bottom: 98px;
+    }
+
     .ex__foot {
       flex-direction: column-reverse;
       align-items: flex-start;
@@ -993,7 +1061,8 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     animation: ex-rise 1400ms cubic-bezier(0.2, 0.7, 0.2, 1) 900ms both;
   }
 
-  :global(html.sky-intro) .ex__foot {
+  :global(html.sky-intro) .ex__foot,
+  :global(html.sky-intro) .ex:not(.is-open) .ex__more {
     animation: fade-in 900ms ease-out 3000ms both;
   }
 

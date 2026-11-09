@@ -16,10 +16,13 @@ places on the pillars are the parts of me:
 | Honors | 荣誉 | awards and honors |
 | News | 动态 | what is new, as a timeline |
 
-The whole site is that one screen, with nothing to scroll. Choosing a part flies in to it and unfolds its
-stars (Intro opens the profile card instead); choosing a star opens its card; a click anywhere else, or
-Escape, steps back. Each part also has its own address (`/sky/<part>/`), which opens on it; without
-JavaScript that page lists the part's content.
+Choosing a part flies in to it and unfolds its stars (Intro opens the profile card instead); choosing a star
+opens its card beside it; a click anywhere else, or Escape, steps back. Each part also has its own address
+(`/sky/<part>/`), one screen that opens on it; without JavaScript that page lists the part's content.
+
+Scrolling down the home page leads to a **second screen**: the same content as a plain academic page, with
+the profile card staying in view on the left and a section per part on the right (About, News, Research,
+Honors & Awards, Works, Contact), newest first.
 
 ## 维护指南 (Maintenance)
 
@@ -36,6 +39,8 @@ JavaScript that page lists the part's content.
 | 论文配图 | [`public/research/`](public/research/) | 图片文件 |
 
 两个文件开头的注释逐项解释了每个字段。留空 `''` 或不写的字段不会显示。
+
+**两屏共用同一份数据：** 首页第一屏的星图和往下滑的第二屏，都从这两个文件读内容。改一次，两边同时更新，第二屏不用单独改。
 
 ### Research：加一篇论文
 
@@ -94,7 +99,17 @@ JavaScript that page lists the part's content.
 
 ### Intro：个人介绍
 
-都在 `profile.ts`：`role`（一句身份）、`affiliation`（学校）、`bio` / `bioZh`（中英文简介）、`tagline`（首页名字下的一句话）、`cv`（把 PDF 放进 `public/`，写成 `'/cv.pdf'`）。
+都在 `profile.ts`：`role`（一句身份）、`affiliation`（学校）、`bio` / `bioZh`（中英文简介）、`tagline`（首页名字下的一句话）、`cv`（把 PDF 放进 `public/`，写成 `'/cv.pdf'`）、`interests`（研究方向，第二屏名字下面的小标签，如 `['AI for Science (AI4S)', …]`）。
+
+### 第二屏（首页往下滑）
+
+由 [`src/components/Overview.astro`](src/components/Overview.astro) 自动生成，平时不用改它：
+
+- **左边卡片：** 名字、身份、学校、`interests` 标签、邮箱 / GitHub / CV 按钮，来自 `profile.ts`。往下滑时一直停在左边；手机上在最上面。
+- **右边板块，从上到下：** About（`bio`）→ News → Research → Honors & Awards → Works → Contact。
+- **排序：** News、Research、Works 新的在上（在 `stars.ts` 里照旧从旧到新写，第二屏会自动倒过来）；Honors 按 `note` 里的年份从新到旧，同一年保持你写的顺序。
+- **怎么显示：** News 和 Honors 是「日期 + 一行」；Research 和 Works 是卡片，有 `image` 的配图放左边，点图看大图；Contact 是按钮；没有内容的板块显示「Uncharted · 待探索」。
+- **想调板块顺序或标题：** 改 `Overview.astro` 里的 `sections` 列表。
 
 ### 论文配图
 
@@ -124,7 +139,7 @@ npm run og       # 重画链接预览图 public/og.png（改了名字或身份�
 
 ### 其他
 
-- 每个部分的名字、颜色、一句话说明：[`src/data/facets.ts`](src/data/facets.ts)。
+- 每个部分的名字、颜色、一句话说明：[`src/data/facets.ts`](src/data/facets.ts)。第二屏板块标题前的小圆点也用这个颜色。
 - 每个部分在图上的位置、天空明暗：[`src/data/pillars.ts`](src/data/pillars.ts)。
 
 ## How it is built
@@ -133,8 +148,11 @@ npm run og       # 重画链接预览图 public/og.png（改了名字或身份�
 - The living sky behind every page is WebGL 2 ([`src/scripts/pillars-gl.ts`](src/scripts/pillars-gl.ts)).
   A depth mask separates the pillars from the sky, giving parallax with the mouse, drifting gas, twinkling
   stars, and a darker sky round full-colour pillars. Without WebGL a still copy of the picture stands in.
-- The one screen: [`src/components/Explorer.astro`](src/components/Explorer.astro) (markup and styles) and
-  [`src/scripts/explorer.ts`](src/scripts/explorer.ts) (the camera, flying in to a part, the cards).
+- The pillars screen: [`src/components/Explorer.astro`](src/components/Explorer.astro) (markup and styles) and
+  [`src/scripts/explorer.ts`](src/scripts/explorer.ts) (the camera, flying in to a part, the cards; on the
+  home page it also keeps the sky's pillars in step as the page scrolls).
+- The home page's second screen: [`src/components/Overview.astro`](src/components/Overview.astro), built
+  from the same data. Only the home page scrolls (`scrolls` on [`src/layouts/Base.astro`](src/layouts/Base.astro)).
   Which part is the profile card: `PROFILE_PART` in [`src/data/facets.ts`](src/data/facets.ts).
 - Star layout, at build time: [`src/lib/sky.ts`](src/lib/sky.ts). Where the picture sits on a screen:
   [`src/lib/pillars-fit.ts`](src/lib/pillars-fit.ts). The sky's mouse parallax and dimming:
