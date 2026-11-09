@@ -1,7 +1,7 @@
 // The sky behind the site: Webb's Pillars of Creation (NIRCam, full view), in its original colours and at its
-// original tilt, used under its licence with the credit shown wherever it appears. The four parts of me sit
-// on four places in it: the tallest pillar's head, a small evaporating gas globule, the middle pillar's red
-// tip and the tip of the small pillar.
+// original tilt, used under its licence with the credit shown wherever it appears. The parts of me sit
+// on places in it: the tallest pillar's head, a small evaporating gas globule, the middle pillar's red
+// tip, the tip of the small pillar, the low pillar's summit and the tallest pillar's outstretched arm.
 //
 // Positions are fractions of the image (0–1 across, 0–1 down). Web copies and masks are made by
 // scripts/make-pillars.py. No Astro imports here, so scripts can use it directly.
@@ -44,6 +44,8 @@ export const spots: Record<FacetId, [number, number]> = {
   contact: [0.615, 0.345], // a small evaporating gas globule
   intro: [0.865, 0.336], // the middle pillar's red, glowing tip
   works: [0.855, 0.457], // the tip of the small pillar
+  honors: [0.287, 0.474], // the summit of the low pillar at the bottom left
+  news: [0.329, 0.39], // the tallest pillar's arm, reaching out to the left
 };
 
 /** Which side each part's label runs on wide and on tall screens, so neighbours never collide. */
@@ -52,4 +54,6 @@ export const labelLeft: Record<FacetId, { wide: boolean; tall: boolean }> = {
   contact: { wide: false, tall: true },
   intro: { wide: true, tall: true },
   works: { wide: true, tall: true },
+  honors: { wide: false, tall: false },
+  news: { wide: false, tall: false },
 };

@@ -27,6 +27,17 @@ for (const file of pages) {
 }
 
 const exists = (p) => stat(p).then(() => true, () => false);
+
+/** Whether a file at this site path exists in dist/ with exactly this spelling, capitals included. */
+async function existsExactly(path) {
+  let dir = DIST;
+  for (const part of decodeURIComponent(path).split('/').filter(Boolean)) {
+    const names = await readdir(dir).catch(() => []);
+    if (!names.includes(part)) return false;
+    dir = join(dir, part);
+  }
+  return true;
+}
 const problems = new Set();
 
 for (const [file, text] of html) {
@@ -45,6 +56,11 @@ for (const [file, text] of html) {
     if (hash && ids.has(route) && !ids.get(route).has(decodeURIComponent(hash))) {
       problems.add(`${from} → ${href} (no #${hash} on that page)`);
     }
+  }
+  // files the page loads (images, figures): they must exist with exactly this spelling, capitals included,
+  // since GitHub Pages tells kolta.svg and KolTa.svg apart even where this computer does not
+  for (const [, src] of text.matchAll(/\s(?:src|href)="(\/[^"#?]+\.[a-z0-9]+)"/gi)) {
+    if (!(await existsExactly(src))) problems.add(`${from} → ${src} (no file spelled exactly like that)`);
   }
 }
 

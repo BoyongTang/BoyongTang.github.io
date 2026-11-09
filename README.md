@@ -4,8 +4,8 @@ My personal website: who I am, what I work on, and how to reach me.
 
 **Live:** [boyongtang.github.io](https://boyongtang.github.io)
 
-The home page is a single view of the Pillars of Creation, as seen by the James Webb Space Telescope. Four
-places on the pillars are the four parts of me:
+The home page is a single view of the Pillars of Creation, as seen by the James Webb Space Telescope. Six
+places on the pillars are the parts of me:
 
 | Part | 中文 | What it holds |
 | --- | --- | --- |
@@ -13,6 +13,8 @@ places on the pillars are the four parts of me:
 | Intro | 个人介绍 | who I am: one profile card |
 | Works | 作品 | what I have made |
 | Contact | 联系 | how to reach me |
+| Honors | 荣誉 | awards and honors |
+| News | 动态 | what is new, as a timeline |
 
 The whole site is that one screen, with nothing to scroll. Choosing a part flies in to it and unfolds its
 stars (Intro opens the profile card instead); choosing a star opens its card; a click anywhere else, or
@@ -28,6 +30,8 @@ JavaScript that page lists the part's content.
 | Research 研究 | [`src/data/stars.ts`](src/data/stars.ts) 的 `research` | 论文 |
 | Works 作品 | [`src/data/stars.ts`](src/data/stars.ts) 的 `works` | 项目、代码仓库 |
 | Contact 联系 | [`src/data/stars.ts`](src/data/stars.ts) 的 `contact` | 邮箱、GitHub 等链接 |
+| Honors 荣誉 | [`src/data/stars.ts`](src/data/stars.ts) 的 `honors` | 奖项、奖学金、荣誉称号 |
+| News 动态 | [`src/data/stars.ts`](src/data/stars.ts) 的 `news` | 新消息：论文上线、录用、获奖、入学等 |
 | Intro 个人介绍 | [`src/data/profile.ts`](src/data/profile.ts) | 身份、简介、邮箱和 CV 按钮 |
 | 论文配图 | [`public/research/`](public/research/) | 图片文件 |
 
@@ -44,7 +48,7 @@ JavaScript that page lists the part's content.
   note: 'Under Review',           // 状态：卡片里显示成小标签
   title: 'KolTa: A Physics-Informed …',            // 完整标题
   authors: 'Boyong Tang, Tao Wang, Lei Yang',      // 自己的名字自动加粗
-  image: { src: '/research/KolTa-predictor.svg', alt: '这张图画的是什么' },
+  image: { src: '/research/kolta-predictor.svg', alt: '这张图画的是什么' },
   text: '一两句话：解决什么问题，效果多好。',
   links: [
     { label: 'arXiv', href: 'https://arxiv.org/abs/…' },
@@ -67,6 +71,26 @@ JavaScript that page lists the part's content.
 每一项是 `name` 加 `link`。邮箱链接要以 `mailto:` 开头，如 `'mailto:you@example.com'`。
 
 > **换邮箱时改两处：** `stars.ts` 的 `contact`，以及 `profile.ts` 里的 `email` / `generalEmail`（个人卡片的按钮）。
+
+### Honors：加一个奖项
+
+一条链是一类荣誉（现在有「Competitions 竞赛」和「Sichuan University 四川大学」两条），一颗星是一个奖，按年份从旧到新排：
+
+```ts
+{ name: 'CUMCM', kind: 'Third Prize', note: '2026', title: 'China Undergraduate Mathematical Contest in Modeling (CUMCM)', bright: true },
+```
+
+`name` 写奖项简称，`kind` 写等级，`note` 写年份（显示成小标签），`title` 写全称。有证书或公示链接可以加 `links`。新的一类荣誉（比如「Scholarships 奖学金」）就加一条新链。
+
+### News：发一条动态
+
+一颗星是一条消息，按时间从旧到新排，连起来就是一条时间线。新消息加在 `news` 的最后：
+
+```ts
+{ name: 'KolTa preprint', kind: 'Preprint', note: 'Nov 2026', text: '一两句话说发生了什么。', links: [{ label: 'arXiv', href: '…' }], bright: true },
+```
+
+`note` 写日期（如 `'Nov 2026'`），`kind` 写类别（Preprint、Award、Talk…）。最新、最重要的那条可以加 `bright: true`，旧的那条去掉 `bright`。消息太多时可以删掉最早的几条。
 
 ### Intro：个人介绍
 
@@ -100,7 +124,7 @@ npm run og       # 重画链接预览图 public/og.png（改了名字或身份�
 
 ### 其他
 
-- 四个部分的名字、颜色、一句话说明：[`src/data/facets.ts`](src/data/facets.ts)。
+- 每个部分的名字、颜色、一句话说明：[`src/data/facets.ts`](src/data/facets.ts)。
 - 每个部分在图上的位置、天空明暗：[`src/data/pillars.ts`](src/data/pillars.ts)。
 
 ## How it is built
