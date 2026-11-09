@@ -162,7 +162,7 @@ export const stars: Record<StarPart, ChainInput[]> = {
         {
           name: 'Research Assistant',
           kind: 'Research',
-          note: '2025',
+          note: 'Aug 2026',
           text: 'Joined Prof. Tao Wang at Sichuan University as an undergraduate research assistant.',
         },
         {
