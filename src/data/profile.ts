@@ -8,10 +8,11 @@ export const profile = {
   role: 'Undergraduate · Applied Mathematics & AI',
   affiliation: 'Sichuan University',
   /** Your scholar email (学术邮箱): the card's "Scholar email" button. */
-  email: 'boyong.tang.math.ai@gmail.com',
+  //email: 'boyong.tang.math.ai@gmail.com',
   /** For everything else (一般事务邮箱): the card's "General email" button. Empty: none. */
-  generalEmail: 'tang.boyong@outlook.com',
+  //generalEmail: 'tang.boyong@outlook.com',
   github: 'https://github.com/BoyongTang',
+  googleScholar: 'https://scholar.google.com/citations?user=SPO-YQYAAAAJ&hl=zh-CN&authuser=1',
   /** The quiet line under your name on the home page, e.g. 'Observe the unanswered.' Empty: none. */
   tagline: '',
 
@@ -23,7 +24,7 @@ export const profile = {
   /** 中文简介（可留空）。 */
   bioZh: '',
   /** A PDF in /public, e.g. '/cv.pdf': the card's "CV" button. Empty: none. */
-  cv: '',
+  //cv: '',
   /** One more sentence for search engines and link previews (optional). */
   subline: '',
   /** Research interests: small tags under your name on the second screen (scroll down on the home page). */
