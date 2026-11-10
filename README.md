@@ -111,6 +111,36 @@ Honors & Awards, Works, Contact), newest first.
 - **怎么显示：** News 和 Honors 是「日期 + 一行」；Research 和 Works 是卡片，有 `image` 的配图放左边，点图看大图；Contact 是按钮；没有内容的板块显示「Uncharted · 待探索」。
 - **想调板块顺序或标题：** 改 `Overview.astro` 里的 `sections` 列表。
 
+### 动效（闪光与流动）
+
+两屏上的小动效都是纯 CSS 加一小段脚本，不依赖任何库。平时不用动；想调快慢、强弱或关掉某一个，按下表找：
+
+| 动效 | 在哪里 | 怎么调 |
+| --- | --- | --- |
+| 名字上划过的流光 | [`Explorer.astro`](src/components/Explorer.astro) 的 `.ex__cap--home .ex__name` 和 `@keyframes ex-glint` | `animation` 里的 `7s` 是多久划一次，`3.2s` 是打开页面后多久开始；渐变里的 `#ffe2b8` 是流光的颜色 |
+| 流星 | [`Explorer.astro`](src/components/Explorer.astro) 里两行 `<span class="ex__meteor" …>` | 每行的 `style`：`--mx` / `--my` 起点位置，`--ma` 角度，`--mt` 多久出现一次，`--md` 第一次等多久。想多一颗就复制一行，想少就删一行 |
+| 星星卡片升起 | [`Explorer.astro`](src/components/Explorer.astro) 的 `@keyframes ex-card-in` | `.ex__card` 的 `animation: … 360ms` |
+| 第二屏内容滑入 | [`Overview.astro`](src/components/Overview.astro) 里的 `<script>`，样式是 `.ov .rv` / `.ov .rv.is-in` | 滑入多远：`translateY(18px)`；多快：`700ms` / `800ms`；同时出现的几项前后错开：脚本里的 `70`（毫秒） |
+| 标题下流动的光、标题前闪烁的小星 | [`Overview.astro`](src/components/Overview.astro) 的 `.ov__head::after`（`ov-flow`）和 `.ov__head::before`（`ov-twinkle`） | `7s` / `3.6s` 是一圈的时间 |
+| 卡片上跟着鼠标的光斑、悬停时变亮的边 | [`Overview.astro`](src/components/Overview.astro) 的 `.ov__card::before, .ov__paper::before` 和 `:hover` 规则 | 光斑强弱：`var(--c) 28%`；大小：`340px` |
+| 头像外绕圈的光点 | [`Overview.astro`](src/components/Overview.astro) 的 `.ov__mark::before`（`ov-orbit`） | `7s` 是一圈的时间 |
+| 按钮和链接标签上的流光 | [`global.css`](src/styles/global.css) 的 `.btn::after`；链接标签是 `Overview.astro` 的 `.ov__chips a:hover` | `750ms` 是划过的时间 |
+
+- **颜色跟着板块走：** 第二屏的动效都用 `var(--c)`，也就是该板块在 [`src/data/facets.ts`](src/data/facets.ts) 里的颜色。改了板块颜色，动效颜色自动跟着变。
+- **关掉某一个：** 把对应的 `animation: …` 那一行删掉或注释掉即可，其他不受影响。
+- **「减少动态效果」：** 系统开了这个设置（或在 404 页的页脚点了 Reduce motion）时，以上动效全部自动停下，内容照常显示。所以**新加动画时，一定写在这两层里面**，照着现有的抄：
+
+  ```css
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .你的类名 {
+      animation: …;
+    }
+  }
+  ```
+
+- **第二屏新加了一种内容块：** 想让它也滑入，把它的类名加进 `Overview.astro` 脚本开头那一长串选择器里（`.ov__card, .ov__head, …`）。不加也没关系，它会直接显示。
+- **没有 JavaScript 时：** 滑入效果和鼠标光斑不出现，内容全部正常显示（隐藏状态是脚本加上去的，不是写死在样式里）。
+
 ### 论文配图
 
 - PNG、JPG、WebP、SVG 都可以。示意图能导出 SVG 最好（放大不糊）；照片、截图、点很多的散点图用 PNG 或 JPG。
@@ -136,6 +166,8 @@ npm run og       # 重画链接预览图 public/og.png（改了名字或身份�
 - **提交前先保存文件。** VS Code 标签上有白点表示还没保存。
 - **`name` 在同一部分里不要重复**，`from` 要和前面某颗星的 `name` 一字不差。
 - **只放真实内容：** 没有的栏目就空着，网站会自动隐藏或显示「待探索」。
+- **`.btn` 带 `overflow: hidden`**（流光要靠它裁掉）。以后想给按钮加伸到外面的东西（角标、外发光），要加在按钮外面一层，否则会被裁掉。
+- **改完动效，手机宽度也看一眼：** 在浏览器里把窗口拉窄，或用开发者工具的手机模式，确认第二屏的内容都滑出来了。
 
 ### 其他
 
@@ -157,7 +189,14 @@ npm run og       # 重画链接预览图 public/og.png（改了名字或身份�
 - Star layout, at build time: [`src/lib/sky.ts`](src/lib/sky.ts). Where the picture sits on a screen:
   [`src/lib/pillars-fit.ts`](src/lib/pillars-fit.ts). The sky's mouse parallax and dimming:
   [`src/scripts/backdrop.ts`](src/scripts/backdrop.ts).
-- Motion respects the system's reduced-motion setting ([`src/scripts/motion.ts`](src/scripts/motion.ts)).
+- Small motion on both screens, all CSS plus one short script: a glint across the name, the odd meteor
+  and a rising star card ([`Explorer.astro`](src/components/Explorer.astro)); on the second screen,
+  content rising in as it scrolls into view, light running under each heading, cards lit where the pointer
+  is, and a point of light circling the mark ([`Overview.astro`](src/components/Overview.astro)); a glint
+  on buttons ([`global.css`](src/styles/global.css)). The maintenance guide above says how to tune each.
+- Motion respects the system's reduced-motion setting ([`src/scripts/motion.ts`](src/scripts/motion.ts)):
+  every animation is declared inside `prefers-reduced-motion: no-preference` and
+  `html:not([data-motion='reduce'])`, so nothing new moves when motion is off.
 
 ## The picture
 
