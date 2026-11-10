@@ -131,6 +131,8 @@ p {
 
 .btn {
   --b: var(--hairline);
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -149,13 +151,30 @@ p {
   transition:
     border-color var(--t-identify) var(--ease),
     background-color var(--t-identify) var(--ease),
-    color var(--t-identify) var(--ease);
+    color var(--t-identify) var(--ease),
+    box-shadow 300ms var(--ease);
 }
 
 .btn:hover {
   --b: var(--signal-cyan);
   color: var(--starlight);
   background: rgb(130 208 220 / 0.08);
+  box-shadow: 0 0 22px -8px var(--signal-cyan), inset 0 0 14px -10px var(--signal-cyan);
+}
+
+/* a glint crosses the button as the pointer arrives */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 36%, rgb(255 255 255 / 0.3) 50%, transparent 64%);
+  transform: translateX(-130%);
+  pointer-events: none;
+}
+
+.btn:hover::after {
+  transform: translateX(130%);
+  transition: transform 750ms var(--ease);
 }
 
 .btn--primary {

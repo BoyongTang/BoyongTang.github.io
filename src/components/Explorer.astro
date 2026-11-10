@@ -88,6 +88,9 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     data-still
   />
   <div class="ex__veil" aria-hidden="true"></div>
+  <!-- now and then a meteor crosses the sky -->
+  <span class="ex__meteor" aria-hidden="true" style="--mx:12%;--my:14%;--ma:24deg;--mt:13s;--md:5s"></span>
+  <span class="ex__meteor" aria-hidden="true" style="--mx:58%;--my:6%;--ma:38deg;--mt:19s;--md:11s"></span>
 
   <svg class="ex__stars" aria-hidden="false" role="group" aria-label="Stars of the open part">
     <defs>
@@ -370,6 +373,36 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
 
   .ex.is-open .ex__veil {
     opacity: 0.55;
+  }
+
+  /* ── meteors: a thin streak, head first, gone in under a second; still and unseen without motion ── */
+  .ex__meteor {
+    position: absolute;
+    left: var(--mx);
+    top: var(--my);
+    width: 150px;
+    height: 1.5px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, rgb(190 226 255 / 0.5) 72%, #fff);
+    filter: drop-shadow(0 0 4px rgb(160 215 255 / 0.85));
+    mix-blend-mode: screen;
+    transform-origin: 100% 50%;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.sky-ready:not([data-motion='reduce'])) .ex:not(.is-open) .ex__meteor {
+      animation: ex-meteor var(--mt) linear var(--md) infinite;
+    }
+  }
+
+  @keyframes ex-meteor {
+    0% { opacity: 0; transform: rotate(var(--ma)) translateX(-260px) scaleX(0.25); }
+    1.2% { opacity: 1; }
+    4.5% { opacity: 0.9; }
+    6% { opacity: 0; transform: rotate(var(--ma)) translateX(420px) scaleX(1); }
+    100% { opacity: 0; transform: rotate(var(--ma)) translateX(420px) scaleX(1); }
   }
 
   /* ── an open part's stars ── */
@@ -922,6 +955,29 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     color: color-mix(in srgb, var(--c) 35%, #f4f2ee);
   }
 
+  /* the name catches the light: a warm glint crosses the letters every few seconds */
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .ex__cap--home .ex__name {
+      background: linear-gradient(100deg, #f4f2ee 0 45%, #fff 48.5%, #ffe2b8 50%, #fff 51.5%, #f4f2ee 55% 100%) 100% 0 / 300% 100% no-repeat;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: none;
+      filter: drop-shadow(0 1px 8px rgb(0 0 0 / 0.9));
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      :global(html:not([data-motion='reduce'])) .ex__cap--home .ex__name {
+        animation: ex-glint 7s ease-in-out 3.2s infinite;
+      }
+    }
+  }
+
+  @keyframes ex-glint {
+    0% { background-position: 100% 0; }
+    38%, 100% { background-position: 0% 0; }
+  }
+
   .ex__tag {
     margin: 0;
     font: 400 12px/1.5 var(--font-mono);
@@ -953,6 +1009,11 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
     cursor: auto;
     user-select: text;
     -webkit-user-select: text;
+    animation: ex-card-in 360ms var(--ease) both;
+  }
+
+  @keyframes ex-card-in {
+    from { opacity: 0; translate: 0 10px; }
   }
 
   /* beside its star (src/scripts/explorer.ts sets left and top) */
