@@ -194,6 +194,66 @@ const sections: { id: FacetId; title: string; zh: string; items: SkyItem[] }[] =
   </div>
 </section>
 
+<script>
+  // The second screen comes in as you reach it: each heading, line and card rises into place the first time
+  // it scrolls into view (together, they follow one another). And a card is lit where the pointer is.
+  const ov = document.querySelector<HTMLElement>('.ov');
+  if (ov) {
+    const items = [...ov.querySelectorAll<HTMLElement>('.ov__card, .ov__head, .ov__sec > .ov__text, .ov__empty, .ov__rows > li, .ov__paper, .ov__sec > .ov__btns, .ov__top')];
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          let n = 0;
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            const el = e.target as HTMLElement;
+            el.style.transitionDelay = `${Math.min(n++, 6) * 70}ms`;
+            el.classList.add('is-in');
+            io.unobserve(el);
+            // the delay is only for arriving: afterwards hover answers at once
+            el.addEventListener('transitionend', () => (el.style.transitionDelay = ''), { once: true });
+          }
+        },
+        { rootMargin: '0px 0px -8% 0px' },
+      );
+      for (const el of items) {
+        el.classList.add('rv');
+        io.observe(el);
+      }
+    }
+
+    for (const card of ov.querySelectorAll<HTMLElement>('.ov__card, .ov__paper')) {
+      card.addEventListener(
+        'pointermove',
+        (ev) => {
+          const r = card.getBoundingClientRect();
+          card.style.setProperty('--gx', `${(ev.clientX - r.left).toFixed(0)}px`);
+          card.style.setProperty('--gy', `${(ev.clientY - r.top).toFixed(0)}px`);
+        },
+        { passive: true },
+      );
+    }
+  }
+</script>
+
+<style is:global>
+  /* arriving (classes set by the script above; without JavaScript everything is simply there) */
+  .ov .rv {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  .ov .rv.is-in {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 700ms var(--ease),
+      transform 800ms var(--ease),
+      border-color 300ms var(--ease),
+      box-shadow 300ms var(--ease);
+  }
+</style>
+
 <style>
   .ov {
     position: relative;
@@ -229,9 +289,42 @@ const sections: { id: FacetId; title: string; zh: string; items: SkyItem[] }[] =
     background: rgb(5 9 18 / 0.7);
     backdrop-filter: blur(6px);
     text-align: center;
+    --c: #ff8f7d;
+  }
+
+  /* a card is lit where the pointer is, in its part's colour, and its edge warms */
+  .ov__card,
+  .ov__paper {
+    isolation: isolate;
+    overflow: hidden;
+    transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+  }
+
+  .ov__card::before,
+  .ov__paper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(340px circle at var(--gx, 50%) var(--gy, 0%), color-mix(in srgb, var(--c) 28%, transparent), transparent 70%);
+    opacity: 0;
+    transition: opacity 400ms ease;
+    pointer-events: none;
+  }
+
+  .ov__card:hover,
+  .ov__paper:hover {
+    border-color: color-mix(in srgb, var(--c) 50%, var(--hairline));
+    box-shadow: 0 14px 44px -18px color-mix(in srgb, var(--c) 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--c) 12%, transparent);
+  }
+
+  .ov__card:hover::before,
+  .ov__paper:hover::before {
+    opacity: 1;
   }
 
   .ov__mark {
+    position: relative;
     display: grid;
     place-items: center;
     width: 84px;
@@ -243,6 +336,47 @@ const sections: { id: FacetId; title: string; zh: string; items: SkyItem[] }[] =
     font: 500 26px/1 var(--font-display);
     letter-spacing: 0.08em;
     color: var(--starlight);
+    box-shadow: 0 0 26px -6px rgb(255 143 125 / 0.55);
+  }
+
+  /* a point of light circles the mark */
+  .ov__mark::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0 58%, rgb(255 143 125 / 0.7) 82%, #ffe2b8 96%, #fff 99%, transparent);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.2px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.2px));
+    opacity: 0.9;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='reduce'])) .ov__mark::before {
+      animation: ov-orbit 7s linear infinite;
+    }
+
+    :global(html:not([data-motion='reduce'])) .ov__head::before {
+      animation: ov-twinkle 3.6s ease-in-out infinite;
+    }
+
+    :global(html:not([data-motion='reduce'])) .ov__head::after {
+      animation: ov-flow 7s linear infinite;
+    }
+  }
+
+  @keyframes ov-orbit {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes ov-twinkle {
+    0%, 100% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent), 0 0 12px 2px var(--c); }
+    50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 30%, transparent), 0 0 20px 5px var(--c); }
+  }
+
+  @keyframes ov-flow {
+    from { background-position: -40% 0; }
+    to { background-position: 140% 0; }
   }
 
   .ov__name {
@@ -305,7 +439,20 @@ const sections: { id: FacetId; title: string; zh: string; items: SkyItem[] }[] =
     scroll-margin-top: 24px;
   }
 
+  /* light runs along the rule under each heading, in the part's colour */
+  .ov__head::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--c) 75%, #fff), transparent) -40% 0 / 26% 100% no-repeat;
+    pointer-events: none;
+  }
+
   .ov__head {
+    position: relative;
     display: flex;
     align-items: baseline;
     gap: 10px;
@@ -392,6 +539,7 @@ const sections: { id: FacetId; title: string; zh: string; items: SkyItem[] }[] =
   }
 
   .ov__paper {
+    position: relative;
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
     gap: 20px;
@@ -413,12 +561,18 @@ const sections: { id: FacetId; title: string; zh: string; items: SkyItem[] }[] =
     border-radius: var(--radius-sm);
     background: #f6f7f9;
     cursor: zoom-in;
+    overflow: hidden;
   }
 
   .ov__fig img {
     display: block;
     width: 100%;
     height: auto;
+    transition: transform 600ms var(--ease);
+  }
+
+  .ov__fig:hover img {
+    transform: scale(1.04);
   }
 
   .ov__body {
@@ -481,10 +635,13 @@ const sections: { id: FacetId; title: string; zh: string; items: SkyItem[] }[] =
     letter-spacing: 0.08em;
     color: var(--starlight);
     text-decoration: none;
+    transition: border-color var(--t-identify) var(--ease), box-shadow 300ms var(--ease), background-color var(--t-identify) var(--ease);
   }
 
   .ov__chips a:hover {
     border-color: var(--c);
+    background: color-mix(in srgb, var(--c) 12%, transparent);
+    box-shadow: 0 0 18px -6px var(--c);
   }
 
   .ov__top {
