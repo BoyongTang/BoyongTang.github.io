@@ -90,8 +90,12 @@ const year = new Date().getFullYear();
         <span>© {year} {profile.name}</span>
         <span>Sky: {creditLine}.</span>
         <span>
-          <a href={`mailto:${profile.email}`}>{profile.email}</a>
-          &nbsp;·&nbsp;
+          {profile.email && (
+            <>
+              <a href={`mailto:${profile.email}`}>{profile.email}</a>
+              &nbsp;·&nbsp;
+            </>
+          )}
           <button type="button" data-motion-toggle aria-pressed="false">Reduce motion</button>
         </span>
       </div>

@@ -58,6 +58,7 @@ const sections: { id: FacetId; title: string; zh: string; items: SkyItem[] }[] =
         <p class="ov__btns">
           {profile.email && <a class="btn" href={`mailto:${profile.email}`}>Scholar email →</a>}
           {profile.generalEmail && <a class="btn" href={`mailto:${profile.generalEmail}`}>General email →</a>}
+          {profile.googleScholar && <a class="btn" href={profile.googleScholar} rel="noopener">Google Scholar ↗</a>}
           {profile.github && <a class="btn" href={profile.github} rel="noopener">GitHub ↗</a>}
           {profile.cv && <a class="btn" href={profile.cv}>CV ↓</a>}
         </p>

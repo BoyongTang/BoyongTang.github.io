@@ -329,6 +329,7 @@ export function initExplorer(root: HTMLElement) {
     if (!part || !entry) return;
     if (current !== part) openPart(part);
     selected = id;
+    card.classList.remove('is-profile');
     root.querySelectorAll('[data-star]').forEach((a) => a.classList.toggle('is-selected', (a as HTMLElement).dataset.star === id));
     cardBody.replaceChildren(entry.cloneNode(true));
     card.style.setProperty('--c', getComputedStyle(groups.get(part)!).getPropertyValue('--c'));
@@ -343,6 +344,8 @@ export function initExplorer(root: HTMLElement) {
     const entry = root.querySelector<HTMLElement>('[data-entry="profile"]');
     if (!entry || !current) return;
     selected = 'profile';
+    // no star to sit beside: the profile card takes the middle of the screen
+    card.classList.add('is-profile');
     cardBody.replaceChildren(entry.cloneNode(true));
     card.style.setProperty('--c', getComputedStyle(groups.get(current)!).getPropertyValue('--c'));
     card.hidden = false;
@@ -359,6 +362,7 @@ export function initExplorer(root: HTMLElement) {
     selected = null;
     root.querySelectorAll('[data-star]').forEach((a) => a.classList.remove('is-selected'));
     card.hidden = true;
+    card.classList.remove('is-profile');
     if (current && home) history.replaceState(null, '', `${location.pathname}${location.search}#${current}`);
     last?.focus({ preventScroll: true });
   }

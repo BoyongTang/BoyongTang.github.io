@@ -275,6 +275,7 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
       <p class="sitem__links">
         {profile.email && <a class="btn" href={`mailto:${profile.email}`}>Scholar email →</a>}
         {profile.generalEmail && <a class="btn" href={`mailto:${profile.generalEmail}`}>General email →</a>}
+        {profile.googleScholar && <a class="btn" href={profile.googleScholar} rel="noopener">Google Scholar ↗</a>}
         {profile.github && <a class="btn" href={profile.github} rel="noopener">GitHub ↗</a>}
         {profile.cv && <a class="btn" href={profile.cv}>CV ↓</a>}
       </p>
@@ -297,7 +298,8 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
             {f.id === PROFILE_PART ? (
               <p>
                 {profile.name}: {[profile.role, profile.affiliation, profile.location].filter(Boolean).join(', ')}. {profile.bio}{' '}
-                <a href={`mailto:${profile.email}`}>{profile.email}</a>
+                {profile.email && <a href={`mailto:${profile.email}`}>{profile.email}</a>}
+                {profile.googleScholar && <a href={profile.googleScholar} rel="noopener">Google Scholar</a>}
               </p>
             ) : (
               <PartItems f={f} />
@@ -1014,6 +1016,41 @@ const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
 
   @keyframes ex-card-in {
     from { opacity: 0; translate: 0 10px; }
+  }
+
+  /* the profile card (Intro has no stars): in the middle of the screen, a little larger */
+  .ex__card.is-profile {
+    top: 46%;
+    right: auto;
+    bottom: auto;
+    border-radius: var(--radius-md);
+    left: 50%;
+    width: min(500px, calc(100% - 2 * var(--gutter)));
+    max-height: calc(100% - 200px);
+    padding: 32px 34px 28px;
+    transform: translate(-50%, -50%);
+    animation: ex-card-in 450ms var(--ease) both;
+  }
+
+  .ex__card.is-profile .profile {
+    gap: 14px;
+  }
+
+  .ex__card.is-profile .sitem__name {
+    font-size: 30px;
+  }
+
+  .ex__card.is-profile .sitem__text {
+    font-size: 16px;
+  }
+
+  .ex__card.is-profile .sitem__links {
+    margin-top: 8px;
+  }
+
+  @keyframes ex-card-in {
+    from { opacity: 0; transform: translate(-50%, calc(-50% + 10px)); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
   }
 
   /* beside its star (src/scripts/explorer.ts sets left and top) */
