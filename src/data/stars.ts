@@ -160,10 +160,10 @@ export const stars: Record<StarPart, ChainInput[]> = {
           text: 'Began the B.S. in Applied Mathematics & Artificial Intelligence at Sichuan University.',
         },
         {
-          name: 'Research Assistant',
+          name: 'Undergraduate Researcher',
           kind: 'Research',
           note: 'Aug 2026',
-          text: 'Joined Prof. Tao Wang at Sichuan University as an undergraduate research assistant.',
+          text: 'Joined Prof. Tao Wang at Sichuan University as an undergraduate researcher.',
         },
         {
           name: 'KolTa preprint',
