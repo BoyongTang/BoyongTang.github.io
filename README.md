@@ -99,7 +99,7 @@ Honors & Awards, Works, Contact), newest first.
 
 ### Intro：个人介绍
 
-都在 `profile.ts`：`role`（一句身份）、`affiliation`（学校）、`bio` / `bioZh`（中英文简介）、`tagline`（首页名字下的一句话）、`cv`（把 PDF 放进 `public/`，写成 `'/cv.pdf'`）、`interests`（研究方向，第二屏名字下面的小标签，如 `['AI for Science (AI4S)', …]`）。
+都在 `profile.ts`。Intro 没有星星，点开后这张卡片显示在屏幕正中间。字段有：`role`（一句身份）、`affiliation`（学校）、`email` / `generalEmail`（邮箱按钮，留空 `''` 就不显示）、`github`、`googleScholar`（Google Scholar 主页链接，只留 `?user=…` 这一段，去掉 `&hl=…&authuser=…`）、`bio` / `bioZh`（中英文简介）、`tagline`（首页名字下的一句话）、`cv`（把 PDF 放进 `public/`，写成 `'/cv.pdf'`）、`interests`（研究方向，第二屏名字下面的小标签，如 `['AI for Science (AI4S)', …]`）。
 
 ### 第二屏（首页往下滑）
 
