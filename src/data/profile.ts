@@ -1,5 +1,5 @@
-// Who you are: the card that opens when Intro (个人介绍) is chosen on the pillars. The other three parts'
-// stars are in src/data/stars.ts. Keep it short. Anything left empty ('') simply does not show.
+// Who you are: the card that opens when Intro (个人介绍) is chosen on the pillars. The other parts'
+// stars (Research, Works, Contact, Honors, News) are in src/data/stars.ts. Keep it short. Anything left empty ('') simply does not show.
 
 export const profile = {
   // ── the basics ───────────────────────────────────────────────────────────

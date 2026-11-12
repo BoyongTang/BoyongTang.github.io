@@ -7,7 +7,7 @@ export default defineConfig({
   trailingSlash: 'always',
   build: { format: 'directory' },
   // old addresses, so links to them still land somewhere: the research atlas, the Toolbox and Path parts,
-  // and the separate pages, which all became the four parts
+  // and the separate pages, which all became the parts on the pillars
   redirects: {
     '/atlas': '/',
     '/atlas/math': '/sky/research/',

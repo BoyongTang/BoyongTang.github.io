@@ -4,7 +4,7 @@ import { reducedMotion } from './motion';
 import { LivingPillars, type Rect, type View } from './pillars-gl';
 
 // The one sky behind every page: the living Pillars of Creation, fixed to the window.
-//   explore  the home page and the four parts: the whole pillars, placed by src/scripts/explorer.ts;
+//   explore  the home page and the parts' pages: the whole pillars, placed by src/scripts/explorer.ts;
 //            the sky round them sits darker (PILLARS.dim) and the view moves gently with the mouse
 //   page     a dimmed, softened stretch of the pillars behind a page of text
 // Without WebGL 2 the page keeps a still copy of the image (html:not(.has-gl)).
