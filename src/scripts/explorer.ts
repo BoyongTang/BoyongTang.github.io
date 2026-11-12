@@ -3,7 +3,7 @@ import { fitPillars, shapeFor, type Shape } from '../lib/pillars-fit';
 import { reducedMotion } from './motion';
 
 // The Pillars of Creation as a map to explore (src/components/Explorer.astro). The camera is a point of the
-// image at the centre of the view and a scale (screen px per image px). Everything on top (the four parts,
+// image at the centre of the view and a scale (screen px per image px). Everything on top (the parts,
 // an open part's stars) is placed from it every frame, and the living sky behind the page reads it too
 // (window.__oqView, see src/scripts/backdrop.ts). Visitors cannot zoom or drag: choosing a part flies the
 // camera in to it, and its star chains come out once it arrives (the profile part opens the profile card

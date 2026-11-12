@@ -1,5 +1,5 @@
 // Renders public/og.png (1200 × 630): the home page as a wide screen shows it. The Pillars of Creation
-// fill the frame, the five parts of me sit on their spots, and the name is one line of spaced
+// fill the frame, the parts of me sit on their spots, and the name is one line of spaced
 // capitals at the bottom centre, with the image credit. Built from public/sky/pillars-max.webp.
 // Run: npm run og   (needs Node ≥ 23.6 to import the .ts data files directly)
 import { writeFile } from 'node:fs/promises';
