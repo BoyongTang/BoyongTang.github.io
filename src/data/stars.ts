@@ -70,7 +70,7 @@ export const stars: Record<StarPart, ChainInput[]> = {
           kind: 'Research Paper',
           note: 'Under Review',
           title: 'KolTa: A Physics-Informed Active Learning Framework for Formulation Discovery with Limited Data',
-          authors: 'Boyong Tang, Tao Wang, Lei Yang',
+          authors: 'Boyong Tang, Lei Yang, Tao Wang',
           image: {
             src: '/research/kolta-predictor.svg',
             alt: 'Fig. 2. Three-stage predictor of KolTa, illustrated with three components in two roles',
