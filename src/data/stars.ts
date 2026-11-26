@@ -166,6 +166,18 @@ export const stars: Record<StarPart, ChainInput[]> = {
           text: 'Joined Prof. Tao Wang at Sichuan University as an undergraduate researcher.',
         },
         {
+          name: 'Third-class Comperhensive Scholarship',
+          kind: 'Honor',
+          note: 'Oct 2026',
+          text: 'Awarded the Third-class Comperhensive Scholarship at Sichuan University.',
+        },
+        {
+          name: 'Merit Studenr',
+          kind: 'Honor',
+          note: 'Oct 2026',
+          text: 'Awarded the Merit Student Honor at Sichuan University.',
+        },
+        {
           name: 'KolTa preprint',
           kind: 'Preprint',
           note: 'Nov 2026',
